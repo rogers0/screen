@@ -1,10 +1,45 @@
-#! /bin/sh
+#!/bin/sh -e
+
+case "$1" in
+  configure) ;;
+  abort-upgrade|abort-deconfigure|abort-remove) exit 0 ;;
+  *)
+    echo "ERROR: screen postinst called with unknown argument \"$1\"."
+    echo "Aborting configuration of screen package."
+    exit 1 ;;
+esac
+
+# FHS:
+if [ -d /usr/doc -a ! -e /usr/doc/screen -a -d /usr/share/doc/screen ]; then
+  ln -sf ../share/doc/screen /usr/doc/screen
+fi
+
 install-info --quiet --section "General Commands" "General Commands" \
- /usr/info/screen.info.gz
+ /usr/share/info/screen.info.gz
 
 # the terminfo/termcap entries don't get installed now; it's done by
 # the `termcap-compat' and the `ncurses-term' packages
 
-# No need to remove /tmp/screens from older versions;
-# the directory used now for sockets is /var/run/screens
+# /var/run/screens was used in previous releases and should be removed now
+rm -rf /var/run/screens
 
+# if utmp group exists, use it
+if cut -d: -f1 < /etc/group | grep -qs utmp; then
+  SCREEN_MODE=2755
+  SCREEN_GROUP=utmp
+  SCREENDIR_MODE=775
+else
+  SCREEN_MODE=4755
+  SCREEN_GROUP=root
+  SCREENDIR_MODE=755
+fi
+
+if command -v suidregister > /dev/null 2>&1; then
+  suidregister -s screen /usr/bin/screen root $SCREEN_GROUP $SCREEN_MODE
+else
+  chown root.$SCREEN_GROUP /usr/bin/screen
+  chmod $SCREEN_MODE /usr/bin/screen
+fi
+
+chown root.$SCREEN_GROUP /var/run/screen
+chmod $SCREENDIR_MODE /var/run/screen

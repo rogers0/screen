@@ -1,12 +1,15 @@
 #!/usr/bin/make -f
 #
 # Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
-# Copyright (C) 1997 Juan Cespedes <cespedes@debian.org>
+# Copyright (C) 1997-2000 Juan Cespedes <cespedes@debian.org>
 
-build:
-		./configure --prefix=/usr
-		$(MAKE) CFLAGS='-O2 -g -Wall'
+build:		configure
+		./configure --prefix=/usr --with-libpam
+		$(MAKE) CFLAGS='-O2 -g -Wall -DUSE_PAM'
 		touch build
+
+configure:	configure.in
+		autoconf
 
 binary:         binary-indep binary-arch
 
@@ -15,35 +18,43 @@ binary-indep:
 binary-arch:    build
 		@test 0 = `id -u` || { echo "Error: not super-user"; exit 1; }
 		rm -rf debian/tmp
-		install -d -m 755 debian/tmp/{DEBIAN,etc,usr/{bin,info,man/man1,doc/screen}}
+		install -d -m 755 debian/tmp/DEBIAN debian/tmp/etc/pam.d
+		install -d -m 755 debian/tmp/usr/share/info debian/tmp/usr/bin
+		install -d -m 755 debian/tmp/usr/share/man/man1
+		install -d -m 755 debian/tmp/usr/share/doc/screen
+		install -d -m 755 debian/tmp/var/run/screen
 		cp -a etc/etcscreenrc debian/tmp/etc/screenrc
 		install -s -m 4755 screen debian/tmp/usr/bin/screen
-		cp -a doc/screen.info* debian/tmp/usr/info
-		cp -a doc/screen.1 debian/tmp/usr/man/man1/screen.1
-		cp -a debian/changelog debian/tmp/usr/doc/screen/changelog.Debian
-		cp -a ChangeLog debian/tmp/usr/doc/screen/changelog
-		cp -a README NEWS FAQ debian/tmp/usr/doc/screen
-		rm -f debian/tmp/usr/info/screen.info*.gz
-		gzip -9f debian/tmp/usr/info/screen.info* debian/tmp/usr/doc/screen/*
-		gzip -9f debian/tmp/usr/man/man1/*
-		install -d debian/tmp/usr/doc/screen/terminfo
-		cp -a terminfo/* debian/tmp/usr/doc/screen/terminfo
-		cp -a debian/README.terminfo debian/tmp/usr/doc/screen/terminfo/README.Debian
-		gzip -9f debian/tmp/usr/doc/screen/terminfo/*
-		cp -a debian/copyright debian/tmp/usr/doc/screen/copyright
+		cp -a doc/screen.info* debian/tmp/usr/share/info
+		cp -a doc/screen.1 debian/tmp/usr/share/man/man1/screen.1
+		cp -a debian/pam.d-screen debian/tmp/etc/pam.d/screen
+		cp -a debian/changelog debian/tmp/usr/share/doc/screen/changelog.Debian
+		cp -a ChangeLog debian/tmp/usr/share/doc/screen/changelog
+		cp -a README NEWS* TODO doc/FAQ doc/*.ps debian/tmp/usr/share/doc/screen
+		rm -f debian/tmp/usr/share/info/screen.info*.gz
+		gzip -9f debian/tmp/usr/share/info/screen.info* debian/tmp/usr/share/doc/screen/*
+		gzip -9f debian/tmp/usr/share/man/man1/*
+		install -d -m 755 debian/tmp/usr/share/doc/screen/terminfo
+		cp -a terminfo/* debian/tmp/usr/share/doc/screen/terminfo
+		gzip -9f debian/tmp/usr/share/doc/screen/terminfo/*
+		cp -a debian/README.terminfo debian/tmp/usr/share/doc/screen/terminfo/README.Debian
+		cp -a debian/copyright debian/tmp/usr/share/doc/screen/copyright
 		cp -a debian/conffiles debian/tmp/DEBIAN/conffiles
+		install -m 755 debian/preinst debian/tmp/DEBIAN/preinst
 		install -m 755 debian/postinst debian/tmp/DEBIAN/postinst
+		install -m 755 debian/prerm debian/tmp/DEBIAN/prerm
 		install -m 755 debian/postrm debian/tmp/DEBIAN/postrm
 
 		dpkg-shlibdeps screen
 		dpkg-gencontrol
 		chown -R root.root debian/tmp
-		chmod -R go=rX debian/tmp
+		chmod -R u=rwX,go=rX debian/tmp
 		dpkg --build debian/tmp ..
 
 clean:
 		rm -f build debian/files debian/substvars
 		-$(MAKE) realclean
+		rm -f config.log
 		rm -f kmapdef.c
 		rm -f osdef[012]*
 		rm -rf debian/tmp

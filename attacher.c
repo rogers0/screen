@@ -26,21 +26,20 @@ RCS_ID("$Id: attacher.c,v 1.8 1994/05/31 12:31:32 mlschroe Exp $ FAU")
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <signal.h>
 #include "config.h"
 #include "screen.h"
 #include "extern.h"
-#ifndef sun
-#include <sys/ioctl.h>
-#endif
+
+#ifdef USE_PAM
+#include <security/pam_appl.h>
+#endif /* USE_PAM */
 
 #include <pwd.h>
 
 static sigret_t AttacherSigInt __P(SIGPROTOARG);
-#ifdef PASSWORD
-static void  trysend __P((int, struct msg *, char *));
-#endif
 #if defined(SIGWINCH) && defined(TIOCGWINSZ)
 static sigret_t AttacherWinch __P(SIGPROTOARG);
 #endif
@@ -53,15 +52,17 @@ static void  screen_builtin_lck __P((void));
 #ifdef DEBUG
 static sigret_t AttacherChld __P(SIGPROTOARG);
 #endif
+#ifdef MULTIUSER
+static sigret_t AttachSigCont __P(SIGPROTOARG);
+#endif
 
 extern int real_uid, real_gid, eff_uid, eff_gid;
 extern char *SockName, *SockMatch, SockPath[];
 extern struct passwd *ppp;
-extern char *attach_tty, *attach_term, *LoginName;
+extern char *attach_tty, *attach_term, *LoginName, *preselect;
 extern int xflag, dflag, rflag, quietflag, adaptflag;
 extern struct mode attach_Mode;
 extern int MasterPid;
-extern int nethackflag;
 
 #ifdef MULTIUSER
 extern char *multi;
@@ -72,6 +73,22 @@ static int multipipe[2];
 # endif
 #endif
 
+#ifdef USE_PAM
+static char *PAM_password;
+static char *PAM_name;
+#endif
+
+#ifdef MULTIUSER
+static int ContinuePlease;
+
+static sigret_t
+AttachSigCont SIGDEFARG
+{
+  debug("SigCont()\n");
+  ContinuePlease = 1;
+  SIGRETURN;
+}
+#endif
 
 
 /*
@@ -167,6 +184,7 @@ int how;
 
   bzero((char *) &m, sizeof(m));
   m.type = how;
+  m.protocol_revision = MSG_REVISION;
   strncpy(m.m_tty, attach_tty, sizeof(m.m_tty) - 1);
   m.m_tty[sizeof(m.m_tty) - 1] = 0;
 
@@ -194,7 +212,7 @@ int how;
       switch (n)
 	{
 	case 0:
-	  if (rflag == 2)
+	  if (rflag && (rflag & 1) == 0)
 	    return 0;
 	  if (quietflag)
 	    eexit(10);
@@ -206,9 +224,12 @@ int how;
 	case 1:
 	  break;
 	default:
-	  if (quietflag)
-	    eexit(10 + n);
-	  Panic(0, "Type \"screen [-d] -r [pid.]tty.host\" to resume one of them.");
+	  if (rflag < 3)
+	    {
+	      if (quietflag)
+		eexit(10 + n);
+	      Panic(0, "Type \"screen [-d] -r [pid.]tty.host\" to resume one of them.");
+	    }
 	  /* NOTREACHED */
 	}
     }
@@ -223,7 +244,10 @@ int how;
     setuid(real_uid);
 #if defined(MULTIUSER) && defined(USE_SETEUID)
   else
-    xseteuid(real_uid);	/* multi_uid, allow backend to send signals */
+    {
+      /* This call to xsetuid should also set the saved uid */
+      xseteuid(real_uid); /* multi_uid, allow backend to send signals */
+    }
 #endif
   setgid(real_gid);
   eff_uid = real_uid;
@@ -243,6 +267,17 @@ int how;
     Panic(errno, "stat %s", SockPath);
   if ((st.st_mode & 0600) != 0600)
     Panic(0, "Socket is in wrong mode (%03o)", (int)st.st_mode);
+
+  /*
+   * Change: if -x or -r ignore failing -d
+   */
+  if ((xflag || rflag) && dflag && (st.st_mode & 0700) == 0600)
+    dflag = 0;
+
+  /*
+   * Without -x, the mode must match. 
+   * With -x the mode is irrelevant unless -d.
+   */
   if ((dflag || !xflag) && (st.st_mode & 0700) != (dflag ? 0700 : 0600))
     Panic(0, "That screen is %sdetached.", dflag ? "already " : "not ");
 #ifdef REMOTE_DETACH
@@ -276,6 +311,10 @@ int how;
 
   strncpy(m.m.attach.auser, LoginName, sizeof(m.m.attach.auser) - 1); 
   m.m.attach.auser[sizeof(m.m.attach.auser) - 1] = 0;
+  m.m.attach.esc = DefaultEsc;
+  m.m.attach.meta_esc = DefaultMetaEsc;
+  strncpy(m.m.attach.preselect, preselect ? preselect : "", sizeof(m.m.attach.preselect) - 1);
+  m.m.attach.preselect[sizeof(m.m.attach.preselect) - 1] = 0;
   m.m.attach.apid = getpid();
   m.m.attach.adaptflag = adaptflag;
   m.m.attach.lines = m.m.attach.columns = 0;
@@ -284,23 +323,23 @@ int how;
   if ((s = getenv("COLUMNS")))
     m.m.attach.columns = atoi(s);
 
-#ifdef PASSWORD
-  if (how == MSG_ATTACH || how == MSG_CONT)
-    trysend(lasts, &m, m.m.attach.password);
-  else
+#ifdef MULTIUSER
+  /* setup CONT signal handler to repair the terminal mode */
+  if (multi && (how == MSG_ATTACH || how == MSG_CONT))
+    signal(SIGCONT, AttachSigCont);
 #endif
-    {
-      if (write(lasts, (char *) &m, sizeof(m)) != sizeof(m))
-	Panic(errno, "write");
-      close(lasts);
-    }
+
+  if (write(lasts, (char *) &m, sizeof(m)) != sizeof(m))
+    Panic(errno, "write");
+  close(lasts);
   debug1("Attach(%d): sent\n", m.type);
 #ifdef MULTIUSER
   if (multi && (how == MSG_ATTACH || how == MSG_CONT))
     {
-# ifndef PASSWORD
-      pause();
-# endif
+      while (!ContinuePlease)
+        pause();	/* wait for SIGCONT */
+      signal(SIGCONT, SIG_DFL);
+      ContinuePlease = 0;
 # ifndef USE_SETEUID
       close(multipipe[1]);
 # else
@@ -318,77 +357,11 @@ int how;
 }
 
 
-#ifdef PASSWORD
-
-static trysendstatok, trysendstatfail;
-
-static sigret_t
-trysendok SIGDEFARG
-{
-  trysendstatok = 1;
-}
-
-static sigret_t
-trysendfail SIGDEFARG
-{
-# ifdef SYSVSIGS
-  signal(SIG_PW_FAIL, trysendfail);
-# endif /* SYSVSIGS */
-  trysendstatfail = 1;
-}
-
-static char screenpw[9];
-
-static void
-trysend(fd, m, pwto)
-int fd;
-struct msg *m;
-char *pwto;
-{
-  char *npw = NULL;
-  sigret_t (*sighup)__P(SIGPROTOARG);
-  sigret_t (*sigusr1)__P(SIGPROTOARG);
-  int tries;
-
-  sigusr1 = signal(SIG_PW_OK, trysendok);
-  sighup = signal(SIG_PW_FAIL, trysendfail);
-  for (tries = 0; ; )
-    {
-      strncpy(pwto, screenpw, 9);
-      trysendstatok = trysendstatfail = 0;
-      if (write(fd, (char *) m, sizeof(*m)) != sizeof(*m))
-	Panic(errno, "write");
-      close(fd);
-      while (trysendstatok == 0 && trysendstatfail == 0)
-	pause();
-      if (trysendstatok)
-	{
-	  signal(SIG_PW_OK, sigusr1);
-	  signal(SIG_PW_FAIL, sighup);
-	  if (trysendstatfail)
-	    kill(getpid(), SIG_PW_FAIL);
-	  return;
-	}
-      if (++tries > 1 || (npw = getpass("Screen Password:")) == 0 || *npw == 0)
-	{
-#ifdef NETHACK
-	  if (nethackflag)
-	    Panic(0, "The guard slams the door in your face.");
-	  else
+#if defined(DEBUG) || !defined(DO_NOT_POLL_MASTER)
+static int AttacherPanic;
 #endif
-	  Panic(0, "Password incorrect.");
-	}
-      strncpy(screenpw, npw, 8);
-      if ((fd = MakeClientSocket(0)) == -1)
-	Panic(0, "Cannot contact screen again. Sigh.");
-    }
-}
-#endif /* PASSWORD */
-
 
 #ifdef DEBUG
-static int AttacherPanic;
-
 static sigret_t
 AttacherChld SIGDEFARG
 {
@@ -396,6 +369,17 @@ AttacherChld SIGDEFARG
   SIGRETURN;
 }
 #endif
+
+static sigret_t 
+AttacherSigAlarm SIGDEFARG
+{
+#ifdef DEBUG
+  static int tick_cnt = 0;
+  if ((tick_cnt = (tick_cnt + 1) % 4) == 0)
+    debug("tick\n");
+#endif
+  SIGRETURN;
+}
 
 /*
  * the frontend's Interrupt handler
@@ -433,6 +417,7 @@ AttacherFinit SIGDEFARG
       debug1("attach_tty is %s\n", attach_tty);
       m.m.detach.dpid = getpid();
       m.type = MSG_HANGUP;
+      m.protocol_revision = MSG_REVISION;
       if ((s = MakeClientSocket(0)) >= 0)
 	{
 	  write(s, (char *)&m, sizeof(m));
@@ -473,6 +458,23 @@ AttacherFinitBye SIGDEFARG
   SIGRETURN;
 }
 #endif
+
+#if defined(DEBUG) && defined(SIG_NODEBUG)
+static sigret_t
+AttacherNoDebug SIGDEFARG
+{
+  debug("AttacherNoDebug()\n");
+  signal(SIG_NODEBUG, AttacherNoDebug);
+  if (dfp)
+    { 
+      debug("debug: closing debug file.\n");
+      fflush(dfp);
+      fclose(dfp);
+      dfp = NULL;
+    }
+  SIGRETURN;
+}
+#endif /* SIG_NODEBUG */
 
 static int SuspendPlease;
 
@@ -524,6 +526,9 @@ Attacher()
 #ifdef POW_DETACH
   signal(SIG_POWER_BYE, AttacherFinitBye);
 #endif
+#if defined(DEBUG) && defined(SIG_NODEBUG)
+  signal(SIG_NODEBUG, AttacherNoDebug);
+#endif
 #ifdef LOCK
   signal(SIG_LOCK, DoLock);
 #endif
@@ -544,8 +549,11 @@ Attacher()
 #endif
   for (;;)
     {
-#ifdef DEBUG
-      sleep(1);
+#ifndef DO_NOT_POLL_MASTER
+      signal(SIGALRM, AttacherSigAlarm);
+      alarm(15);
+      pause();
+      alarm(0);
       if (kill(MasterPid, 0) < 0 && errno != EPERM)
         {
 	  debug1("attacher: Panic! MasterPid %d does not exist.\n", MasterPid);
@@ -554,16 +562,17 @@ Attacher()
 #else
       pause();
 #endif
-/*
-      debug("attacher: ding!\n");
-*/
-#ifdef DEBUG
+#if defined(DEBUG) || !defined(DO_NOT_POLL_MASTER)
       if (AttacherPanic)
         {
+# ifdef FORKDEBUG
+	  exit(0);
+# else
 	  fcntl(0, F_SETFL, 0);
 	  SetTTY(0, &attach_Mode);
 	  printf("\nSuddenly the Dungeon collapses!! - You die...\n");
 	  eexit(1);
+# endif
         }
 #endif
 #ifdef BSDJOBS
@@ -663,14 +672,7 @@ LockTerminal()
           exit(errno);
         }
       if (pid == -1)
-        {
-#ifdef NETHACK
-          if (nethackflag)
-            Msg(errno, "Cannot fork terminal - lock failed");
-          else
-#endif
-          Msg(errno, "Cannot lock terminal - fork failed");
-        }
+        Msg(errno, "Cannot lock terminal - fork failed");
       else
         {
 #ifdef BSDWAIT
@@ -728,29 +730,67 @@ LockTerminal()
     }
 }				/* LockTerminal */
 
+#ifdef USE_PAM
+static int PAM_conv (int num_msg,
+             const struct pam_message **msg,
+             struct pam_response **resp,
+             void *appdata_ptr) {
+    int replies = 0;
+    struct pam_response *reply = NULL;
+
+    reply = malloc(sizeof(struct pam_response)*num_msg);
+    if (!reply) return PAM_CONV_ERR;
+    #define COPY_STRING(s) (s) ? strdup(s) : NULL
+
+    for (replies = 0; replies < num_msg; replies++) {
+        switch (msg[replies]->msg_style) {
+        case PAM_PROMPT_ECHO_OFF:
+            /* wants password */
+            reply[replies].resp_retcode = PAM_SUCCESS;
+            reply[replies].resp = COPY_STRING(PAM_password);
+            break;
+        case PAM_TEXT_INFO:
+            /* ignore the informational mesage */
+            /* but first clear out any drek left by malloc */
+            reply[replies].resp = NULL;
+            break;
+        case PAM_PROMPT_ECHO_ON:
+            /* user name given to PAM already */
+            /* fall through */
+        default:
+            /* unknown or PAM_ERROR_MSG */
+            free (reply);
+            return PAM_CONV_ERR;
+        }
+    }
+    *resp = reply;
+    return PAM_SUCCESS;
+}
+
+static struct pam_conv PAM_conversation = {
+    &PAM_conv,
+    NULL
+};
+#endif
+
+
 /* -- original copyright by Luigi Cannelloni 1985 (luigi@faui70.UUCP) -- */
 static void
 screen_builtin_lck()
 {
   char fullname[100], *cp1, message[100 + 100];
-  char *pass, mypass[9];
+  char *pass;
+#ifdef USE_PAM
+  int pam_error;
+  pam_handle_t *pamh = NULL;
+#else
+  char mypass[9];
+#endif /* USE_PAM */
 
-#ifdef undef
-  /* get password entry */
-  if ((ppp = getpwuid(real_uid)) == NULL)
-    {
-      fprintf(stderr, "screen_builtin_lck: No passwd entry.\007\n");
-      sleep(2);
-      return;
-    }
-  if (!isatty(0))
-    {
-      fprintf(stderr, "screen_builtin_lck: Not a tty.\007\n");
-      sleep(2);
-      return;
-    }
-#endif
   pass = ppp->pw_passwd;
+
+#ifndef USE_PAM 
+  /* if we're using PAM this will evaluate to true. which we don't want. */
   if (pass == 0 || *pass == 0)
     {
       if ((pass = getpass("Key:   ")))
@@ -777,10 +817,12 @@ screen_builtin_lck()
         }
       pass = 0;
     }
+#endif /* USE_PAM */
 
   debug("screen_builtin_lck looking in gcos field\n");
   strncpy(fullname, ppp->pw_gecos, sizeof(fullname) - 9);
   fullname[sizeof(fullname) - 9] = 0;
+
   if ((cp1 = index(fullname, ',')) != NULL)
     *cp1 = '\0';
   if ((cp1 = index(fullname, '&')) != NULL)
@@ -804,7 +846,22 @@ screen_builtin_lck()
           AttacherFinit(SIGARG);
           /* NOTREACHED */
         }
-      debug3("getpass(%d): %x == %s\n", errno, (unsigned int)cp1, cp1);
+#ifdef USE_PAM
+		PAM_password=cp1;
+	  	PAM_name=ppp->pw_name;
+
+	    pam_error = pam_start("screen", PAM_name, &PAM_conversation, &pamh);
+
+		if (pam_error == PAM_SUCCESS) {
+			pam_error = pam_authenticate(pamh, 0);
+			pam_end(pamh, PAM_SUCCESS);
+			if (pam_error == PAM_SUCCESS) {
+				memset(cp1,0,strlen(cp1));
+				PAM_password = NULL; 
+				break;
+			}
+		}
+#else
       if (pass)
         {
           if (!strncmp(crypt(cp1, pass), pass, strlen(pass)))
@@ -815,6 +872,7 @@ screen_builtin_lck()
           if (!strcmp(cp1, mypass))
             break;
         }
+#endif
       debug("screen_builtin_lck: NO!!!!!\n");
     }
   debug("password ok.\n");

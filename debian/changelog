@@ -1,8 +1,125 @@
-screen (3.7.4-9.1) slink; urgency=high
+screen (3.9.5-9) stable unstable; urgency=HIGH
 
-  * SECURITY: Msg format string error
+  * Fixed security bug (group utmp compromise)
 
- -- Michael Stone <mstone@debian.org>  Sat,  2 Sep 2000 11:25:13 -0700
+ -- Juan Cespedes <cespedes@debian.org>  Sat,  2 Sep 2000 17:51:28 +0200
+
+screen (3.9.5-8) frozen unstable; urgency=low
+
+  * Correct wrong build-dependency (libncurses5-dev
+    instead of libncurses4-dev) (closes: Bug#57989)
+  * Include a /etc/pam.d/screen file (closes: Bug#57592)
+
+ -- Juan Cespedes <cespedes@debian.org>  Mon, 14 Feb 2000 10:07:52 +0100
+
+screen (3.9.5-7) frozen unstable; urgency=low
+
+  * Built against libncurses5 instead of obsoleted libncurses4
+
+ -- Juan Cespedes <cespedes@debian.org>  Sun,  6 Feb 2000 21:26:59 +0100
+
+screen (3.9.5-6) unstable; urgency=low
+
+  * Make `screen' work correctly both as root and non-root
+    (closes: Bug#53290, Bug#53329)
+
+ -- Juan Cespedes <cespedes@debian.org>  Thu, 23 Dec 1999 16:48:02 +0100
+
+screen (3.9.5-5) unstable; urgency=low
+
+  * New Standards-Version (3.1.1)
+  * Acknowledge NMU-fixed bugs (closes: Bug#50394, Bug#51058, Bug#51316)
+  * Changed screens directory from $HOME to /var/run/screen (closes: Bug#51088)
+  * Removed debconf support: no configuration is necessary in this program
+
+ -- Juan Cespedes <cespedes@debian.org>  Sun, 19 Dec 1999 06:04:48 +0100
+
+screen (3.9.5-4.1) unstable; urgency=low
+
+  * Non-maintainer release.
+  * Run autoconf to resync configure with configure.in
+    (closes:Bug#50394,#51058).
+
+ -- Joel Klecker <espy@debian.org>  Mon, 29 Nov 1999 08:38:18 -0800
+
+screen (3.9.5-4) unstable; urgency=low
+
+  * Used debconf
+
+ -- Juan Cespedes <cespedes@debian.org>  Sun, 14 Nov 1999 23:51:10 +0100
+
+screen (3.9.5-3) unstable; urgency=low
+
+  * Applied patch from Joel Klecker <espy@debian.org> to use getpt()
+    to get PTYs (closes: Bug#45628, Bug#48856)
+
+ -- Juan Cespedes <cespedes@debian.org>  Tue,  2 Nov 1999 16:42:41 +0100
+
+screen (3.9.5-2.1) unstable; urgency=low
+
+  * NMU. Backed out pty which didn't free ptys correctly. (Fixes: #45628)
+
+ -- J.H.M. Dassen (Ray) <jdassen@debian.org>  Sat, 30 Oct 1999 17:07:08 +0200
+
+screen (3.9.5-2) unstable; urgency=low
+
+  * Added missing "prerm" file (lintian)
+
+ -- Juan Cespedes <cespedes@debian.org>  Fri,  1 Oct 1999 10:13:17 +0200
+
+screen (3.9.5-1) unstable; urgency=low
+
+  * New upstream version (closes: Bug#45173)
+  * FHS (/usr/doc/screen -> /usr/share/screen)
+  * PAM support
+  * Move "screen-exchange" file to ${HOME} (closes: Bug#45449)
+
+ -- Juan Cespedes <cespedes@debian.org>  Sun, 19 Sep 1999 20:24:56 +0200
+
+screen (3.9.4-1) unstable; urgency=low
+
+  * New upstream version, lots of improvements (closes: Bug#43932)
+  * Removed setuid, make it setgid "utmp" (closes: Bug#43909, Bug#43931)
+  * Uses "vlock" to lock screen if available
+  * Avoid braces in debian/rules (closes: Bug#36888)
+  * Use Unix98 style PTYs (closes: Bug#34578, Bug#37208, Bug#37863)
+  * Closed old bugs (closes: Bug#29523, Bug#35469)
+  * "screen" now defaults to MAXWIN=40 (closes: Bug#42420)
+  * Compile cleanly on glibc-2.1 systems (closes: Bug#26645)
+  * New Standards-Version: 3.0.1 (but keeping docs in /usr/doc)
+
+ -- Juan Cespedes <cespedes@debian.org>  Fri, 10 Sep 1999 16:14:41 +0200
+
+screen (3.7.6-1) unstable; urgency=low
+
+  * New upstream version:
+      Wayne's resize.c patch to keep the cursor onscreen. FindWindow
+      corrected. AIX4 patch from robert@mayday.cix.co.uk.  Fixed
+      kanji am & markcursor bugs.  SCO support (Gert Doering).
+      Wayne's statusline extra space. New flag nospc for MakeWinMsg.
+      New TF capability: add missing termcap/info caps.
+      screen-exchange security fix. Use kstat for Solaris' loadavg.
+      Check for mode 775 if screen runs setgid.  Fixed typo in silence
+      command.  Allow detach with no tty. HPUX10.20 ltchars hack.
+      Use @1/@7 as replacement for kh/kH.  Use seteuid before calling
+      tgetent.  Check for displays in Msg().  Linux ncurses hack:
+      redefine _nc_timed_wait.  Configure check for ncurses (sigh).
+      ITOH Yasufumi: kanji fixes, osf support, bug fixes. More secure
+      Rewrite().  Increased line buffer size to 2048 bytes.
+      SCO-5 Fixes (Brian L. Gentry).  resize code now handles tabs
+      correctly.
+  * Applied NMU from Christian Meder for glibc-2.1: Bug#32814
+
+ -- Juan Cespedes <cespedes@debian.org>  Thu, 11 Feb 1999 18:32:01 +0100
+
+screen (3.7.4-9.1) frozen unstable; urgency=low
+
+  * non maintainer, sparc only upload
+  * apply patch for glibc2.1 from BTS
+  * undefine SVR4 from configure script: glibc2.1's utmpx.h is incompatible
+    with SVR4
+
+ -- Christian Meder <meder@isr.uni-stuttgart.de>  Thu, 26 Nov 1998 15:40:30 +0100
 
 screen (3.7.4-9) frozen unstable; urgency=medium
 

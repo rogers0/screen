@@ -36,10 +36,12 @@ RCS_ID("$Id: misc.c,v 1.5 1994/05/31 12:32:19 mlschroe Exp $ FAU")
 # include <sys/resource.h>
 #endif
 
-extern struct display *display;
+extern struct layer *flayer;
+
 extern int eff_uid, real_uid;
 extern int eff_gid, real_gid;
 extern struct mline mline_old;
+extern struct mchar mchar_blank;
 extern char *null, *blank;
 
 char *
@@ -53,6 +55,19 @@ register const char *str;
   else
     strcpy(cp, str);
   return cp;
+}
+
+/* cheap strstr replacement */
+char *
+InStr(str, pat)
+char *str;
+const char *pat;
+{
+  int npat = strlen(pat);
+  for (;*str; str++)
+    if (!strncmp(str, pat, npat))
+      return str;
+  return 0;
 }
 
 #ifndef HAVE_STRERROR
@@ -72,21 +87,40 @@ int err;
 #endif
 
 void
-centerline(str)
+centerline(str, y)
 char *str;
+int y;
 {
   int l, n;
 
-  ASSERT(display);
+  ASSERT(flayer);
   n = strlen(str);
-  if (n > D_width - 1)
-    n = D_width - 1;
-  l = (D_width - 1 - n) / 2;
-  if (l > 0)
-    AddStrn("", l);
-  AddStrn(str, n);
-  AddStr("\r\n");
+  if (n > flayer->l_width - 1)
+    n = flayer->l_width - 1;
+  l = (flayer->l_width - 1 - n) / 2;
+  LPutStr(flayer, str, n, &mchar_blank, l, y);
 }
+
+void
+leftline(str, y)
+char *str;
+int y;
+{
+  int l, n;
+  struct mchar mchar_dol;
+
+  mchar_dol = mchar_blank;
+  mchar_dol.image = '$';
+
+  ASSERT(flayer);
+  l = n = strlen(str);
+  if (n > flayer->l_width - 1)
+    n = flayer->l_width - 1;
+  LPutStr(flayer, str, n, &mchar_blank, 0, y);
+  if (n != l)
+    LPutChar(flayer, &mchar_dol, n, y);
+}
+
 
 char *
 Filename(s)
@@ -110,11 +144,6 @@ char *nam;
   
   if (nam == NULL)
     return NULL;
-  if (p = strstr(nam,"/dev/"))
-    return p + 5;
-#else /* apollo */
-  if (nam == NULL)
-    return NULL;
 # ifdef SVR4
   /* unixware has /dev/pts012 as synonym for /dev/pts/12 */
   if (!strncmp(nam, "/dev/pts", 8) && nam[8] >= '0' && nam[8] <= '9')
@@ -124,6 +153,11 @@ char *nam;
       return b;
     }
 # endif /* SVR4 */
+  if (p = strstr(nam,"/dev/"))
+    return p + 5;
+#else /* apollo */
+  if (nam == NULL)
+    return NULL;
   if (strncmp(nam, "/dev/", 5) == 0)
     return nam + 5;
 #endif /* apollo */
@@ -284,7 +318,7 @@ int except;
     f = rl.rlim_max;
   else
 #endif /* SVR4 */
-#if defined(SYSV) && !defined(ISC)
+#if defined(SYSV) && defined(NOFILE) && !defined(ISC)
   f = NOFILE;
 #else /* SYSV && !ISC */
   f = getdtablesize();
@@ -293,6 +327,8 @@ int except;
     if (f != except)
       close(f);
 }
+
+
 
 /*
  *  Security - switch to real uid
@@ -382,7 +418,7 @@ UserStatus()
 #endif
 }
 
-#ifdef NEED_RENAME
+#ifndef HAVE_RENAME
 int
 rename (old, new)
 char *old;
@@ -443,6 +479,7 @@ int len;
   return p - buf;
 }
 
+
 #ifdef DEBUG
 void
 opendebug(new, shout)
@@ -470,6 +507,140 @@ int new, shout;
 }
 #endif /* DEBUG */
 
+void
+sleep1000(msec)
+int msec;
+
+{
+  struct timeval t;
+
+  t.tv_sec = (long) (msec / 1000);
+  t.tv_usec = (long) ((msec % 1000) * 1000);
+  select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
+}
+
+
+#if 0
+struct win **
+GlobWindows(pattern)
+char *pattern;
+{
+  static struct win *wv[MAXWIN + 1];
+  extern struct win *windows;
+  struct win *w;
+  struct win **av;
+  char *p;
+  int t, l, ll, i;
+
+  av = wv;
+
+  if (!pattern)
+    return NULL;
+  debug1("GlobWindows pattern '%s'\n", pattern);
+  t = 0;
+  p = pattern;
+  if (*p == '*')
+    {
+      t++;
+      p++;
+    }
+  l = strlen(p);
+  if (l && p[l - 1] == '*')
+    {
+      l--;
+      p[l] = '\0';
+      t += 2;
+    }
+
+  for (w = windows; w; w = w->w_next)
+    {
+      switch (t)
+	{
+	case 0:         /* exact match */
+	  if (!strcmp(p, w->w_title))
+	    *av++ = w;
+	  break;
+	case 1:         /* suffix match */
+	  ll = strlen(w->w_title);
+	  if (l < ll && !strncmp(p, w->w_title + ll - l, l))
+	    *av++ = w;
+	  break;
+	case 2:         /* prefix match */
+	  if (!strncmp(p, w->w_title, l))
+	    *av++ = w;
+	  break;
+	default:        /* 3: infix match */
+	  ll = strlen(w->w_title);
+	  for (i = ll - l; i >= 0; i--)
+	    {
+	      if (!strncmp(p, w->w_title + i, l))
+		{
+		  *av++ = w;
+		  break;
+		}
+	    }
+	}
+    }
+  *av = NULL;
+#ifdef DEBUG
+  {
+    struct win **pp = wv;
+
+    while (--pp >= wv)
+      debug1("GlobWindows: '%s'\n", (*pp)->w_title);
+  }
+#endif
+  return (av != wv) ? wv : NULL;
+}
+#endif
+
+/*
+ * This uses either setenv() or putenv(). If it is putenv() we cannot dare
+ * to free the buffer after putenv(), unless it it the one found in putenv.c
+ */
+void
+xsetenv(var, value)
+char *var;
+char *value;
+{
+#ifndef USESETENV
+  char *buf;
+  int l;
+
+  if ((buf = (char *)malloc((l = strlen(var)) +
+			    strlen(value) + 2)) == NULL)
+    {
+      Msg(0, strnomem);
+      return;
+    }
+  strcpy(buf, var);
+  buf[l] = '=';
+  strcpy(buf + l + 1, value);
+  putenv(buf);
+# ifdef NEEDPUTENV
+  /*
+   * we use our own putenv(), knowing that it does a malloc()
+   * the string space, we can free our buf now.
+   */
+  free(buf);
+# else /* NEEDSETENV */
+  /*
+   * For all sysv-ish systems that link a standard putenv()
+   * the string-space buf is added to the environment and must not
+   * be freed, or modified.
+   * We are sorry to say that memory is lost here, when setting
+   * the same variable again and again.
+   */
+# endif /* NEEDSETENV */
+#else /* USESETENV */
+# if defined(linux) || defined(__convex__) || (BSD >= 199103)
+  setenv(var, value, 0);
+# else
+  setenv(var, value);
+# endif /* linux || convex || BSD >= 199103 */
+#endif /* USESETENV */
+}
+
 /*
  *     "$HOST blafoo"          -> "localhost blafoo"
  *     "${HOST}blafoo"         -> "localhostblafoo"
@@ -493,14 +664,14 @@ char *ss;
 struct display *d;
 {
   static char ebuf[2048];
-  register int esize = 2047, vtype, quofl = 0;
+  int esize = sizeof(ebuf) - 1, vtype, quofl = 0;
   register char *e = ebuf;
   register char *s = ss;
   register char *v;
   char xbuf[11];
   int i;
 
-  while (s && *s != '\0' && *s != '\n' && esize > 0)
+  while (*s && *s != '\0' && *s != '\n' && esize > 0)
     {
       if (*s == '\'')
 	quofl ^= 1;
@@ -516,19 +687,19 @@ struct display *d;
 	      while (*p != '}')
 		if (*p++ == '\0')
 		  return ss;
-	      vtype = 0;		/* env var */
+	      vtype = 0;                /* env var */
 	      break;
 	    case ':':
 	      p = ++s;
 	      while (*p != ':')
 		if (*p++ == '\0')
 		  return ss;
-	      vtype = 1;		/* termcap string */
+	      vtype = 1;                /* termcap string */
 	      break;
 	    default:
-	      while (*p != ' ' && *p != '\0' && *p != '\n')
+	      while ((*p >='a' && *p <= 'z') || (*p >='A' && *p <= 'Z') || (*p >='0' && *p <= '9') || *p == '_')
 		p++;
-	      vtype = 0;		/* env var */
+	      vtype = 0;                /* env var */
 	    }
 	  c = *p;
 	  debug1("exp: c='%c'\n", c);
@@ -616,6 +787,7 @@ struct display *d;
   if (esize <= 0)
     Msg(0, "expand_vars: buffer overflow\n");
   *e = '\0';
+  debug1("expand_var returns '%s'\n", ebuf);
   return ebuf;
 }
 
@@ -627,7 +799,7 @@ struct display *d;
 int
 _delay(delay, outc)
 register int delay;
-int (*outc)();
+int (*outc) __P((int));
 {
   int pad;
   extern short ospeed;
@@ -643,7 +815,42 @@ int (*outc)();
     (*outc)(0);
   return 0;
 }
-#endif
+
+# ifdef linux
+
+/* stupid stupid linux ncurses! It won't to padding with
+ * zeros but sleeps instead. This breaks CalcCost, of course.
+ * Also, the ncurses wait functions use a global variable
+ * to store the current outc function. Oh well...
+ */
+
+int (*save_outc) __P((int));
+
+#  undef tputs
+
+void
+xtputs(str, affcnt, outc)
+char *str;
+int affcnt;
+int (*outc) __P((int));
+{
+  extern int tputs __P((const char *, int, int (*)(int)));
+  save_outc = outc;
+  tputs(str, affcnt, outc);
+}
+
+int
+_nc_timed_wait(mode, ms, tlp)
+int mode, ms, *tlp;
+{
+  _delay(ms * 10, save_outc);
+  return 0;
+}
+
+# endif /* linux */
+
+#endif /* TERMINFO */
+
 
 
 #ifndef USEVARARGS

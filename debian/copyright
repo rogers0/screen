@@ -2,13 +2,15 @@ This is the Debian GNU/Linux prepackaged version of screen, a screen
 manager with VT100/ANSI terminal emulation.
 
 This package was put together from sources obtained from:
-  ftp://ftp.gnu.ai.mit.edu/pub/gnu/screen-3.7.4.tar.gz
+  ftp://ftp.uni-erlangen.de/pub/utilities/screen/screen-3.9.5.tar.gz
 
 Changes for Debian:
   * added Debian GNU/Linux package maintenance system files
   * ETCSCREENRC definition changed to "/etc/screenrc" in config.h.in
-  * Used /var/run/screens instead of /tmp/screens
+  * Used /var/run/screen instead of /tmp/screens
   * Added support for MD5-based passwords
+  * Added PAM support
+  * Make it set-gid "utmp" instead of setuid root
 
 
 Copyrights
@@ -21,8 +23,9 @@ Copyright (C) 1993 Michael Schroeder <mlschroe@immd4.informatik.uni-erlangen.de>
 Modifications for Debian:
   Copyright (C) Ian Murdock <imurdock@debian.org>
   Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
-  Copyright (C) 1997-1998 Juan Cespedes <cespedes@debian.org>
-  
+  Copyright (C) 1997-1999 Juan Cespedes <cespedes@debian.org>
+  PAM support: Copyright (C) 1999 "Pablo (Tombstone) Averbuj" <pablo@gos.nu>
+
 
 License
 -------

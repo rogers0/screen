@@ -1,7 +1,19 @@
-#! /bin/sh
+#!/bin/sh -e
+
+case "$1" in
+  remove) ;;
+  purge) ;;
+  upgrade|failed-upgrade|abort-install|abort-upgrade|disappear) exit 0 ;;
+  *)
+    echo "ERROR: screen postrm called with unknown argument \"$1\"."
+    echo "Aborting removal of screen package."
+    exit 1 ;;
+esac
+
 install-info --quiet --remove screen
 
-if test "$1" = "purge" ; then
-  rm -rf /var/run/screens
-fi
+rm -rf /var/run/screen
 
+if command -v suidunregister > /dev/null 2>&1; then
+  suidunregister -s screen /usr/bin/screen
+fi

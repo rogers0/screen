@@ -1,0 +1,65 @@
+#!/bin/sh -e
+
+# ask_user function by Philip Hands <phil@hands.com>
+# ask_user ---  function prompts the user with y/n style prompt
+#
+# It's behaviour is controlled via the parameters:
+#  1  -  the initial prompt
+#  2  -  default return value (set to 0, 1 or "none")
+#  3  -  the patern match for acceptable Yes responses
+#  4  -  the patern match for acceptable No responses
+#  5  -  the error prompt, displayed when the user fails to provide valid input
+#
+# e.g.  ask_user  "Foo, or Bar [fb] " none '[fF]*' '[bB]*' "try again"
+
+ask_user() {
+  P=${1:-'Should I do this ? [yN] '}
+  D=${2:-1}
+  Y=${3:-'[yY]*'}
+  N=${4:-'[nN]*'}
+  E=${5:-'\nPlease enter either y)es or n)o, followed by <RETURN>\n'}
+
+  while :
+  do
+    echo -ne "$P"
+    read response
+    case "$response" in
+      ${Y} ) return 0 ;;
+      ${N} ) return 1 ;;
+      "" ) [ "$D" = 0 -o "$D" = 1 ] && return $D ;;
+    esac
+    echo -e $E
+  done
+}
+
+if [ "$1" = "upgrade" ]
+then
+  if dpkg --compare-versions $2 lt 3.9.5-5
+  then
+    if start-stop-daemon --stop --quiet --signal 0 --exec /usr/bin/screen
+    then
+      cat >&2 << EOF
+
+This version of "screen" is incompatible with all versions before 3.9.5-5;
+however, you have version $2 installed and some instances of it
+are running in this moment.
+
+If you continue with the installation, you will not be able to access
+your previous screen sessions
+
+EOF
+      if ask_user "Proceed anyway? [yN] " 1
+      then
+        :
+      else
+        cat >&2 << EOF
+
+Please exit from all the "screen" sessions before attempting
+to upgrade again
+
+EOF
+        exit 1
+      fi
+    fi
+  fi
+fi

@@ -24,17 +24,22 @@
 
 #include <stdio.h>
 #include <errno.h>
-#include <sys/param.h>
 
+#ifdef __hpux
+/* workaround for HPUX-11 which manages to include sys/user.h! */
+# define _SYS_USER_INCLUDED
+#endif
+
+#include <sys/param.h>
 
 /* In strict ANSI mode, HP-UX machines define __hpux but not hpux */
 #if defined(__hpux) && !defined(hpux)
 # define hpux
 #endif
 
-#if defined(BSDI) || defined(__386BSD__) || defined(_CX_UX) || defined(hpux)
+#if defined(__bsdi__) || defined(__386BSD__) || defined(_CX_UX) || defined(hpux) || defined(_IBMR2)
 # include <signal.h>
-#endif /* BSDI || __386BSD__ || _CX_UX */
+#endif /* __bsdi__ || __386BSD__ || _CX_UX || hpux || _IBMR2 */
 
 #ifdef ISC
 # ifdef ENAMETOOLONG
@@ -77,15 +82,18 @@ extern int errno;
 #  undef strlen
 # else /* NEWSOS */
 #  include <strings.h>
+#  if defined(__GLIBC__) && (__GLIBC__ >= 2)
+#   include <string.h>
+#  endif
 # endif /* NEWSOS */
 #else /* SYSV */
 # if defined(SVR4) || defined(NEWSOS)
 #  define strlen ___strlen___
 #  include <string.h>
 #  undef strlen
-#  ifndef NEWSOS
+#  if !defined(NEWSOS) && !defined(__hpux)
     extern size_t strlen(const char *);
-#  endif /* NEWSOS */
+#  endif
 # else /* SVR4 */
 #  include <string.h>
 # endif /* SVR4 */
@@ -94,9 +102,30 @@ extern int errno;
 #ifdef USEVARARGS
 # if defined(__STDC__)
 #  include <stdarg.h>
+#  define VA_LIST(var) va_list var;
+#  define VA_DOTS ...
+#  define VA_DECL
+#  define VA_START(ap, fmt) va_start(ap, fmt)
+#  define VA_ARGS(ap) ap
+#  define VA_END(ap) va_end(ap)
 # else
 #  include <varargs.h>
+#  define VA_LIST(var) va_list var;
+#  define VA_DOTS va_alist
+#  define VA_DECL va_dcl
+#  define VA_START(ap, fmt) va_start(ap)
+#  define VA_ARGS(ap) ap
+#  define VA_END(ap) va_end(ap)
 # endif
+#else
+# define VA_LIST(var)
+# define VA_DOTS p1, p2, p3, p4, p5, p6
+# define VA_DECL unsigned long VA_DOTS;
+# define VA_START(ap, fmt)
+# define VA_ARGS(ap) VA_DOTS
+# define VA_END(ap)
+# undef vsnprintf
+# define vsnprintf xsnprintf
 #endif
 
 #if !defined(sun) && !defined(B43) && !defined(ISC) && !defined(pyr) && !defined(_CX_UX)
@@ -104,9 +133,10 @@ extern int errno;
 #endif
 #include <sys/time.h>
 
-#if (defined(TIOCGWINSZ) || defined(TIOCSWINSZ)) && defined(M_UNIX)
+#ifdef M_UNIX   /* SCO */
 # include <sys/stream.h>
 # include <sys/ptem.h>
+# define ftruncate(fd, s) chsize(fd, s)
 #endif
 
 #ifdef SYSV
@@ -115,10 +145,10 @@ extern int errno;
 # define bzero(poi,len) memset(poi,0,len)
 # define bcmp memcmp
 # define killpg(pgrp,sig) kill( -(pgrp), sig)
-#else
-# ifndef linux
-#  define getcwd(b,l) getwd(b)
-# endif
+#endif
+
+#ifndef HAVE_GETCWD
+# define getcwd(b,l) getwd(b)
 #endif
 
 #ifndef USEBCOPY
@@ -144,7 +174,7 @@ extern int errno;
 #endif
 
 #if !defined(HAVE__EXIT) && !defined(_exit)
-# define _exit(x) exit(x)
+#define _exit(x) exit(x)
 #endif
 
 #ifndef HAVE_UTIMES
@@ -152,6 +182,10 @@ extern int errno;
 #endif
 #ifndef HAVE_VSNPRINTF
 # define vsnprintf xvsnprintf
+#endif
+
+#ifdef BUILTIN_TELNET
+# include <netinet/in.h>
 #endif
 
 /*****************************************************************
@@ -208,6 +242,15 @@ extern int errno;
 # undef TIOCPKT
 #endif
 
+/* linux ncurses is broken, we have to use our own tputs */
+#if defined(linux) && defined(TERMINFO)
+# define tputs xtputs
+#endif
+
+/* Alexandre Oliva: SVR4 style ptys don't work with osf */
+#ifdef __osf__
+# undef HAVE_SVR4_PTYS
+#endif
 
 /*****************************************************************
  *   utmp handling
@@ -220,7 +263,7 @@ extern int errno;
 #endif
 
 #if defined(UTMPOK) || defined(BUGGYGETLOGIN)
-# if defined(SVR4) && !defined(DGUX)
+# if defined(SVR4) && !defined(DGUX) && !defined(__hpux) && !defined(linux)
 #  include <utmpx.h>
 #  define UTMPFILE	UTMPX_FILE
 #  define utmp		utmpx
@@ -243,10 +286,6 @@ extern int errno;
     */
 #  define UTNOKEEP
 # endif /* apollo */
-# ifdef linux
-   /* pututline is useless so we do it ourself...  */
-#  define UT_UNSORTED
-# endif
 
 # ifndef UTMPFILE
 #  ifdef UTMP_FILE
@@ -320,6 +359,9 @@ extern int errno;
 #if defined(S_IFDIR) && defined(S_IFMT) && !defined(S_ISDIR)
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
+#if defined(S_IFLNK) && defined(S_IFMT) && !defined(S_ISLNK)
+#define S_ISLNK(mode) (((mode) & S_IFMT) == S_IFLNK)
+#endif
 
 /*
  * SunOS 4.1.3: `man 2V open' has only one line that mentions O_NOBLOCK:
@@ -372,7 +414,7 @@ extern int errno;
 #endif
 
 /* Geeeee, reverse it? */
-#if defined(SVR4) || (defined(SYSV) && defined(ISC)) || defined(_AIX) || defined(linux) || defined(ultrix) || defined(__386BSD__) || defined(BSDI) || defined(POSIX) || defined(NeXT)
+#if defined(SVR4) || (defined(SYSV) && defined(ISC)) || defined(_AIX) || defined(linux) || defined(ultrix) || defined(__386BSD__) || defined(__bsdi__) || defined(POSIX) || defined(NeXT)
 # define SIGHASARG
 #endif
 
@@ -408,7 +450,7 @@ extern int errno;
  *    Wait stuff
  */
 
-#if (!defined(sysV68) && !defined(M_XENIX)) || defined(NeXT)
+#if (!defined(sysV68) && !defined(M_XENIX)) || defined(NeXT) || defined(M_UNIX)
 # include <sys/wait.h>
 #endif
 
