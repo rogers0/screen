@@ -47,7 +47,7 @@
  */
 
 #ifndef TMPTEST
-# define SOCKDIR "/tmp/screens"
+# define SOCKDIR "/var/run/screens"
 #else
 # define SOCKDIR "/tmp/testscreens"
 #endif
@@ -447,6 +447,16 @@
  * define HAVE_LSTAT if your system has symlinks and the lstat() call.
  */
 #undef HAVE_LSTAT
+
+/*
+ * define HAVE_UTIMES if your system has the utimes() call.
+ */
+#undef HAVE_UTIMES
+
+/*
+ * define HAVE_VSNPRINTF if your system has vsnprintf() (GNU lib).
+ */
+#undef HAVE_VSNPRINTF
 
 /*
  * define HAVE_DEV_PTC if you have a /dev/ptc character special

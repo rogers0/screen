@@ -31,9 +31,6 @@ RCS_ID("$Id: attacher.c,v 1.8 1994/05/31 12:31:32 mlschroe Exp $ FAU")
 #include "config.h"
 #include "screen.h"
 #include "extern.h"
-#ifndef sun
-#include <sys/ioctl.h>
-#endif
 
 #include <pwd.h>
 

@@ -1,7 +1,0 @@
-Debian 1.1 uses ncurses/terminfo, not curses/termcap, so you really
-shouldn't need the screencap file in this directory, nor a /etc/termcap
-file.
-
-The screeninfo.src file has been installed with the postinst of
-screen, so you don't need to do it manually -- it's here for
-reference, and to recover from stupid errors (like?).

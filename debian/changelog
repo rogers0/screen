@@ -1,3 +1,69 @@
+screen (3.7.4-6) unstable; urgency=low
+
+  * Pass SIGWINCH to applications when size changes (fixes:Bug#18471)
+
+ -- Juan Cespedes <cespedes@debian.org>  Sun, 22 Feb 1998 11:16:46 +0100
+
+screen (3.7.4-5) unstable; urgency=low
+
+  * Fixed minor bug in debian/rules clean
+  * `screen' now depends on `ncurses-term', so it doesn't install its
+    own terminfo entry
+  * New Standards-Version: 2.4.0.0
+
+ -- Juan Cespedes <cespedes@debian.org>  Thu, 12 Feb 1998 16:10:22 +0100
+
+screen (3.7.4-4) unstable; urgency=low
+
+  * Changed upstream changelog name (ChangeLog.gz -> changelog.gz)
+  * Changed sockets from /tmp to /var/run (closes:Bug#6487)
+  * New Standards-Version: 2.3.0.1
+  * Changed behaviour of backspace key (now sends `DEL' == 0177)
+
+ -- Juan Cespedes <cespedes@debian.org>  Sun,  4 Jan 1998 21:13:51 +0100
+
+screen (3.7.4-3) unstable; urgency=low
+
+  * New maintainer
+  * New Standards-Version: 2.3.0.0
+  * Minor fixes in /usr/doc/screen
+  * Pristine Source
+  * Fixed Bug#12626
+
+ -- Juan Cespedes <cespedes@debian.org>  Sat, 11 Oct 1997 02:14:43 +0200
+
+screen (3.7.4-2) unstable; urgency=low
+
+  * Added definition of kend to screeninfo.src.
+  * Recompiled for libc6.
+
+ -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Fri,  3 Oct 1997 22:18:45 +0200
+
+screen (3.7.4-1) unstable; urgency=low
+
+  * Upgraded to upstream version.
+  * fixed /etc/screenrc problem (used to read: /usr/etc/screenrc).
+
+ -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Sat,  2 Aug 1997 22:26:08 +0200
+
+screen (3.7.2-5) unstable; urgency=low
+
+  * Recompiled for libc6 (now should be using libc functions for utmp access)
+
+ -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Thu, 19 Jun 1997 17:48:26 +0200
+
+screen (3.7.2-4) unstable; urgency=low
+
+  * After suggestions from David Luyer, increase the number of tty's to 256.
+
+ -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Sun, 4 May 1997 17:25:00 +0200
+
+screen (3.7.2-3) stable unstable; urgency=high
+
+  * Security fix for buffer-overrun posted to bugtraq.
+
+ -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Fri, 21 Feb 1997 17:02:30 +0100
+
 screen (3.7.2-2) unstable; urgency=low
 
   * This package contained a /usr/doc/screen/screeninfo.src.gz (compressed)

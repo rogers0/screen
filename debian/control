@@ -1,12 +1,12 @@
 Source: screen
 Section: misc
 Priority: optional
-Maintainer: joost witteveen <joostje@debian.org>
-Standards-Version: 2.1.1.0
+Maintainer: Juan Cespedes <cespedes@debian.org>
+Standards-Version: 2.4.0.0
 
 Package: screen
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: ${shlibs:Depends}, ncurses-term (>= 1.9.9g-8)
 Description: A screen manager with VT100/ANSI terminal emulation.
  screen is a terminal multiplexor that runs several separate "screens"
  on a single physical character-based terminal.  Each virtual terminal

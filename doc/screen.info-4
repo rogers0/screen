@@ -73,10 +73,11 @@ Socket Directory
 
    The socket directory defaults either to `$HOME/.screen' or simply to
 `/tmp/screens' or preferably to `/usr/local/screens' chosen at
-compile-time. If `screen' is installed setuid root, then the
-administrator should compile screen with an adequate (not NFS mounted)
-`SOCKDIR'. If `screen' is not running setuid-root, the user can specify
-any mode 777 directory in the environment variable `$SCREENDIR'.
+compile-time (`/var/run/screens' for Debian GNU/Linux). If `screen' is
+installed setuid root, then the administrator should compile screen
+with an adequate (not NFS mounted) `SOCKDIR'. If `screen' is not
+running setuid-root, the user can specify any mode 777 directory in the
+environment variable `$SCREENDIR'.
 
 
 File: screen.info,  Node: Compiling Screen,  Prev: Socket Directory,  Up: Installation

@@ -481,7 +481,7 @@ Start/stop monitoring the current window for inactivity.
 .SH CUSTOMIZATION
 The \*Qsocket directory\*U defaults either to $HOME/.screen or simply to
 /tmp/screens or preferably to /usr/local/screens chosen at
-compile-time. (/tmp/screens for debian)
+compile-time. (/var/run/screens for Debian GNU/Linux)
  If
 .I screen
 is installed setuid-root, then the administrator
@@ -861,6 +861,7 @@ Clears the current window and saves its image to the scrollback buffer.
 .sp
 .ne 3
 .B colon
+.RI [ prefix ]
 .PP
 Allows you to enter \*Q.screenrc\*U command lines. Useful
 for on-the-fly modification of key bindings,
@@ -3209,7 +3210,7 @@ Read in after /etc/screenrc
 .IP $ISCREENDIR/S-<login>
 .IP $SCREENDIR/S-<login>
 .IP /tmp/screens/S-<login>
-Socket directories (default)
+Socket directories (default for Debian GNU/Linux)
 .IP /usr/tmp/screens/S-<login>
 Alternate socket directories.
 .IP "<socket directory>/.termcap"

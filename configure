@@ -1619,6 +1619,9 @@ if test "$ptys" != "$pdir/pty??" ; then
 p0=`echo $ptys | tr ' ' '\012' | sed -e 's/^.*\(.\).$/\1/g' | sort -u | tr -d '\012'`
 p1=`echo $ptys | tr ' ' '\012' | sed -e 's/^.*\(.\)$/\1/g'  | sort -u | tr -d '\012'`
 
+#hack for 256 pty's:
+p0=abcdepqrstuvwxyz
+
 {
 test -n "$verbose" && \
 echo "	defining" PTYRANGE0 to be "\"$p0\""
@@ -2622,10 +2625,10 @@ rm -f /tmp/conftest*
 test -n "$silent" || echo "checking for vsprintf"
 cat > conftest.${ac_ext} <<EOF
 #include "confdefs.h"
-#include <varargs.h>
+
 #include <stdio.h>
 int main() { return 0; }
-int t() { vsprintf();; return 0; }
+int t() { vsprintf(0,0,0);; return 0; }
 EOF
 if eval $ac_compile; then
   rm -rf conftest*
@@ -2964,6 +2967,56 @@ ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_STRERROR\${ac_dB}HAVE_STRERROR\${ac_dC}
 fi
 rm -f conftest*
 
+test -n "$silent" || echo "checking for utimes"
+cat > conftest.${ac_ext} <<EOF
+#include "confdefs.h"
+
+int main() { return 0; }
+int t() { utimes(0,0);; return 0; }
+EOF
+if eval $ac_compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining HAVE_UTIMES"
+echo "#define" HAVE_UTIMES "1" >> confdefs.h
+DEFS="$DEFS -DHAVE_UTIMES=1"
+ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_UTIMES\${ac_dB}HAVE_UTIMES\${ac_dC}1\${ac_dD}
+\${ac_uA}HAVE_UTIMES\${ac_uB}HAVE_UTIMES\${ac_uC}1\${ac_uD}
+\${ac_eA}HAVE_UTIMES\${ac_eB}HAVE_UTIMES\${ac_eC}1\${ac_eD}
+"
+}
+
+
+fi
+rm -f conftest*
+
+test -n "$silent" || echo "checking for vsnprintf"
+cat > conftest.${ac_ext} <<EOF
+#include "confdefs.h"
+
+int main() { return 0; }
+int t() { vsnprintf(0,0,0);; return 0; }
+EOF
+if eval $ac_compile; then
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining HAVE_VSNPRINTF"
+echo "#define" HAVE_VSNPRINTF "1" >> confdefs.h
+DEFS="$DEFS -DHAVE_VSNPRINTF=1"
+ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_VSNPRINTF\${ac_dB}HAVE_VSNPRINTF\${ac_dC}1\${ac_dD}
+\${ac_uA}HAVE_VSNPRINTF\${ac_uB}HAVE_VSNPRINTF\${ac_uC}1\${ac_uD}
+\${ac_eA}HAVE_VSNPRINTF\${ac_eB}HAVE_VSNPRINTF\${ac_eC}1\${ac_eD}
+"
+}
+
+
+fi
+rm -f conftest*
+
 
 test -n "$seqptx" && LIBS="-ltermcap -lc -lsocket -linet -lsec -lseq"
 
@@ -2982,12 +3035,12 @@ if test -n "$prefix"; then
 
 {
 test -n "$verbose" && \
-echo "	defining" ETCSCREENRC to be "\"$prefix/etc/screenrc\""
-echo "#define" ETCSCREENRC "\"$prefix/etc/screenrc\"" >> confdefs.h
-DEFS="$DEFS -DETCSCREENRC=\"$prefix/etc/screenrc\""
-ac_sed_defs="${ac_sed_defs}\${ac_dA}ETCSCREENRC\${ac_dB}ETCSCREENRC\${ac_dC}\"$prefix/etc/screenrc\"\${ac_dD}
-\${ac_uA}ETCSCREENRC\${ac_uB}ETCSCREENRC\${ac_uC}\"$prefix/etc/screenrc\"\${ac_uD}
-\${ac_eA}ETCSCREENRC\${ac_eB}ETCSCREENRC\${ac_eC}\"$prefix/etc/screenrc\"\${ac_eD}
+echo "	defining" ETCSCREENRC to be "\"/etc/screenrc\""
+echo "#define" ETCSCREENRC "\"/etc/screenrc\"" >> confdefs.h
+DEFS="$DEFS -DETCSCREENRC=\"/etc/screenrc\""
+ac_sed_defs="${ac_sed_defs}\${ac_dA}ETCSCREENRC\${ac_dB}ETCSCREENRC\${ac_dC}\"/etc/screenrc\"\${ac_dD}
+\${ac_uA}ETCSCREENRC\${ac_uB}ETCSCREENRC\${ac_uC}\"/etc/screenrc\"\${ac_uD}
+\${ac_eA}ETCSCREENRC\${ac_eB}ETCSCREENRC\${ac_eC}\"/etc/screenrc\"\${ac_eD}
 "
 }
 

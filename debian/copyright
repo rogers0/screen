@@ -1,44 +1,47 @@
 This is the Debian GNU/Linux prepackaged version of screen, a screen
-manager with VT100/ANSI terminal emulation.  screen was originally
-written by Oliver Laumann; the most recent version was produced by
-Wayne Davison, Juergen Weigert and Michael Schroeder.
+manager with VT100/ANSI terminal emulation.
 
-This package was put together by Ian Murdock <imurdock@debian.org>,
-from sources obtained from:
- prep.ai.mit.edu:/pub/gnu/screen-3.6.2.tar.gz
+This package was put together from sources obtained from:
+  ftp://ftp.gnu.ai.mit.edu/pub/gnu/screen-3.7.4.tar.gz
 
-Later taken over by joost witteveen <joostje@master.debian.org>,
-who only added minor changes.
+Changes for Debian:
+  * added Debian GNU/Linux package maintenance system files
+  * ETCSCREENRC definition changed to "/etc/screenrc" in config.h.in
+  * 3.7.1-5--3.7.1-7 had "Depends: login (>=1.0-5) | shadow-login"
+    because of a bug in the utmp handling in screen. This bug
+    has been fixed by the upstream maintainer, and it should now
+    not anymore need login-1.0-5 (or higer).
+  * Used /var/run/screens instead of /tmp/screens
 
-Changes:
- * added Debian GNU/Linux package maintenance system files
- * ETCSCREENRC definition changed to "/etc/screenrc" in config.h.in
- * remove /tmp/screens after installation and removal, as this prevents
-   permission conflicts between different screen versions.
- * 3.7.1-5--3.7.1-7 had "Depends: login (>=1.0-5) | shadow-login"
-   because of a bug in the utmp handling in screen. This bug
-   has been fixed by the upstream maintainer, and it should now
-   not anymore need login-1.0-5 (or higer).
+
+Copyrights
+----------
+Copyright (C) 1987 Oliver Laumann
+Copyright (C) 1991 Wayne Davidson
+Copyright (C) 1993 Juergen Weigert <jnweiger@immd4.informatik.uni-erlangen.de>
+Copyright (C) 1993 Michael Schroeder <mlschroe@immd4.informatik.uni-erlangen.de>
+
+Modifications for Debian:
+  Copyright (C) Ian Murdock <imurdock@debian.org>
+  Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
+  Copyright (C) 1997 Juan Cespedes <cespedes@debian.org>
   
 
-screen is Copyright (C) 1993
-   Juergen Weigert <jnweiger@immd4.informatik.uni-erlangen.de>
-   Michael Schroeder <mlschroe@immd4.informatik.uni-erlangen.de>
+License
+-------
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2, or (at your option)
+any later version.
 
-   Copyright (C) 1987 Oliver Laumann
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; version 2 dated June, 1991.
+A copy of the GNU General Public License is available as
+`/usr/doc/copyright/GPL' in the Debian GNU/Linux distribution or on
+the World Wide Web at `http://www.gnu.org/copyleft/gpl.html'. You can
+also obtain it by writing to the Free Software Foundation, Inc., 59
+Temple Place - Suite 330, Boston, MA 02111-1307, USA
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU General Public License
-   along with this program;  if not, write to the Free Software
-   Foundation, Inc., 675 Mass Ave., Cambridge, MA 02139, USA.
-
-On Debian GNU/Linux systems, the complete text of the GNU General
-Public License can be found in `/usr/doc/copyright/GPL'.
