@@ -1821,7 +1821,7 @@ pw_try_again:
 		   * active at the time of the bell. (Tim MacKenzie)
 		   */
 		  p->w_bell = BELL_OFF; 
-		  Msg(0, VisualBellString);
+		  Msg(0, "%s", VisualBellString);
 		  if (D_status)
 		    D_status_bell = 1;
 		}
