@@ -1,6 +1,6 @@
 #3.3
 # This is a global screenrc file
-# Install this file as /usr/local/etc/screenrc. See config.h
+# Install this file as /etc/screenrc. See config.h
 #
 # Flaws of termcap and standard settings are done here.
 # Note: This file should not be shared between different hosts.

@@ -1,0 +1,17 @@
+screen (3.7.2-2) unstable; urgency=low
+
+  * This package contained a /usr/doc/screen/screeninfo.src.gz (compressed)
+    that is apparently needed by the install phase. uncompressed it.
+
+ -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Tue, 7 Jan 1997 21:22:32 +0100
+
+screen (3.7.2-1) unstable; urgency=low
+  
+  * Upgraded to upstream version
+  * converted to new source format
+  
+ -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Sat, 4 Jan 1997 11:40:40 +0100
+
+Local variables:
+mode: debian-changelog
+End:

@@ -480,7 +480,9 @@ Start/stop monitoring the current window for inactivity.
 
 .SH CUSTOMIZATION
 The \*Qsocket directory\*U defaults either to $HOME/.screen or simply to
-/tmp/screens or preferably to /usr/local/screens chosen at compile-time. If
+/tmp/screens or preferably to /usr/local/screens chosen at
+compile-time. (/tmp/screens for debian)
+ If
 .I screen
 is installed setuid-root, then the administrator
 should compile
@@ -493,7 +495,7 @@ in the environment variable $SCREENDIR.
 When
 .I screen
 is invoked, it executes initialization commands from the files
-\*Q/usr/local/etc/screenrc\*U and
+\*Q/etc/screenrc\*U and
 \*Q.screenrc\*U in the user's home directory. These are the \*Qprogrammer's
 defaults\*U that can be overridden in the following ways: for the
 global screenrc file
@@ -1244,7 +1246,7 @@ and then compile the entry with
 The echo command may be used to annoy
 .I screen
 users with a 'message of the
-day'. Typically installed in a global /local/etc/screenrc. See also
+day'. Typically installed in a global /etc/screenrc. See also
 \*Qsleep\*U.
 Echo is also useful for online checking of environment variables.
 .sp
@@ -1508,7 +1510,8 @@ the \*Qstartup_message\*U command.
 .PP
 Lock this display.
 Call a screenlock program (/local/bin/lck or /usr/bin/lock or a builtin if no
-other is available). Screen does not accept any command keys until this program
+other is available (for debian: none is available)). Screen does 
+not accept any command keys until this program
 terminates. Meanwhile processes in the windows may continue, as the windows
 are in the `detached' state. The screenlock program may be changed through the
 environment variable $LOCKPRG (which must be set in the shell from which
@@ -3196,16 +3199,16 @@ Terminal description.
 .SH FILES
 .PD 0
 .IP $SYSSCREENRC 28
-.IP /local/etc/screenrc
+.IP /etc/screenrc
 \fIscreen\fP initialization commands
 .IP $ISCREENRC
 .IP $SCREENRC
 .IP $HOME/.iscreenrc
 .IP $HOME/.screenrc
-Read in after /local/etc/screenrc
+Read in after /etc/screenrc
 .IP $ISCREENDIR/S-<login>
 .IP $SCREENDIR/S-<login>
-.IP /local/screens/S-<login>
+.IP /tmp/screens/S-<login>
 Socket directories (default)
 .IP /usr/tmp/screens/S-<login>
 Alternate socket directories.

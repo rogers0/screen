@@ -58,7 +58,7 @@
  * Don't define this, if you don't want it.
  */
 #ifndef ETCSCREENRC
-# define ETCSCREENRC "/usr/local/etc/screenrc"
+# define ETCSCREENRC "/etc/screenrc"
 #endif
 
 /*

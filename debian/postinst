@@ -1,0 +1,53 @@
+#! /bin/sh
+install-info --quiet --section "General Commands" "General Commands" \
+ /usr/info/screen.info.gz
+
+# after a suggestion from  Guy Maor, I removed the stuff here
+# that installs a screen entry in /etc/termcap -- this is the
+# job of the termcap compatibility package.
+
+# Anyway, see /usr/doc/screen/README.
+
+#install the terminfo stuff:
+tic /usr/doc/screen/screeninfo.src
+
+#this is to remove the "/tmp/screens has incorrect permissions" 
+#error message from screen 3.7.1 after upgrading to this (3.7.1)
+#version of screen from 3.6 or earlier.
+
+if test -d /tmp/screens; then
+  if test  "`ls -ald /tmp/screens|cut -d" " -f 1`" = "drwxr-xr-x"; then
+    echo you seem to be upgrading from a post 3.6 version of screen.
+    echo "If I'm wrong, plase type \"rm -rf /tmp/screens\" right after"
+    echo installation, to avoid problems with permissions later.
+  else
+    if killall -0 screen; then
+      echo you seem to be upgrading from a pre-3.7 version of screen,
+      echo but you still have screen-sessions running.
+      echo This will cause problems with permissions of /tmp/screens,
+      echo unless I remove this directory now.
+      echo Unfortunately, if I remove /tmp/screens now, the running
+      echo screen sessions will lose the ability to reattach.
+      echo 
+      echo Do you want me to remove /tmp/screens anyway "(advised)",
+      echo thereby crippling the current screen sessions, or shall I 
+      echo leave screen unconfigured so that you can rerun the installtion
+      echo later, when the screen sessions have ended?
+      echo        type 
+      echo " 1   to rm -rf /tmp/screens now"
+      echo " 2   to leave screen unconfigured"
+      read ans  
+      if test "$ans" = "1"; then
+  	rm -rf /tmp/screens
+      else
+  	exit 1
+      fi
+    else
+      echo you seem to be upgrading from a pre-3.7 version of screen.
+      echo "to avoid problems with permissions later, I'm now removing"
+      echo '/tmp/screens (you should not notice this)'
+      rm -rf /tmp/screens
+    fi
+  fi
+fi
+

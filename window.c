@@ -899,6 +899,12 @@ char **av;
 	FreePseudowin(w);
 	return -1;
       }
+    if (ioctl(w->w_ptyfd, TIOCPKT, (char *)&flag))
+      {
+	Msg(errno, "TIOCPKT ioctl on parent");
+	FreePseudowin(w);
+	return -1;
+      }
   }
 #endif /* TIOCPKT */
   pwin->p_pid = ForkWindow(av, (char *)0, (char *)0, t, w);
@@ -922,6 +928,14 @@ struct win *w;
     close(pwin->p_ptyfd);
   free((char *)pwin);
   w->w_pwin = NULL;
+#ifdef TIOCPKT
+  {
+    int flag = 1;
+
+    if (ioctl(w->w_ptyfd, TIOCPKT, (char *)&flag))
+      Msg(errno, "TIOCPKT reset on parent failed");
+  }
+#endif /* TIOCPKT */
 }
 
 #endif /* PSEUDOS */
