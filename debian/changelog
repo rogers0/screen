@@ -1,3 +1,23 @@
+screen (4.0.2-4.1) unstable; urgency=low
+
+  * Non-maintainer upload
+  * re-run autoconf, fix ftbfs                             (closes: #269366)
+
+ -- David Kimdon <dwhedon@debian.org>  Sat, 13 Nov 2004 20:49:00 -0800
+
+screen (4.0.2-4) unstable; urgency=low
+
+  * new debconf translations:
+    * Japanese - thanks Hideki Yamane                       (closes: #224175)
+    * Italian - thanks Fabio Pani                           (closes: #224580)
+    * Simplified Chinese - thanks Carlos Z.F. Liu           (closes: #230811)
+    * Dutch - thanks Luk Claes                              (closes: #244326)
+    * Czech - thanks Miroslav Kure                          (closes: #261243)
+
+  * updated Danish translation  - thanks Morten Brix Pedersen (closes: #241241)
+
+ -- Adam Lazur <zal@debian.org>  Tue, 24 Aug 2004 20:09:08 -0400
+
 screen (4.0.2-3) unstable; urgency=high
 
   * security: fix hole in stale session cleanup init script which allows
