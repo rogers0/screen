@@ -328,7 +328,7 @@ int dump;
     case DUMP_EXCHANGE:
       strncpy(fn, BufferFile, sizeof(fn) - 1);
       fn[sizeof(fn) - 1] = 0;
-      umask(0);
+      umask(077);
       break;
 #endif
     }

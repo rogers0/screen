@@ -46,6 +46,7 @@ RCS_ID("$Id: process.c,v 1.27 1994/05/31 12:32:39 mlschroe Exp $ FAU")
 #include "screen.h"
 #include "extern.h"
 
+extern char bufferfile[MAXPATHLEN + 2 * MAXSTR];
 extern struct comm comms[];
 extern char *rc_name;
 extern char *RcFileName, *home;
@@ -1628,7 +1629,7 @@ int key;
 #ifdef COPY_PASTE
     case RC_BUFFERFILE:
       if (*args == 0)
-	BufferFile = SaveStr(DEFAULT_BUFFERFILE);
+	BufferFile = SaveStr(bufferfile);
       else if (ParseSaveStr(act, &BufferFile))
         break;
       if (msgok)

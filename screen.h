@@ -89,7 +89,7 @@
  */
 #define MAXHISTHEIGHT		3000
 #define DEFAULTHISTHEIGHT	100
-#define DEFAULT_BUFFERFILE	"/tmp/screen-exchange"
+/*#define DEFAULT_BUFFERFILE	"/tmp/screen-exchange"*/
 
 #define	TTY_FLAG_PLAIN		0x01
 

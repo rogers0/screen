@@ -7,11 +7,8 @@ This package was put together from sources obtained from:
 Changes for Debian:
   * added Debian GNU/Linux package maintenance system files
   * ETCSCREENRC definition changed to "/etc/screenrc" in config.h.in
-  * 3.7.1-5--3.7.1-7 had "Depends: login (>=1.0-5) | shadow-login"
-    because of a bug in the utmp handling in screen. This bug
-    has been fixed by the upstream maintainer, and it should now
-    not anymore need login-1.0-5 (or higer).
   * Used /var/run/screens instead of /tmp/screens
+  * Added support for MD5-based passwords
 
 
 Copyrights
@@ -24,7 +21,7 @@ Copyright (C) 1993 Michael Schroeder <mlschroe@immd4.informatik.uni-erlangen.de>
 Modifications for Debian:
   Copyright (C) Ian Murdock <imurdock@debian.org>
   Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
-  Copyright (C) 1997 Juan Cespedes <cespedes@debian.org>
+  Copyright (C) 1997-1998 Juan Cespedes <cespedes@debian.org>
   
 
 License

@@ -91,6 +91,7 @@ FILE *dfp;
 #endif
 
 
+char bufferfile[MAXPATHLEN + 2 * MAXSTR];
 extern char *blank, *null, Term[], screenterm[], **environ, Termcap[];
 int force_vt = 1, assume_LP = 0;
 int VBellWait, MsgWait, MsgMinWait, SilenceWait;
@@ -426,9 +427,6 @@ char **av;
   VisualBellString = SaveStr("   Wuff,  Wuff!!  ");
   ActivityString = SaveStr("Activity in window %");
   screenlogfile = SaveStr("screenlog.%n");
-#ifdef COPY_PASTE
-  BufferFile = SaveStr(DEFAULT_BUFFERFILE);
-#endif
   ShellProg = NULL;
 #ifdef POW_DETACH
   PowDetachString = 0;
@@ -790,13 +788,19 @@ char **av;
 pw_try_again:
 #endif
   n = 0;
+  len = 13;
   if (ppp->pw_passwd[0] == '#' && ppp->pw_passwd[1] == '#' &&
       strcmp(ppp->pw_passwd + 2, ppp->pw_name) == 0)
     n = 13;
-  for (; n < 13; n++)
+  else if (!strncmp(ppp->pw_passwd, "$1$", 3)) {	/* MD5-based passwords */
+    n = 3;
+    len = 34;
+  }
+  for (; n < len; n++)
     {
       char c = ppp->pw_passwd[n];
       if (!(c == '.' || c == '/' ||
+	    (len==34 && c=='$') || 
 	    (c >= '0' && c <= '9') || 
 	    (c >= 'a' && c <= 'z') || 
 	    (c >= 'A' && c <= 'Z'))) 
@@ -915,6 +919,7 @@ pw_try_again:
 	{
 	  sprintf(SockPath, "%s/.iscreen", home);
 	  SockDir = SockPath;
+	  snprintf(bufferfile,sizeof(bufferfile),"%s/.screen-exchange",home);
 	}
 #endif
       if (SockDir)
@@ -964,6 +969,12 @@ pw_try_again:
 	}
 #endif
     }
+#ifdef COPY_PASTE
+  strncpy(bufferfile,SockPath,sizeof(bufferfile)) [sizeof(bufferfile) - 1] = '\0';
+  strncat(bufferfile,"/screen-exchange",sizeof(bufferfile) - strlen (bufferfile));
+
+  BufferFile = SaveStr(bufferfile);
+#endif
 
   if (stat(SockPath, &st) == -1)
     Panic(errno, "Cannot access %s", SockPath);
