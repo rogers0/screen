@@ -1,2 +1,3 @@
 install all Makefiles and config:
-  sh ./configure
+	rm -f config.cache
+	sh ./configure

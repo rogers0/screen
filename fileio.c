@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -39,6 +39,7 @@ RCS_ID("$Id: fileio.c,v 1.10 1994/05/31 12:32:01 mlschroe Exp $ FAU")
 
 extern struct display *display, *displays;
 extern struct win *fore;
+extern struct layer *flayer;
 extern int real_uid, eff_uid;
 extern int real_gid, eff_gid;
 extern char *extra_incap, *extra_outcap;
@@ -54,8 +55,8 @@ static char *CatExtra __P((char *, char *));
 static char *findrcfile __P((char *));
 
 
-static FILE *fp = NULL;
-char *rc_name;
+char *rc_name = "";
+int rc_recursion = 0;
 
 static char *
 CatExtra(str1, str2)
@@ -94,32 +95,36 @@ static char *
 findrcfile(rcfile)
 char *rcfile;
 {
-  static char buf[256];
-  char *rc, *p;
+  char buf[256];
+  char *p;
 
   if (rcfile)
     {
-      rc = SaveStr(rcfile);
+      char *rcend = rindex(rc_name, '/');
+      if (*rcfile != '/' && rcend && (rcend - rc_name) + strlen(rcfile) + 2 < sizeof(buf))
+	{
+	  strncpy(buf, rc_name, rcend - rc_name + 1);
+	  strcpy(buf + (rcend - rc_name) + 1, rcfile);
+	  if (access(buf, R_OK) == 0)
+	    return SaveStr(buf);
+	}
       debug1("findrcfile: you specified '%s'\n", rcfile);
+      return SaveStr(rcfile);
+    }
+  debug("findrcfile: you specified nothing...\n");
+  if ((p = getenv("SCREENRC")) != NULL && *p != '\0')
+    {
+      debug1("  $SCREENRC has: '%s'\n", p);
+      return SaveStr(p);
     }
   else
     {
-      debug("findrcfile: you specified nothing...\n");
-      if ((p = getenv("SCREENRC")) != NULL && *p != '\0')
-	{
-	  debug1("  $SCREENRC has: '%s'\n", p);
-	  rc = SaveStr(p);
-	}
-      else
-	{
-	  debug("  ...nothing in $SCREENRC, defaulting $HOME/.screenrc\n");
-	  if (strlen(home) > sizeof(buf) - 12)
-	    Panic(0, "Rc: home too large");
-	  sprintf(buf, "%s/.screenrc", home);
-	  rc = SaveStr(buf);
-	}
+      debug("  ...nothing in $SCREENRC, defaulting $HOME/.screenrc\n");
+      if (strlen(home) > sizeof(buf) - 12)
+	Panic(0, "Rc: home too large");
+      sprintf(buf, "%s/.screenrc", home);
+      return SaveStr(buf);
     }
-  return rc;
 }
 
 /*
@@ -135,6 +140,8 @@ char *rcfilename;
   register char *p, *cp;
   char buf[2048];
   char *args[MAXARGS];
+  FILE *fp;
+  char *oldrc_name = rc_name;
 
   /* always fix termcap/info capabilities */
   extra_incap = CatExtra("TF", extra_incap);
@@ -147,7 +154,7 @@ char *rcfilename;
 
   if ((fp = secfopen(rc_name, "r")) == NULL)
     {
-      if (RcFileName && strcmp(RcFileName, rc_name) == 0)
+      if (!rc_recursion && RcFileName && !strcmp(RcFileName, rc_name))
 	{
           /*
            * User explicitly gave us that name,
@@ -160,7 +167,7 @@ char *rcfilename;
 	}
       debug1("StartRc: '%s' no good. ignored\n", rc_name);
       Free(rc_name);
-      rc_name = "";
+      rc_name = oldrc_name;
       return;
     }
   while (fgets(buf, sizeof buf, fp) != NULL)
@@ -195,7 +202,7 @@ char *rcfilename;
 	      Msg(0, "%s: sleep: one numeric argument expected.", rc_name);
 	      continue;
 	    }
-	  DisplaySleep(atoi(args[1]));
+	  DisplaySleep(atoi(args[1]), 1);
 	}
 #ifdef TERMINFO
       else if (!strcmp(args[0], "termcapinfo") || !strcmp(args[0], "terminfo"))
@@ -229,10 +236,19 @@ char *rcfilename;
 	  if (argc == 4)
 	    extra_outcap = CatExtra(args[3], extra_outcap);
 	}
+      else if (!strcmp(args[0], "source"))
+	{
+	  if (rc_recursion <= 10)
+	    {
+	      rc_recursion++;
+	      StartRc(args[1]);
+	      rc_recursion--;
+	    }
+	}
     }
   fclose(fp);
   Free(rc_name);
-  rc_name = "";
+  rc_name = oldrc_name;
 }
 
 void
@@ -240,12 +256,16 @@ FinishRc(rcfilename)
 char *rcfilename;
 {
   char buf[2048];
+  FILE *fp;
+  char *oldrc_name = rc_name;
 
   rc_name = findrcfile(rcfilename);
 
   if ((fp = secfopen(rc_name, "r")) == NULL)
     {
-      if (RcFileName && strcmp(RcFileName, rc_name) == 0)
+      if (rc_recursion)
+        Msg(errno, "%s: source %s", oldrc_name, rc_name);
+      else if (RcFileName && !strcmp(RcFileName, rc_name))
 	{
     	  /*
  	   * User explicitly gave us that name, 
@@ -258,7 +278,7 @@ char *rcfilename;
 	}
       debug1("FinishRc: '%s' no good. ignored\n", rc_name);
       Free(rc_name);
-      rc_name = "";
+      rc_name = oldrc_name;
       return;
     }
 
@@ -267,8 +287,23 @@ char *rcfilename;
     RcLine(buf);
   (void) fclose(fp);
   Free(rc_name);
-  rc_name = "";
+  rc_name = oldrc_name;
 }
+
+void
+do_source(rcfilename)
+char *rcfilename;
+{
+  if (rc_recursion > 10)
+    {
+      Msg(0, "%s: source: recursion limit reached", rc_name);
+      return;
+    }
+  rc_recursion++;
+  FinishRc(rcfilename);
+  rc_recursion--;
+}
+
 
 /*
  * Running a Command Line in the environment determined by the display.
@@ -281,12 +316,17 @@ char *ubuf;
 {
   char *args[MAXARGS], *buf;
 #ifdef MULTIUSER
-  extern struct user *EffectiveAclUser;	/* acl.c */
-  extern struct user *users;		/* acl.c */
+  extern struct acluser *EffectiveAclUser;	/* acl.c */
+  extern struct acluser *users;		/* acl.c */
 #endif
 
   if (display)
-    fore = D_fore;
+    {
+      fore = D_fore;
+      flayer = D_forecv->c_layer;
+    }
+  else
+    flayer = fore ? fore->w_savelayer : 0;
   buf = expand_vars(ubuf, display);
   if (Parse(buf, args) <= 0)
     return;
@@ -309,7 +349,9 @@ char *ubuf;
  * needs display for copybuffer access and termcap dumping
  */
 void
-WriteFile(dump)
+WriteFile(user, fn, dump)
+struct acluser *user;
+char *fn;
 int dump;
 {
   /* dump==0:	create .termcap,
@@ -317,11 +359,12 @@ int dump;
    * #ifdef COPY_PASTE
    * dump==2:	BUFFERFILE
    * #endif COPY_PASTE 
+   * dump==1:	scrollback,
    */
   register int i, j, k;
   register char *p;
   register FILE *f;
-  char fn[1024];
+  char fnbuf[1024];
   char *mode = "w";
 #ifdef COPY_PASTE
   int public = 0;
@@ -339,25 +382,40 @@ int dump;
   switch (dump)
     {
     case DUMP_TERMCAP:
-      i = SockName - SockPath;
-      if (i > sizeof(fn) - 9)
-	i = 0;
-      strncpy(fn, SockPath, i);
-      strcpy(fn + i, ".termcap");
+      if (fn == 0)
+	{
+	  i = SockName - SockPath;
+	  if (i > sizeof(fnbuf) - 9)
+	    i = 0;
+	  strncpy(fnbuf, SockPath, i);
+	  strcpy(fnbuf + i, ".termcap");
+	  fn = fnbuf;
+	}
       break;
     case DUMP_HARDCOPY:
-      if (hardcopydir && strlen(hardcopydir) < sizeof(fn) - 21)
-	sprintf(fn, "%s/hardcopy.%d", hardcopydir, fore->w_number);
-      else
-        sprintf(fn, "hardcopy.%d", fore->w_number);
+    case DUMP_SCROLLBACK:
+      if (fn == 0)
+	{
+	  if (fore == 0)
+	    return;
+	  if (hardcopydir && *hardcopydir && strlen(hardcopydir) < sizeof(fnbuf) - 21)
+	    sprintf(fnbuf, "%s/hardcopy.%d", hardcopydir, fore->w_number);
+	  else
+	    sprintf(fnbuf, "hardcopy.%d", fore->w_number);
+	  fn = fnbuf;
+	}
       if (hardcopy_append && !access(fn, W_OK))
 	mode = "a";
       break;
 #ifdef COPY_PASTE
     case DUMP_EXCHANGE:
-      strncpy(fn, BufferFile, sizeof(fn) - 1);
-      fn[sizeof(fn) - 1] = 0;
-      public = !strcmp(fn, bufferfile);
+      if (fn == 0)
+	{
+	  strncpy(fnbuf, BufferFile, sizeof(fnbuf) - 1);
+	  fnbuf[sizeof(fnbuf) - 1] = 0;
+	  fn = fnbuf;
+	}
+      public = !strcmp(fn, DEFAULT_BUFFERFILE);
 # ifdef HAVE_LSTAT
       exists = !lstat(fn, &stb);
       if (public && exists && (S_ISLNK(stb.st_mode) || stb.st_nlink > 1))
@@ -413,17 +471,32 @@ int dump;
 	  switch (dump)
 	    {
 	    case DUMP_HARDCOPY:
+	    case DUMP_SCROLLBACK:
+	      if (!fore)
+		break;
 	      if (*mode == 'a')
 		{
 		  putc('>', f);
-		  for (j = D_width - 2; j > 0; j--)
+		  for (j = fore->w_width - 2; j > 0; j--)
 		    putc('=', f);
 		  fputs("<\n", f);
 		}
-	      for (i = 0; i < D_height; i++)
+	      if (dump == DUMP_SCROLLBACK)
 		{
-		  p = fore->w_mlines[i].image;
-		  for (k = D_width - 1; k >= 0 && p[k] == ' '; k--)
+		  for (i = 0; i < fore->w_histheight; i++)
+		    {
+		      p = (char *)(WIN(i)->image);
+		      for (k = fore->w_width - 1; k >= 0 && p[k] == ' '; k--)
+			;
+		      for (j = 0; j <= k; j++)
+			putc(p[j], f);
+		      putc('\n', f);
+		    }
+		}
+	      for (i = 0; i < fore->w_height; i++)
+		{
+		  p = (char *)fore->w_mlines[i].image;
+		  for (k = fore->w_width - 1; k >= 0 && p[k] == ' '; k--)
 		    ;
 		  for (j = 0; j <= k; j++)
 		    putc(p[j], f);
@@ -439,8 +512,8 @@ int dump;
 	      break;
 #ifdef COPY_PASTE
 	    case DUMP_EXCHANGE:
-	      p = D_user->u_copybuffer;
-	      for (i = D_user->u_copylen; i-- > 0; p++)
+	      p = user->u_plop.buf;
+	      for (i = user->u_plop.len; i-- > 0; p++)
 		if (*p == '\r' && (i == 0 || p[1] != '\n'))
 		  putc('\n', f);
 		else
@@ -454,7 +527,7 @@ int dump;
     }
   if (UserStatus() <= 0)
     Msg(0, "Cannot open \"%s\"", fn);
-  else
+  else if (display && !*rc_name)
     {
       switch (dump)
 	{
@@ -462,6 +535,7 @@ int dump;
 	  Msg(0, "Termcap entry written to \"%s\".", fn);
 	  break;
 	case DUMP_HARDCOPY:
+	case DUMP_SCROLLBACK:
 	  Msg(0, "Screen image %s to \"%s\".",
 	      (*mode == 'a') ? "appended" : "written", fn);
 	  break;

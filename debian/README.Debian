@@ -1,0 +1,53 @@
+$Id: README.Debian,v 1.5 2002/03/20 22:19:41 laz Exp $
+
+Screen Information
+------------------
+See the copyright file for information about where to get screen, licensing,
+and other assorted information.
+
+
+Debian Modifications
+--------------------
+  * added Debian package maintenance files
+  * Use /var/run/screen instead of /tmp/screens
+  * Make it set-gid "utmp" instead of setuid root
+
+
+Debian Screen Q&A
+-----------------
+
+Q: Screen sets my xterm titlebar. I don't like this, how do I make it stop?
+
+A: The titlebar setting is set in the /etc/screenrc by telling screen that some
+   of the GUI terminals have a hardstatus line and that it can be set by
+   sending the xterm escape sequences that set the title/icon.
+
+   # Set the hardstatus prop on gui terms to set the titlebar/icon title
+   termcapinfo xterm*|rxvt*|kterm*|Eterm* hs:ts=\E]0;:fs=\007:ds=\E]0;\007
+
+   You can override this on a system wide basis by commenting out this line in
+   the /etc/screenrc or you can override it in your personal screenrc by adding
+   the following line:
+
+   termcapinfo xterm*|rxvt*|kterm*|Eterm* hs@
+
+
+Q: Why do I get #!$@#$@!% trailing spaces when I cut and paste from mutt
+   running within screen?
+Q: Why does the statusbar in my irc client extend to the end of the screen
+   in xterm but not in screen?
+
+A: This has to do with handling of the bce terminal attribute, or lack
+   thereof by default in screen. You can enable bce on a per-user by adding the
+   following to your .screenrc:
+
+   defbce on
+   term screen-bce
+
+   NOTE: if you do this your TERM will be screen-bce. When you login to
+         other machines they may not have a screen-bce terminal type, so you
+         will see errors. To fix this you must put the terminfo for screen-bce
+         on that remote machine. The screen terminfo is found in
+         /usr/share/doc/screen/terminfo/screeninfo.src and you can compile it
+         on the remote machine using tic(1).
+

@@ -24,7 +24,7 @@ sed -e '1,26d' \
 chmod -w $1
 exit 0
 
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -96,6 +96,8 @@ extern int iflag;
 extern struct win *console_window;
 static void consredir_readev_fn __P((struct event *, char *));
 #endif
+
+int separate_sids = 1;
 
 static void DoSendBreak __P((int, int, int));
 static sigret_t SigAlrmDummy __P(SIGPROTOARG);
@@ -202,6 +204,15 @@ char *line, *opt;
 #endif
   SetTTY(f, &Mode);
 
+#if defined(linux) && defined(TIOCMSET)
+  {
+    int mcs = 0;
+    ioctl(f, TIOCMGET, &mcs);
+    mcs |= TIOCM_RTS;
+    ioctl(f, TIOCMSET, &mcs);
+  }
+#endif
+
   brktty(f);
   alarm(0);
   signal(SIGALRM, sigalrm);
@@ -213,14 +224,6 @@ char *line, *opt;
 /*
  *  Tty mode handling
  */
-
-#if defined(TERMIO) || defined(POSIX)
-int intrc, origintrc = VDISABLE;        /* display? */
-#else
-int intrc, origintrc = -1;		/* display? */
-#endif
-static int startc, stopc;		/* display? */
-
 
 void
 InitTTY(m, ttyflag)
@@ -246,9 +249,9 @@ IF{ONLCR}	m->tio.c_oflag |= ONLCR;
 IF{TAB3}	m->tio.c_oflag |= TAB3; 
 IF{OXTABS}      m->tio.c_oflag |= OXTABS;
 /* IF{PARENB}	m->tio.c_cflag |= PARENB;	nah! jw. */
+IF{OPOST}	m->tio.c_oflag |= OPOST;
     }
 
-IF{OPOST}	m->tio.c_oflag |= OPOST;
 
 /*
  * Or-ing the speed into c_cflags is dangerous.
@@ -327,10 +330,9 @@ XIF{VSTATUS}	m->tio.c_cc[VSTATUS]  = Ctrl('T');
 IF{ISTRIP}	m->tio.c_iflag |= ISTRIP;
 IF{IXON}	m->tio.c_iflag |= IXON;
 
-IF{OPOST}	m->tio.c_oflag |= OPOST;
-
   if (!ttyflag)	/* may not even be good for ptys.. */
     {
+IF{OPOST}	m->tio.c_oflag |= OPOST;
 IF{ICRNL}	m->tio.c_iflag |= ICRNL;
 IF{ONLCR}	m->tio.c_oflag |= ONLCR;
 IF{TAB3}	m->tio.c_oflag |= TAB3;
@@ -410,7 +412,7 @@ IF{LCRTBS}	| LCRTBS
 # endif /* TERMIO */
 #endif /* POSIX */
 
-#if defined(KANJI) && defined(TIOCKSET)
+#if defined(ENCODINGS) && defined(TIOCKSET)
   m->m_jtchars.t_ascii = 'J';
   m->m_jtchars.t_kanji = 'B';
   m->m_knjmode = KM_ASCII | KM_SYSSJIS;
@@ -448,7 +450,7 @@ struct mode *mp;
   ioctl(fd, TIOCSLTC, (char *)&mp->m_ltchars); /* moved here for apollo. jw */
 # endif
 #endif
-#if defined(KANJI) && defined(TIOCKSET)
+#if defined(ENCODINGS) && defined(TIOCKSET)
   ioctl(fd, TIOCKSETC, &mp->m_jtchars);
   ioctl(fd, TIOCKSET, &mp->m_knjmode);
 #endif
@@ -492,7 +494,7 @@ struct mode *mp;
   ioctl(fd, TIOCGETD, (char *)&mp->m_ldisc);
 # endif
 #endif
-#if defined(KANJI) && defined(TIOCKSET)
+#if defined(ENCODINGS) && defined(TIOCKSET)
   ioctl(fd, TIOCKGETC, &mp->m_jtchars);
   ioctl(fd, TIOCKGET, &mp->m_knjmode);
 #endif
@@ -510,6 +512,7 @@ int flow, interrupt;
 {
   *np = *op;
 
+  ASSERT(display);
 #if defined(TERMIO) || defined(POSIX)
 # ifdef CYTERMIO
   np->m_mapkey = NOMAPKEY;
@@ -549,19 +552,11 @@ IF{IEXTEN}  np->tio.c_lflag &= ~IEXTEN;
    */
   np->tio.c_cc[VMIN] = 1;
   np->tio.c_cc[VTIME] = 0;
-XIF{VSTART}	startc = op->tio.c_cc[VSTART];
-XIF{VSTOP}	stopc = op->tio.c_cc[VSTOP];
-  if (interrupt)
-    origintrc = intrc = op->tio.c_cc[VINTR];
-  else
-    {
-      origintrc = op->tio.c_cc[VINTR];
-      intrc = np->tio.c_cc[VINTR] = VDISABLE;
-    }
+  if (!interrupt || !flow)
+    np->tio.c_cc[VINTR] = VDISABLE;
   np->tio.c_cc[VQUIT] = VDISABLE;
   if (flow == 0)
     {
-      np->tio.c_cc[VINTR] = VDISABLE;
 XIF{VSTART}	np->tio.c_cc[VSTART] = VDISABLE;
 XIF{VSTOP}	np->tio.c_cc[VSTOP] = VDISABLE;
       np->tio.c_iflag &= ~IXON;
@@ -585,15 +580,8 @@ XIF{VREPRINT}	np->tio.c_cc[VREPRINT] = VDISABLE;
 XIF{VWERASE}	np->tio.c_cc[VWERASE] = VDISABLE;
 # endif /* HPUX_LTCHARS_HACK */
 #else /* TERMIO || POSIX */
-  startc = op->m_tchars.t_startc;
-  stopc = op->m_tchars.t_stopc;
-  if (interrupt)
-    origintrc = intrc = op->m_tchars.t_intrc;
-  else
-    {
-      origintrc = op->m_tchars.t_intrc;
-      intrc = np->m_tchars.t_intrc = -1;
-    }
+  if (!interrupt || !flow)
+    np->m_tchars.t_intrc = -1;
   np->m_ttyb.sg_flags &= ~(CRMOD | ECHO);
   np->m_ttyb.sg_flags |= CBREAK;
 # if defined(CYRILL) && defined(CSTYLE) && defined(CS_8BITS)
@@ -603,7 +591,6 @@ XIF{VWERASE}	np->tio.c_cc[VWERASE] = VDISABLE;
   np->m_tchars.t_quitc = -1;
   if (flow == 0)
     {
-      np->m_tchars.t_intrc = -1;
       np->m_tchars.t_startc = -1;
       np->m_tchars.t_stopc = -1;
     }
@@ -625,10 +612,10 @@ int on;
 #if defined(TERMIO) || defined(POSIX)
   if (on)
     {
-      D_NewMode.tio.c_cc[VINTR] = intrc;
-XIF{VSTART}	D_NewMode.tio.c_cc[VSTART] = startc;
-XIF{VSTOP}	D_NewMode.tio.c_cc[VSTOP] = stopc;
-      D_NewMode.tio.c_iflag |= IXON;
+      D_NewMode.tio.c_cc[VINTR] = iflag ? D_OldMode.tio.c_cc[VINTR] : VDISABLE;
+XIF{VSTART}	D_NewMode.tio.c_cc[VSTART] = D_OldMode.tio.c_cc[VSTART];
+XIF{VSTOP}	D_NewMode.tio.c_cc[VSTOP] = D_OldMode.tio.c_cc[VSTOP];
+      D_NewMode.tio.c_iflag |= D_OldMode.tio.c_iflag & IXON;
     }
   else
     {
@@ -646,9 +633,9 @@ XIF{VSTOP}	D_NewMode.tio.c_cc[VSTOP] = VDISABLE;
 #else /* POSIX || TERMIO */
   if (on)
     {
-      D_NewMode.m_tchars.t_intrc = intrc;
-      D_NewMode.m_tchars.t_startc = startc;
-      D_NewMode.m_tchars.t_stopc = stopc;
+      D_NewMode.m_tchars.t_intrc = iflag ? D_OldMode.m_tchars.t_intrc : -1;
+      D_NewMode.m_tchars.t_startc = D_OldMode.m_tchars.t_startc;
+      D_NewMode.m_tchars.t_stopc = D_OldMode.m_tchars.t_stopc;
     }
   else
     {
@@ -747,6 +734,18 @@ char *opt;
 	  m->m_ttyb.sg_flags &= ~TANDEM;
 #endif
         }
+      else if (!strncmp("crtscts", opt, 7))
+	{
+#if (defined(POSIX) || defined(TERMIO)) && defined(CRTSCTS)
+	  m->tio.c_cflag |= CRTSCTS;
+#endif
+	}
+      else if (!strncmp("-crtscts", opt, 8))
+        {
+#if (defined(POSIX) || defined(TERMIO)) && defined(CRTSCTS)
+	  m->tio.c_cflag &= ~CRTSCTS;
+#endif
+	}
       else
         return -1;
       while (*opt && !index(sep, *opt)) opt++;
@@ -767,13 +766,16 @@ brktty(fd)
 int fd;
 {
 #if defined(POSIX) && !defined(ultrix)
-  setsid();		/* will break terminal affiliation */
-# if defined(BSD) && defined(TIOCSCTTY)
+  if (separate_sids)
+    setsid();		/* will break terminal affiliation */
+  /* GNU added for Hurd systems 2001-10-10 */
+# if defined(BSD) && defined(TIOCSCTTY) && !defined(__GNU__)
   ioctl(fd, TIOCSCTTY, (char *)0);
 # endif /* BSD && TIOCSCTTY */
 #else /* POSIX */
 # ifdef SYSV
-  setpgrp();		/* will break terminal affiliation */
+  if (separate_sids)
+    setpgrp();		/* will break terminal affiliation */
 # else /* SYSV */
 #  ifdef BSDJOBS
   int devtty;
@@ -805,24 +807,27 @@ int fd;
    *	fgtty: Not a typewriter (25)
    */
 # if defined(__osf__) || (BSD >= 199103) || defined(ISC)
-  setsid();	/* should be already done */
+  if (separate_sids)
+    setsid();	/* should be already done */
 #  ifdef TIOCSCTTY
   ioctl(fd, TIOCSCTTY, (char *)0);
 #  endif
 # endif
 
 # ifdef POSIX
-  if (tcsetpgrp(fd, mypid))
-    {
-      debug1("fgtty: tcsetpgrp: %d\n", errno);
-      return -1;
-    }
+  if (separate_sids)
+    if (tcsetpgrp(fd, mypid))
+      {
+        debug1("fgtty: tcsetpgrp: %d\n", errno);
+        return -1;
+      }
 # else /* POSIX */
   if (ioctl(fd, TIOCSPGRP, (char *)&mypid) != 0)
     debug1("fgtty: TIOSETPGRP: %d\n", errno);
 #  ifndef SYSV	/* Already done in brktty():setpgrp() */
-  if (setpgrp(fd, mypid))
-    debug1("fgtty: setpgrp: %d\n", errno);
+  if (separate_sids)
+    if (setpgrp(fd, mypid))
+      debug1("fgtty: setpgrp: %d\n", errno);
 #  endif
 # endif /* POSIX */
 #endif /* BSDJOBS */
@@ -1015,8 +1020,8 @@ int n, closeopen;
 
 #if !defined(TIOCCONS) && defined(SRIOCSREDIR)
 
-struct event consredir_ev;
-int consredirfd[2] = {-1, -1};
+static struct event consredir_ev;
+static int consredirfd[2] = {-1, -1};
 
 static void
 consredir_readev_fn(ev, data)
@@ -1060,7 +1065,7 @@ char *rc_name;
   int sfd = -1;
 
   if (on < 0)
-    return;		/* pty close will ungrab */
+    return 0;		/* pty close will ungrab */
   if (on)
     {
       if (displays == 0)
@@ -1211,15 +1216,14 @@ IF{MCTS}#  define TIOCM_CTS MCTS
 #if defined(CLOCAL) || defined(CRTSCTS)
   GetTTY(fd, &mtio);
 #endif
+  clocal = 0;
 #ifdef CLOCAL
   if (mtio.tio.c_cflag & CLOCAL)
     {
       clocal = 1;
       *p++ = '{';
     }
-  else
 #endif
-    clocal = 0;
 
 #ifdef TIOCM_CTS
 # ifdef CRTSCTS
@@ -1241,8 +1245,8 @@ IF{MCTS}#  define TIOCM_CTS MCTS
 # else
 #  ifdef TIOCMODG
   if (ioctl(fd, TIOCMODG, (char *)&mflags) < 0)
-# else
-  if (ioctl(fd, TIOCMODG, &mflags) < 0)
+#  else
+  if (ioctl(fd, MCGETA, &mflags) < 0)
 #  endif
 # endif
     {
@@ -1268,6 +1272,7 @@ IF{MCTS}#  define TIOCM_CTS MCTS
       while (*s) *p++ = *s++;
 # endif
 # ifdef TIOCM_CTS
+      s = "!CTS "; 
       if (!rtscts)
         {
           *p++ = '(';
@@ -1286,15 +1291,14 @@ IF{MCTS}#  define TIOCM_CTS MCTS
       while (*s) *p++ = *s++;
 # endif
 # if defined(TIOCM_CD) || defined(TIOCM_CAR)
+      s = "!CD "; 
 #  ifdef TIOCGSOFTCAR
       if (softcar)
 	 {
 	  *p++ = '(';
 	  s = "!CD) ";
 	 }
-      else
 #  endif
-      s = "!CD "; 
 #  ifdef TIOCM_CD
       if (mflags & TIOCM_CD) s++;
 #  else

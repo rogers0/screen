@@ -1,17 +1,16 @@
-This is the Debian GNU/Linux prepackaged version of screen, a screen
-manager with VT100/ANSI terminal emulation.
+This is the Debian prepackaged version of screen, a screen manager with
+VT100/ANSI terminal emulation.
 
 This package was put together from sources obtained from:
-  ftp://ftp.uni-erlangen.de/pub/utilities/screen/screen-3.9.5.tar.gz
+  ftp://ftp.uni-erlangen.de/pub/utilities/screen
 
-Changes for Debian:
-  * added Debian GNU/Linux package maintenance system files
-  * ETCSCREENRC definition changed to "/etc/screenrc" in config.h.in
-  * Used /var/run/screen instead of /tmp/screens
-  * Added support for MD5-based passwords
-  * Added PAM support
-  * Make it set-gid "utmp" instead of setuid root
+See the info documentation for contact information for the upstream authors.
 
+You are free to distribute this software under the terms of the GNU
+General Public License version 2.
+
+On Debian systems, the complete text of the GNU General Public License can
+be found in /usr/share/common-licenses/GPL file.
 
 Copyrights
 ----------
@@ -20,28 +19,9 @@ Copyright (C) 1991 Wayne Davidson
 Copyright (C) 1993 Juergen Weigert <jnweiger@immd4.informatik.uni-erlangen.de>
 Copyright (C) 1993 Michael Schroeder <mlschroe@immd4.informatik.uni-erlangen.de>
 
-Modifications for Debian:
-  Copyright (C) Ian Murdock <imurdock@debian.org>
+Debian Modifications:
+  Copyright (C) 1996 Ian Murdock <imurdock@debian.org>
   Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
-  Copyright (C) 1997-1999 Juan Cespedes <cespedes@debian.org>
-  PAM support: Copyright (C) 1999 "Pablo (Tombstone) Averbuj" <pablo@gos.nu>
-
-
-License
--------
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-A copy of the GNU General Public License is available as
-`/usr/doc/copyright/GPL' in the Debian GNU/Linux distribution or on
-the World Wide Web at `http://www.gnu.org/copyleft/gpl.html'. You can
-also obtain it by writing to the Free Software Foundation, Inc., 59
-Temple Place - Suite 330, Boston, MA 02111-1307, USA
+  Copyright (C) 1997-2001 Juan Cespedes <cespedes@debian.org>
+  Copyright (C) 2001-2002 Adam Lazur <zal@debian.org>
 

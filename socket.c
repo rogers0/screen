@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -50,6 +50,7 @@ RCS_ID("$Id: socket.c,v 1.23 1994/05/31 12:33:00 mlschroe Exp $ FAU")
 
 static int   CheckPid __P((int));
 static void  ExecCreate __P((struct msg *));
+static void  DoCommandMsg __P((struct msg *));
 #if defined(_SEQUENT_) && !defined(NAMEDPIPE)
 # define connect sconnect	/* _SEQUENT_ has braindamaged connect */
 static int   sconnect __P((int, struct sockaddr *, int));
@@ -64,6 +65,7 @@ extern int dflag, iflag, rflag, lsflag, quietflag, wipeflag, xflag;
 extern char *attach_tty, *LoginName, HostName[];
 extern struct display *display, *displays;
 extern struct win *fore, *wtab[], *console_window, *windows;
+extern struct layer *flayer;
 extern struct NewWindow nwin_undef;
 #ifdef MULTIUSER
 extern char *multi;
@@ -73,6 +75,7 @@ extern char *getenv();
 
 extern char SockPath[];
 extern struct event serv_read;
+extern char *rc_name;
 
 #ifdef MULTIUSER
 # define SOCKMODE (S_IWRITE | S_IREAD | (displays ? S_IEXEC : 0) | (multi ? 1 : 0))
@@ -242,26 +245,29 @@ char *match;
 	  debug2("  MakeClientSocket failed, unreachable? %d %d\n",
 	         matchlen, wipeflag);
 	  sent->mode = -3;
+#ifndef SOCKDIR_IS_LOCAL_TO_HOST
 	  /* Unreachable - it is dead if we detect that it's local
            * or we specified a match
            */
 	  n = name + strlen(name) - 1;
 	  while (n != name && *n != '.')
 	    n--;
-	  if (matchlen || (*n == '.' && n[1] && strncmp(HostName, n + 1, strlen(n + 1)) == 0))
-		{
-		  ndead++;
-		  sent->mode = -1;
-		  if (wipeflag)
-		    {
-		      if (unlink(SockPath) == 0)
-			{
-			  sent->mode = -2;
-			  nwipe++;
-			}
-		    }
+	  if (matchlen == 0  && !(*n == '.' && n[1] && strncmp(HostName, n + 1, strlen(n + 1)) == 0))
+	    {
+	      npriv++;		/* a good socket that was not for us */
+	      continue;
 	    }
-	  npriv++;		/* a good socket that was not for us */
+#endif
+	  ndead++;
+	  sent->mode = -1;
+	  if (wipeflag)
+	    {
+	      if (unlink(SockPath) == 0)
+		{
+		  sent->mode = -2;
+		  nwipe++;
+		}
+	    }
 	  continue;
 	}
 
@@ -357,7 +363,7 @@ char *match;
       if (wipeflag)
         Msg(0, "%d socket%s wiped out.", nwipe, nwipe > 1 ? "s" : "");
       else
-        Msg(0, "Remove dead screens with 'screen -wipe'.", ndead > 1 ? "s" : "", ndead > 1 ? "" : "es");	/* other args for nethack */
+        Msg(0, "Remove dead screens with 'screen -wipe'."+1-1, ndead > 1 ? "s" : "", ndead > 1 ? "" : "es");	/* other args for nethack */
     }
   if (firsts != -1)
     {
@@ -939,6 +945,15 @@ ReceiveMsg()
 #endif
 
       debug2("RecMsg: apid %d is o.k. and we just opened '%s'\n", m.m.attach.apid, m.m_tty);
+#ifndef MULTI
+      if (displays)
+	{
+	  write(i, "Screen session in use.\n", 23);
+	  close(i);
+	  Kill(m.m.attach.apid, SIG_BYE);
+	  break;
+	}
+#endif
 
       /* create new display */
       GetTTY(i, &Mode);
@@ -950,6 +965,15 @@ ReceiveMsg()
 	  Kill(m.m.attach.apid, SIG_BYE);
 	  break;
         }
+#ifdef ENCODINGS
+# ifdef UTF8
+      D_encoding = m.m.attach.encoding == 1 ? UTF8 : m.m.attach.encoding ? m.m.attach.encoding - 1 : 0;
+# else
+      D_encoding = m.m.attach.encoding ? m.m.attach.encoding - 1 : 0;
+# endif
+      if (D_encoding < 0 || !EncodingName(D_encoding))
+	D_encoding = 0;
+#endif
       /* turn off iflag on a multi-attach... */
       if (iflag && olddisplays)
 	{
@@ -979,7 +1003,7 @@ ReceiveMsg()
       break;
     case MSG_HANGUP:
       if (!wi)		/* ignore hangups from inside */
-        SigHup(SIGARG);
+        Hangup();
       break;
 #ifdef REMOTE_DETACH
     case MSG_DETACH:
@@ -999,6 +1023,9 @@ ReceiveMsg()
 	}
       break;
 #endif
+    case MSG_COMMAND:
+      DoCommandMsg(&m);
+      break;
     default:
       Msg(0, "Invalid message (type %d).", m.type);
     }
@@ -1104,7 +1131,7 @@ struct msg *m;
    * We reboot our Terminal Emulator. Forget all we knew about
    * the old terminal, reread the termcap entries in .screenrc
    * (and nothing more from .screenrc is read. Mainly because
-   * I did not check, weather a full reinit is save. jw) 
+   * I did not check, weather a full reinit is safe. jw) 
    * and /etc/screenrc, and initialise anew.
    */
   if (extra_outcap)
@@ -1195,7 +1222,7 @@ static void PasswordProcessInput __P((char *, int));
 
 struct pwdata {
   int l;
-  char buf[8];
+  char buf[20 + 1];
   struct msg m;
 };
 
@@ -1248,6 +1275,7 @@ int ilen;
 	    }
 	  /* great, pw matched, all is fine */
 	  bzero(pwdata->buf, sizeof(pwdata->buf));
+	  AddStr("\r\n");
 	  D_processinputdata = 0;
 	  D_processinput = ProcessInput;
 	  FinishAttach(&pwdata->m);
@@ -1272,9 +1300,97 @@ int ilen;
 	  l = 0;
 	  continue;
 	}
-      if (l < 8)
+      if (l < sizeof(pwdata->buf) - 1)
 	pwdata->buf[l++] = c;
     }
   pwdata->l = l;
 }
 #endif
+
+static void
+DoCommandMsg(mp)
+struct msg *mp;
+{
+  char *args[MAXARGS];
+  int n;
+  register char **pp = args, *p = mp->m.command.cmd;
+  struct acluser *user;
+#ifdef MULTIUSER
+  extern struct acluser *EffectiveAclUser;	/* acls.c */
+#else
+  extern struct acluser *users;			/* acls.c */
+#endif
+
+  n = mp->m.command.nargs;
+  if (n > MAXARGS - 1)
+    n = MAXARGS - 1;
+  for (; n > 0; n--)
+    {
+      *pp++ = p;
+      p += strlen(p) + 1;
+    }
+  *pp = 0;
+#ifdef MULTIUSER
+  user = *FindUserPtr(mp->m.attach.auser);
+  if (user == 0)
+    {
+      Msg(0, "Unknown user %s tried to send a command!", mp->m.attach.auser);
+      return;
+    }
+#else
+  user = users;
+#endif
+#ifdef PASSWORD
+  if (user->u_password && *user->u_password)
+    {
+      Msg(0, "User %s has a password, cannot use -X option.", mp->m.attach.auser);
+      return;
+    }
+#endif
+  if (!display)
+    for (display = displays; display; display = display->d_next)
+      if (D_user == user)
+	break;
+  for (fore = windows; fore; fore = fore->w_next)
+    if (!TTYCMP(mp->m_tty, fore->w_tty))
+      {
+	if (!display)
+	  display = fore->w_layer.l_cvlist ? fore->w_layer.l_cvlist->c_display : 0;
+	break;
+      }
+  if (!display)
+    display = displays;		/* sigh */
+  if (*mp->m.command.preselect)
+    {
+      int i;
+      i = WindowByNoN(mp->m.command.preselect);
+      fore = i >= 0 ? wtab[i] : 0;
+    }
+  else if (!fore)
+    {
+      if (display && D_user == user)
+	fore = Layer2Window(display->d_forecv->c_layer);
+      if (!fore)
+	{
+	  fore = user->u_detachwin >= 0 ? wtab[user->u_detachwin] : 0;
+	  fore = FindNiceWindow(fore, 0);
+	}
+    }
+#ifdef MULTIUSER
+  EffectiveAclUser = user;
+#endif
+  if (*args)
+    {
+      char *oldrcname = rc_name;
+      rc_name = "-X";
+      debug3("Running command on display %x window %x (%d)\n", display, fore, fore ? fore->w_number : -1);
+      flayer = fore ? &fore->w_layer : 0;
+      if (fore && fore->w_savelayer && (fore->w_blocked || fore->w_savelayer->l_cvlist == 0))
+	flayer = fore->w_savelayer;
+      DoCommand(args);
+      rc_name = oldrcname;
+    }
+#ifdef MULTIUSER
+  EffectiveAclUser = 0;
+#endif
+}

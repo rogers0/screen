@@ -1,7 +1,7 @@
 #! /bin/sh
 
-if test -z "$CC"; then
-  CC=cc
+if test -z "$CPP"; then
+  CPP="cc -E"
 fi
 if test -z "$srcdir"; then
   srcdir=.
@@ -50,7 +50,7 @@ cat << EOF > osdef2.sed
 1i\\
  */
 EOF
-$CC -I. -I$srcdir -E osdef0.c | sed -n -f osdef1.sed >> osdef2.sed
+$CPP -I. -I$srcdir osdef0.c | sed -n -f osdef1.sed >> osdef2.sed
 sed -f osdef2.sed < $srcdir/osdef.h.in > osdef.h
 rm osdef0.c osdef1.sed osdef2.sed
 
@@ -62,7 +62,7 @@ if test -f core*; then
   echo "  retry 'make' now and only remove offending lines from osdef.h later."
   exit 1
 fi
-if eval test "`diff osdef.h osdef.h.in | wc -l`" -eq 4; then
+if eval test "`diff osdef.h $srcdir/osdef.h.in | wc -l`" -eq 4; then
   echo "  Hmm, sed is very pessimistic about your system header files."
   echo "  But it did not dump core -- strange! Let's continue carefully..."
   echo "  If this fails, you may want to remove offending lines from osdef.h"

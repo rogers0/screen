@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -55,6 +55,7 @@ extern struct event logflushev;
 extern int log_flush, logtstamp_after;
 extern int ZombieKey_destroy, ZombieKey_resurrect;
 extern struct layer *flayer;
+extern int maxusercount;
 
 #if defined(TIOCSWINSZ) || defined(TIOCGWINSZ)
 extern struct winsize glwz;
@@ -64,9 +65,13 @@ extern struct winsize glwz;
 extern int aixhack;
 #endif
 
+#ifdef O_NOCTTY
+extern int separate_sids;
+#endif
+
 static void WinProcess __P((char **, int *));
 static void WinRedisplayLine __P((int, int, int, int));
-static void WinClearLine __P((int, int, int));
+static void WinClearLine __P((int, int, int, int));
 static int  WinRewrite __P((int, int, int, struct mchar *, int));
 static int  WinResize __P((int, int));
 static void WinRestore __P((void));
@@ -112,9 +117,10 @@ struct NewWindow nwin_undef   =
   -1,		/* wrap */
   -1,		/* logging */
   -1,		/* slowpaste */
-  -1, 		/* c1 */
   -1, 		/* gr */
-  -1, 		/* kanji */
+  -1, 		/* c1 */
+  -1, 		/* bce */
+  -1, 		/* encoding */
   (char *)0,	/* hstatus */
   (char *)0	/* charset */
 };
@@ -136,9 +142,10 @@ struct NewWindow nwin_default =
   1,		/* wrap */
   0,		/* logging */
   0,		/* slowpaste */
-  1,		/* c1 */
   0,		/* gr */
-  0,		/* kanji */
+  1,		/* c1 */
+  0,		/* bce */
+  0,		/* encoding */
   (char *)0,	/* hstatus */
   (char *)0	/* charset */
 };
@@ -168,9 +175,10 @@ struct NewWindow *def, *new, *res;
   COMPOSE(wrap);
   COMPOSE(Lflag);
   COMPOSE(slow);
-  COMPOSE(c1);
   COMPOSE(gr);
-  COMPOSE(kanji);
+  COMPOSE(c1);
+  COMPOSE(bce);
+  COMPOSE(encoding);
   COMPOSE(hstatus);
   COMPOSE(charset);
 #undef COMPOSE
@@ -358,13 +366,9 @@ int y, from, to, isblank;
     return;
   fore = (struct win *)flayer->l_data;
   if (from == 0 && y > 0 && fore->w_mlines[y - 1].image[fore->w_width] == 0)
-    {
-      struct mchar nc;
-      copy_mline2mchar(&nc, &fore->w_mlines[y], 0);
-      LWrapChar(&fore->w_layer, &nc, y - 1, -1, -1, 0);
-      from++;
-    }
-  LCDisplayLine(&fore->w_layer, &fore->w_mlines[y], y, from, to, isblank);
+    LCDisplayLineWrap(&fore->w_layer, &fore->w_mlines[y], y, from, to, isblank);
+  else
+    LCDisplayLine(&fore->w_layer, &fore->w_mlines[y], y, from, to, isblank);
 }
 
 static int
@@ -373,12 +377,15 @@ int y, x1, x2, doit;
 struct mchar *rend;
 {
   register int cost, dx;
-  register char *p, *i;
+  register unsigned char *p, *i;
 #ifdef FONT
-  register char *f;
+  register unsigned char *f;
 #endif
 #ifdef COLOR
-  register char *c;
+  register unsigned char *c;
+# ifdef COLORS256
+  register unsigned char *cx;
+# endif
 #endif
 
   debug3("WinRewrite %d, %d-%d\n", y, x1, x2);
@@ -394,9 +401,20 @@ struct mchar *rend;
   p = fore->w_mlines[y].attr + x1;
 #ifdef FONT
   f = fore->w_mlines[y].font + x1;
+# ifdef DW_CHARS
+  if (is_dw_font(rend->font))
+    return EXPENSIVE;
+# endif
+# ifdef UTF8
+  if (fore->w_encoding && fore->w_encoding != UTF8 && D_encoding == UTF8 && ContainsSpecialDeffont(fore->w_mlines + y, x1, x2, fore->w_encoding))
+    return EXPENSIVE;
+# endif
 #endif
 #ifdef COLOR
   c = fore->w_mlines[y].color + x1;
+# ifdef COLORS256
+  cx = fore->w_mlines[y].colorx + x1;
+# endif
 #endif
 
   cost = dx = x2 - x1 + 1;
@@ -411,17 +429,22 @@ struct mchar *rend;
 #ifdef COLOR
       if (*c++ != rend->color)
 	return EXPENSIVE;
+# ifdef COLORS256
+      if (*cx++ != rend->colorx)
+	return EXPENSIVE;
+# endif
 #endif
     }
   return cost;
 }
 
 static void
-WinClearLine(y, xs, xe)
-int y, xs, xe;
+WinClearLine(y, xs, xe, bce)
+int y, xs, xe, bce;
 {
   fore = (struct win *)flayer->l_data;
-  LClearLine(flayer, y, xs, xe, &fore->w_mlines[y]);
+  debug3("WinClearLine %d %d-%d\n", y, xs, xe);
+  LClearLine(flayer, y, xs, xe, bce, &fore->w_mlines[y]);
 }
 
 static int
@@ -451,6 +474,7 @@ WinRestore()
       InsertMode(fore->w_insert);
       ReverseVideo(fore->w_revvid);
       CursorVisibility(fore->w_curinv ? -1 : fore->w_curvvis);
+      MouseMode(fore->w_mouse);
     }
 }
 
@@ -510,7 +534,7 @@ struct NewWindow *newwin;
   int type;
   char *TtyName;
 #ifdef MULTIUSER
-  extern struct user *users;
+  extern struct acluser *users;
 #endif
 
   debug1("NewWindow: StartAt %d\n", newwin->StartAt);
@@ -624,11 +648,27 @@ struct NewWindow *newwin;
   if (nwin.hstatus)
     p->w_hstatus = SaveStr(nwin.hstatus);
   p->w_monitor = nwin.monitor;
+#ifdef MULTIUSER
+  if (p->w_monitor == MON_ON)
+    {
+      /* always tell all users */
+      for (i = 0; i < maxusercount; i++)
+	ACLBYTE(p->w_mon_notify, i) |= ACLBIT(i);
+    }
+#endif
   /*
    * defsilence by Lloyd Zusman (zusman_lloyd@jpmorgan.com)
    */
   p->w_silence = nwin.silence;
   p->w_silencewait = SilenceWait;
+#ifdef MULTIUSER
+  if (p->w_silence == SILENCE_ON)
+    {
+      /* always tell all users */
+      for (i = 0; i < maxusercount; i++)
+	ACLBYTE(p->w_lio_notify, i) |= ACLBIT(i);
+    }
+#endif
 #ifdef COPY_PASTE
   p->w_slowpaste = nwin.slow;
 #else
@@ -638,6 +678,8 @@ struct NewWindow *newwin;
   p->w_norefresh = 0;
   strncpy(p->w_tty, TtyName, MAXSTR - 1);
 
+#if 0
+  /* XXX Fixme display resize */
   if (ChangeWindowSize(p, display ? D_defwidth : 80,
 		       display ? D_defheight : 24, 
 		       nwin.histheight))
@@ -645,10 +687,19 @@ struct NewWindow *newwin;
       FreeWindow(p);
       return -1;
     }
-#ifdef KANJI
-  p->w_kanji = nwin.kanji;
+#else
+  if (ChangeWindowSize(p, display ? D_forecv->c_xe - D_forecv->c_xs + 1: 80,
+		       display ? D_forecv->c_ye - D_forecv->c_ys + 1 : 24, 
+		       nwin.histheight))
+    {
+      FreeWindow(p);
+      return -1;
+    }
 #endif
-  ResetWindow(p);	/* sets w_wrap, w_c1, w_gr */
+
+  p->w_encoding = nwin.encoding;
+  ResetWindow(p);	/* sets w_wrap, w_c1, w_gr, w_bce */
+
 #ifdef FONT
   if (nwin.charset)
     SetCharsets(p, nwin.charset);
@@ -704,18 +755,19 @@ struct NewWindow *newwin;
   *pp = p;
   p->w_next = windows;
   windows = p;
+  p->w_lflag = nwin.lflag;
 #ifdef UTMPOK
   p->w_slot = (slot_t)-1;
 # ifdef LOGOUTOK
   debug1("MakeWindow will %slog in.\n", nwin.lflag?"":"not ");
-  if (nwin.lflag)
+  if (nwin.lflag & 1)
 # else /* LOGOUTOK */
   debug1("MakeWindow will log in, LOGOUTOK undefined in config.h%s.\n",
   	 nwin.lflag?"":" (although lflag=0)");
 # endif /* LOGOUTOK */
     {
       p->w_slot = (slot_t)0;
-      if (display)
+      if (display || (p->w_lflag & 2))
         SetUtmp(p);
     }
 # ifdef CAREFULUTMP
@@ -757,6 +809,7 @@ struct NewWindow *newwin;
   Activate(p->w_norefresh);
   WindowChanged((struct win*)0, 'w');
   WindowChanged((struct win*)0, 'W');
+  WindowChanged((struct win*)0, 0);
   return n;
 }
 
@@ -804,8 +857,8 @@ struct win *p;
 #ifdef BUILTIN_TELNET
   if (p->w_type == W_TYPE_TELNET)
     {
-	if (TelConnect(p))
-	  return -1;
+      if (TelConnect(p))
+        return -1;
     }
   else
 #endif
@@ -817,12 +870,13 @@ struct win *p;
     }
 
 #ifdef UTMPOK
-  if (display && p->w_slot == (slot_t)0)
+  if (p->w_slot == (slot_t)0 && (display || (p->w_lflag & 2)))
     SetUtmp(p);
 # ifdef CAREFULUTMP
   CarefulUtmp();	/* If all 've been zombies, we've had no slot */
 # endif
 #endif
+  WindowChanged(p, 'f');
   return p->w_number;
 }
 
@@ -1065,7 +1119,24 @@ char **args, *ttyn;
   int i, pat, wfdused;
   struct pseudowin *pwin = win->w_pwin;
 #endif
+#if (defined(sun) || defined(_IBMR2)) && defined(O_NOCTTY)
+  int slave;
+#endif
 
+#if defined(sun) && defined(O_NOCTTY)
+  /* sun's utmp_update program opens the salve side, thus corrupting
+   * pty semantics */
+  debug("pre-opening slave...\n");
+  if ((slave = open(ttyn, O_RDWR|O_NOCTTY)) == -1)
+    {
+      Msg(errno, "ttyn");
+      return -1;
+    }
+#endif
+#if defined(_IBMR2) && defined(O_NOCTTY)
+  slave = aixhack;
+  aixhack = -1;
+#endif
   debug("forking...\n");
   proc = *args;
   if (proc == 0)
@@ -1118,14 +1189,14 @@ char **args, *ttyn;
       if (dfp && dfp != stderr)
 	fclose(dfp);
 #endif
-#ifdef _IBMR2
+#if (defined(sun) || defined(_IBMR2)) && defined(O_NOCTTY)
       close(0);
-      dup(aixhack);
-      close(aixhack);
-#endif
+      dup(slave);
+      close(slave);
       closeallfiles(win->w_ptyfd);
-#ifdef _IBMR2
-      aixhack = dup(0);
+      slave = dup(0);
+#else
+      closeallfiles(win->w_ptyfd);
 #endif
 #ifdef DEBUG
       if (dfp)	/* do not produce child debug, when debug is "off" */
@@ -1158,7 +1229,15 @@ char **args, *ttyn;
 	    {
 	      if (newfd < 0)
 		{
-		  if ((newfd = open(ttyn, O_RDWR)) < 0)
+# ifdef O_NOCTTY
+		  if (separate_sids)
+		    newfd = open(ttyn, O_RDWR);
+		  else
+		    newfd = open(ttyn, O_RDWR|O_NOCTTY);
+# else
+		  newfd = open(ttyn, O_RDWR);
+# endif
+		  if (newfd < 0)
 		    Panic(errno, "Cannot open %s", ttyn);
 		}
 	      else
@@ -1181,19 +1260,27 @@ char **args, *ttyn;
 	      Msg(errno, "Warning: clear NBLOCK fcntl failed");
 	}
 #else /* PSEUDOS */
-      if ((newfd = open(ttyn, O_RDWR)) != 0)
+# ifdef O_NOCTTY
+      if (separate_sids)
+        newfd = open(ttyn, O_RDWR);
+      else
+        newfd = open(ttyn, O_RDWR|O_NOCTTY);
+# else
+      newfd = open(ttyn, O_RDWR);
+# endif
+      if (newfd != 0)
 	Panic(errno, "Cannot open %s", ttyn);
       dup(0);
       dup(0);
 #endif /* PSEUDOS */
       close(win->w_ptyfd);
-#ifdef _IBMR2
-      close(aixhack);
+#if (defined(sun) || defined(_IBMR2)) && defined(O_NOCTTY)
+      close(slave);
 #endif
       if (newfd >= 0)
 	{
 	  struct mode fakemode, *modep;
-	  InitPty(newfd);
+	  InitPTY(newfd);
 	  if (fgtty(newfd))
 	    Msg(errno, "fgtty");
 	  if (display)
@@ -1288,9 +1375,8 @@ char **args, *ttyn;
     default:
       break;
     }
-#ifdef _IBMR2
-  close(aixhack);
-  aixhack = -1;
+#if (defined(sun) || defined(_IBMR2)) && defined(O_NOCTTY)
+  close(slave);
 #endif
   return pid;
 }
@@ -1463,12 +1549,6 @@ char **av;
 	FreePseudowin(w);
 	return -1;
       }
-    if (ioctl(w->w_ptyfd, TIOCPKT, (char *)&flag))
-      {
-	Msg(errno, "TIOCPKT ioctl on parent");
-	FreePseudowin(w);
-	return -1;
-      }
   }
 #endif /* TIOCPKT */
   
@@ -1503,16 +1583,10 @@ struct win *w;
     close(pwin->p_ptyfd);
   evdeq(&pwin->p_readev);
   evdeq(&pwin->p_writeev);
+  if (w->w_readev.condneg == &pwin->p_inlen)
+    w->w_readev.condpos = w->w_readev.condneg = 0;
   free((char *)pwin);
   w->w_pwin = NULL;
-#ifdef TIOCPKT
-  {
-    int flag = 1;
-
-    if (ioctl(w->w_ptyfd, TIOCPKT, (char *)&flag))
-      Msg(errno, "TIOCPKT reset on parent failed");
-  }
-#endif /* TIOCPKT */
 }
 
 #endif /* PSEUDOS */
@@ -1678,7 +1752,7 @@ char *data;
     }
 
   debug1("going to read from window fd %d\n", ev->fd);
-  if ((len = read(ev->fd, buf, size)) <= 0)
+  if ((len = read(ev->fd, buf, size)) < 0)
     {
       if (errno == EINTR || errno == EAGAIN)
 	return;
@@ -1686,7 +1760,13 @@ char *data;
       if (errno == EWOULDBLOCK)
 	return;
 #endif
-      debug2("Window %d: read error (errno %d) - killing window\n", p->w_number, len ? errno : 0);
+      debug2("Window %d: read error (errno %d) - killing window\n", p->w_number, errno);
+      WindowDied(p);
+      return;
+    }
+  if (len == 0)
+    {
+      debug1("Window %d: EOF - killing window\n", p->w_number);
       WindowDied(p);
       return;
     }
@@ -1698,9 +1778,9 @@ char *data;
 	{
 	  debug1("PAKET %x\n", buf[0]);
 	  if (buf[0] & TIOCPKT_NOSTOP)
-	    NewAutoFlow(p, 0);
+	    WNewAutoFlow(p, 0);
 	  if (buf[0] & TIOCPKT_DOSTOP)
-	    NewAutoFlow(p, 1);
+	    WNewAutoFlow(p, 1);
 	}
       bp++;
       len--;

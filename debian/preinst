@@ -1,65 +1,58 @@
-#!/bin/sh -e
-
-# ask_user function by Philip Hands <phil@hands.com>
-# ask_user ---  function prompts the user with y/n style prompt
+#!/bin/sh
 #
-# It's behaviour is controlled via the parameters:
-#  1  -  the initial prompt
-#  2  -  default return value (set to 0, 1 or "none")
-#  3  -  the patern match for acceptable Yes responses
-#  4  -  the patern match for acceptable No responses
-#  5  -  the error prompt, displayed when the user fails to provide valid input
+# $Id: preinst,v 1.15 2002/04/11 02:01:21 laz Exp $
 #
-# e.g.  ask_user  "Foo, or Bar [fb] " none '[fF]*' '[bB]*' "try again"
 
-ask_user() {
-  P=${1:-'Should I do this ? [yN] '}
-  D=${2:-1}
-  Y=${3:-'[yY]*'}
-  N=${4:-'[nN]*'}
-  E=${5:-'\nPlease enter either y)es or n)o, followed by <RETURN>\n'}
+set -e
+[ -n "$DEBUG" ] && set -vx
 
-  while :
-  do
-    echo -ne "$P"
-    read response
-    case "$response" in
-      ${Y} ) return 0 ;;
-      ${N} ) return 1 ;;
-      "" ) [ "$D" = 0 -o "$D" = 1 ] && return $D ;;
-    esac
-    echo -e $E
-  done
-}
+action=$1
+version=$2
 
-if [ "$1" = "upgrade" ]
-then
-  if dpkg --compare-versions $2 lt 3.9.5-5
-  then
-    if start-stop-daemon --stop --quiet --signal 0 --exec /usr/bin/screen
-    then
-      cat >&2 << EOF
+# gimme da debconf
+set +vx
+. /usr/share/debconf/confmodule
+[ -n "$DEBUG" ] && set -vx
 
-This version of "screen" is incompatible with all versions before 3.9.5-5;
-however, you have version $2 installed and some instances of it
-are running in this moment.
+if [ "$action" = "upgrade" ] ; then
+    # use procps' pgrep if possible
+    if which pgrep > /dev/null ; then
+        PGREP="pgrep -x "
+    else
+        # if not, manufacture our own pgrep using awk and ps... sucko
+        PGREP=screenmaint_pgrep
 
-If you continue with the installation, you will not be able to access
-your previous screen sessions
+        screenmaint_pgrep() {
+            ps auxww | awk "{
+                if (match(\$11,\"screen\")!=0 || match(\$11,\"SCREEN\")!=0) {
+                    print \$2;
+                }
+            }"
+        }
 
-EOF
-      if ask_user "Proceed anyway? [yN] " 1
-      then
-        :
-      else
-        cat >&2 << EOF
-
-Please exit from all the "screen" sessions before attempting
-to upgrade again
-
-EOF
-        exit 1
-      fi
     fi
-  fi
+
+    if dpkg --compare-versions "$version" lt "3.9.5-5" ; then
+        if [ ! -z "$($PGREP screen)" ] ; then
+            # if they're running an old version and there are screen processes
+            # running, then prompt
+
+            # reset these no matter what
+            db_reset screen/old_upgrade_prompt || true
+            db_fset screen/old_upgrade_prompt seen false || true
+
+            # then prompt
+            db_input high screen/old_upgrade_prompt || true
+            db_go || true
+
+            # and find out what they said
+            db_get screen/old_upgrade_prompt || true
+            if [ "$RET" = "false" ]; then
+                exit 1
+            fi
+        fi
+    fi
 fi
+
+#DEBHELPER#
+

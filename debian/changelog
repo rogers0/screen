@@ -1,3 +1,169 @@
+screen (3.9.11-5woody1) stable-security; urgency=high
+
+  * Non-maintainer upload by the Security Team
+  * Applied patch by Timo Sirainen <tss@iki.fi> to fix buffer integer
+    overflow (CAN-2003-0972)
+
+ -- Martin Schulze <joey@infodrom.org>  Sun, 21 Dec 2003 19:46:24 +0100
+
+screen (3.9.11-5) unstable; urgency=high
+
+  * remove (%n.%t) from hardstatus string                      (closes: #137095)
+  * bump up max window title length to 60                      (closes: #135391)
+  * debconf templates:
+    * add french translation (thanks Philippe Batailler)       (closes: #141676)
+    * add russian translation (thanks Ilgiz Kalmetev)          (closes: #137682)
+    * split translations out into their own files
+  * fix debconf prompt when upgrading from versions < 3.9.5-5  (closes: #137743)
+  * edit the long description a bit
+  * update README.Debian as to current state of screen-bce
+
+ -- Adam Lazur <zal@debian.org>  Wed, 10 Apr 2002 22:01:46 -0400
+
+screen (3.9.11-4) unstable; urgency=low
+
+  * patches to fix Japanese support:
+        screen-3.9.11.hcGR-patch
+        screen-3.9.11.paste-patch
+        screen-3.9.11.encoding-patch                           (closes: #136740)
+  * add spanish debconf template translation                   (closes: #136447)
+
+ -- Adam Lazur <zal@debian.org>  Thu,  7 Mar 2002 09:13:56 -0500
+
+screen (3.9.11-3) unstable; urgency=high
+
+  * Security Fix: override autoconf detected default group and mode on ptys
+                  as it is not autodetected properly for buildd's that run
+                  as cronjobs                                  (closes: #135018)
+  * add note to README.Debian about setting xterm titlebar/icon and how to
+    override the default
+  * add note to README.Debian about mutt padding lines with whitespace (bce)
+  * add patchlevel.h (the real upstream changelog) to /usr/share/doc/screen
+
+ -- Adam Lazur <zal@debian.org>  Thu, 21 Feb 2002 17:25:12 -0500
+
+screen (3.9.11-2) unstable; urgency=high
+
+  * Apply patch to fix non utf8 locales                        (closes: #134200)
+  * fix problems with screenrc changes that affected konsole   (closes: #134198)
+    * remove line that was borking TERM=xterm
+    * re-add line which mods xterm initialization string
+  * Add screen-bce terminal type to screeninfo.src and add a note about it in
+    README.Debian
+
+ -- Adam Lazur <zal@debian.org>  Sat, 16 Feb 2002 13:49:38 -0500
+
+screen (3.9.11-1) unstable; urgency=low
+
+  * New upstream release
+    * New commands: windowlist (bound to C-a "), source, eval, ignorecase,
+                    deflogin, setsid
+    * Support for double-width utf-8 characters.
+    * bugfixes and other features, see /usr/share/doc/screen/NEWS.gz for more
+      info
+
+  * Removed patches:
+    * pam support, hurd fix, getpt fix: accepted upstream
+    * md5 password support: obsoleted by pam support
+    * bufferfile default change: screen is tmpfile safe
+
+  * Updates to /etc/screenrc:
+    * Bump up defscrollback from 100 (compiled in default) to 1024
+      (thanks to overfiend for pointing this out)
+    * Add examples of running programs at screen startup
+
+  * Add german template translation                            (closes: #126180)
+  * Now (ab)use upstream's makefile for most of the file installation
+  * compile with --enable-rxvt_osc to allow rxvt icon setting from within
+    screen                                                     (closes: #133333)
+
+ -- Adam Lazur <zal@debian.org>  Fri, 15 Feb 2002 10:18:07 -0500
+
+screen (3.9.10-1) unstable; urgency=low
+
+  * New Maintainer
+  * migrate package build to debhelper
+  * debconfify prompt when upgrading from screen < 3.9.5-5
+
+ -- Adam Lazur <zal@debian.org>  Sat, 15 Dec 2001 21:20:58 -0500
+
+screen (3.9.10-0.1) unstable; urgency=high
+
+  * NMU.
+  * New upstream version with security fix. (Closes: #111339)
+    (Thanks Adam Lazur <laz@clustermonkey.org>)
+
+ -- Eric Gillespie, Jr. <epg@debian.org>  Wed, 12 Sep 2001 22:11:23 -0500
+
+screen (3.9.9-2) unstable; urgency=low
+
+  * New Standards-Version (3.5.4)
+  * Get rid of suidmanager, install screen setgid  (closes: Bug#96858)
+
+ -- Juan Cespedes <cespedes@debian.org>  Tue,  5 Jun 2001 23:50:42 +0200
+
+screen (3.9.9-1) unstable; urgency=low
+
+  * New upstream version
+  * Really fix Bug#80337 (thanks to Michael Schroeder <mls@suse.de>)
+
+ -- Juan Cespedes <cespedes@debian.org>  Sat,  2 Jun 2001 19:40:37 +0200
+
+screen (3.9.8-6.1) unstable; urgency=HIGH
+
+  * Non-maintainer upload.
+  * Disable -DDEBUG which is a massive security hole, closes: #98839.
+
+ -- James Troup <james@nocrew.org>  Sun, 27 May 2001 01:09:31 +0100
+
+screen (3.9.8-6) unstable; urgency=low
+
+  * Updated copyright file
+  * Applied patch from Ryan King <rking@caseta.com> to be
+    able to work correctly on many-lined terminals   (closes: Bug#80337)
+
+ -- Juan Cespedes <cespedes@debian.org>  Tue, 22 May 2001 00:23:00 +0200
+
+screen (3.9.8-5) unstable; urgency=low
+
+  * Fixed small typo in info file
+  * Clean up small lintian bugs
+  * Make commands related to bufferfile (readbuf, writebuf)
+    work again (Oops)          (closes: Bug#45359, Bug#69275, Bug#83759)
+
+ -- Juan Cespedes <cespedes@debian.org>  Sat, 19 May 2001 15:12:11 +0200
+
+screen (3.9.8-4) unstable; urgency=low
+
+  * Make /etc/pam.d/screen be a conffile             (closes: Bug#58696)
+  * Remove option "autofixterm" from manual page     (closes: Bug#97019)
+  * Applied patch to make screen work OK on Hurd     (closes: Bug#97343)
+
+ -- Juan Cespedes <cespedes@debian.org>  Mon, 14 May 2001 03:00:34 +0200
+
+screen (3.9.8-3) unstable; urgency=low
+
+  * Fixed small bug which caused `aterm' to display
+    everything underlined                            (closes: Bug#97327)
+
+ -- Juan Cespedes <cespedes@debian.org>  Sun, 13 May 2001 15:39:19 +0200
+
+screen (3.9.8-2) unstable; urgency=low
+
+  * New version uploaded to unstable instead of "stable unstable" (sorry)
+
+ -- Juan Cespedes <cespedes@debian.org>  Tue,  8 May 2001 22:28:35 +0200
+
+screen (3.9.8-1) stable unstable; urgency=medium
+
+  * New upstream version                  (closes: Bug#74310, Bug#89215)
+  * New Standards-Version (3.5.3)
+  * Applied patch to build cleanly on ia64              (closes: #91964)
+  * Fixed small bug regarding creation of sockets dir
+    when running as root
+
+ -- Juan Cespedes <cespedes@debian.org>  Mon,  7 May 2001 23:26:40 +0200
+
 screen (3.9.5-9) stable unstable; urgency=HIGH
 
   * Fixed security bug (group utmp compromise)
@@ -220,7 +386,3 @@ screen (3.7.2-1) unstable; urgency=low
   * converted to new source format
   
  -- joost witteveen <joost@rulcmc.leidenuniv.nl>  Sat, 4 Jan 1997 11:40:40 +0100
-
-Local variables:
-mode: debian-changelog
-End:

@@ -1,3 +1,83 @@
+                  -------------------------------
+                   What's new in screen-3.9.11 ?
+                  -------------------------------
+
+* windowlist, bound to ^A"
+
+* support for other encodings, e.g. big5, koi8r, cp1251
+    new commands 'encoding', 'defencoding'
+    'register', 'readreg', 'readbuf', 'writebuf' now understand
+    an extra encoding parameter
+
+* support for double utf-8 characters
+
+* lots of new string escapes and extensions to existsing ones:
+    %LD, %LM, %Lw, %W, %-w, %+w, %H, %f, %F, %l, %=, %<, %>
+
+* new commands: 'source', 'eval', 'deflog', 'ignorecase', 'setsid'
+
+* command key classes: 'bind', 'command' and 'help' understand
+  a '-c <class>' parameter. See the man page for examples
+
+* new login state: always - don't remove slot even if screen gets
+  detached
+
+* 256 color support (experimental)
+
+* configurable time format string (for ^At)
+
+* config option to use localized month/week names
+
+* new option '-h' for hardcopy: also dump the scrollback buffer
+
+
+                  ------------------------------
+                   What's new in screen-3.9.9 ?
+                  ------------------------------
+
+* new '-X' option to send commands to screen sessions.
+
+    screen -X echo Hi...
+
+* added a possibility to change the attributes/color in caption or
+  hardstatus strings:
+
+    caption always "%3n %{r}%t%{-}%? @%u%?%? %{g}[%h]%{-}%?"
+
+* new 'dinfo' command to show what screen thinks about your terminal.
+
+* new 'attrcolor' command to map attributes to color codes:
+    attrcolor u "-u b"
+    attrcolor b "r"
+
+* support for UTF-8: new commands 'utf8', 'defutf8' to change the
+  encoding of a window, plus a '-U' option to tell screen that
+  your terminal sends/receives UTF-8 codes.
+
+* support for 16 colors.
+
+
+                  ------------------------------
+                   What's new in screen-3.9.8 ?
+                  ------------------------------
+
+* new command 'resize' to resize regions (aka split windows), try:
+    bind = resize =
+    bind + resize +1
+    bind - resize -1
+    bind _ resize max
+
+* new argument for 'focus': up, down, top, bottom
+
+* X11 mouse tracking support
+
+* Support for the "new color model", aka "background color erase":
+    the bce/defbce commands change the color model of the current
+    window/new windows.
+
+* experimental rxvt OSC sequence support (used to set a background
+  picture or to change the default colors), disabled by default.
+
 
                   ----------------------------
                    What's new in screen-3.9 ?

@@ -1,62 +1,92 @@
 #!/usr/bin/make -f
 #
 # Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
-# Copyright (C) 1997-2000 Juan Cespedes <cespedes@debian.org>
+# Copyright (C) 1997-2001 Juan Cespedes <cespedes@debian.org>
+# Copyright (C) 2001 Adam Lazur <zal@debian.org>
 
-build:		configure
-		./configure --prefix=/usr --with-libpam
-		$(MAKE) CFLAGS='-O2 -g -Wall -DUSE_PAM'
-		touch build
+# Uncomment me to turn on debugging
+#export DH_VERBOSE=1
 
-configure:	configure.in
-		autoconf
+# the debhelper compatability version
+export DH_COMPAT=3
 
-binary:         binary-indep binary-arch
+package = screen
 
-binary-indep:
+ROOT = $$PWD/debian/$(package)
 
-binary-arch:    build
-		@test 0 = `id -u` || { echo "Error: not super-user"; exit 1; }
-		rm -rf debian/tmp
-		install -d -m 755 debian/tmp/DEBIAN debian/tmp/etc/pam.d
-		install -d -m 755 debian/tmp/usr/share/info debian/tmp/usr/bin
-		install -d -m 755 debian/tmp/usr/share/man/man1
-		install -d -m 755 debian/tmp/usr/share/doc/screen
-		install -d -m 755 debian/tmp/var/run/screen
-		cp -a etc/etcscreenrc debian/tmp/etc/screenrc
-		install -s -m 4755 screen debian/tmp/usr/bin/screen
-		cp -a doc/screen.info* debian/tmp/usr/share/info
-		cp -a doc/screen.1 debian/tmp/usr/share/man/man1/screen.1
-		cp -a debian/pam.d-screen debian/tmp/etc/pam.d/screen
-		cp -a debian/changelog debian/tmp/usr/share/doc/screen/changelog.Debian
-		cp -a ChangeLog debian/tmp/usr/share/doc/screen/changelog
-		cp -a README NEWS* TODO doc/FAQ doc/*.ps debian/tmp/usr/share/doc/screen
-		rm -f debian/tmp/usr/share/info/screen.info*.gz
-		gzip -9f debian/tmp/usr/share/info/screen.info* debian/tmp/usr/share/doc/screen/*
-		gzip -9f debian/tmp/usr/share/man/man1/*
-		install -d -m 755 debian/tmp/usr/share/doc/screen/terminfo
-		cp -a terminfo/* debian/tmp/usr/share/doc/screen/terminfo
-		gzip -9f debian/tmp/usr/share/doc/screen/terminfo/*
-		cp -a debian/README.terminfo debian/tmp/usr/share/doc/screen/terminfo/README.Debian
-		cp -a debian/copyright debian/tmp/usr/share/doc/screen/copyright
-		cp -a debian/conffiles debian/tmp/DEBIAN/conffiles
-		install -m 755 debian/preinst debian/tmp/DEBIAN/preinst
-		install -m 755 debian/postinst debian/tmp/DEBIAN/postinst
-		install -m 755 debian/prerm debian/tmp/DEBIAN/prerm
-		install -m 755 debian/postrm debian/tmp/DEBIAN/postrm
+# statically define this... sucko
+TTYGROUP = 5
 
-		dpkg-shlibdeps screen
-		dpkg-gencontrol
-		chown -R root.root debian/tmp
-		chmod -R u=rwX,go=rX debian/tmp
-		dpkg --build debian/tmp ..
+configure-stamp:
+	dh_testdir
+	./configure --prefix=/usr \
+		    --infodir='$$(prefix)/share/info' \
+		    --mandir='$$(prefix)/share/man' \
+		    --with-socket-dir=/var/run/screen \
+		    --enable-pam \
+		    --enable-rxvt_osc \
+		    --with-sys-screenrc=/etc/screenrc
+#		    --enable-colors256
+	touch $@
+
+build: build-stamp
+build-stamp: configure-stamp
+	dh_testdir
+	$(MAKE) CFLAGS='-O2 -g -Wall -DUSE_PAM -DPTYMODE=0620 -DPTYGROUP=$(TTYGROUP)'
+	touch $@
 
 clean:
-		rm -f build debian/files debian/substvars
-		-$(MAKE) realclean
-		rm -f config.log
-		rm -f kmapdef.c
-		rm -f osdef[012]*
-		rm -rf debian/tmp
+	dh_testdir
+	dh_testroot
+	rm -f configure-stamp build-stamp
+	# clean up after the build process
+	-$(MAKE) clean
+	rm -rf config.status
+	dh_clean
 
-.PHONY: binary binary-arch binary-indep clean
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	$(MAKE) prefix=$(ROOT)/usr SCREENENCODINGS='$$(prefix)/share/screen/utf8encodings' install
+	# install the debian screenrc to etc
+	install -m 644 debian/screenrc $(ROOT)/etc
+	# hack around the fact that the install target makes screen a symlink
+	# to screen-$(VERSION)
+	rm -f $(ROOT)/usr/bin/screen
+	mv -f $(ROOT)/usr/bin/screen* $(ROOT)/usr/bin/screen
+	# make it setgid utmp
+	chmod 2755 $(ROOT)/usr/bin/screen
+	chown root:utmp $(ROOT)/usr/bin/screen
+	chmod 775 $(ROOT)/var/run/screen
+	chown root:utmp $(ROOT)/var/run/screen
+	# lintian overrides for the setgid bin etc
+	install -m 755 -d $(ROOT)/usr/share/lintian/overrides
+	install -m 644 debian/screen.lintian.overrides $(ROOT)/usr/share/lintian/overrides/screen
+	# cheat a little here and copy the README.terminfo into the terminfo
+	# dir for dh_installdocs to pick up later
+	install -m 644 debian/README.terminfo terminfo
+
+binary: binary-arch
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installdebconf
+	dh_installdocs
+	dh_installexamples
+	dh_installpam
+	dh_installman || true
+	dh_installinfo
+	dh_installchangelogs -k patchlevel.h
+	dh_strip
+	dh_compress
+	dh_fixperms -X/usr/bin/screen -X/var/run/screen
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+.PHONY: build clean binary-indep binary-arch binary install

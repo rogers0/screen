@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -28,7 +28,6 @@ RCS_ID("$Id: teln.c,v 1.6 1994/05/31 12:32:15 mlschroe Exp $ FAU")
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <arpa/inet.h>
 
 #include "config.h"
 
@@ -145,11 +144,16 @@ struct win *p;
 	  Msg(0, "unknown host: %s", *args);
 	  return -1;
         }
+      if (hp->h_length != sizeof(p->w_telsa.sin_addr.s_addr) || hp->h_addrtype != AF_INET)
+	{
+	  Msg(0, "Bad address type for %s", hp->h_name);
+	  return -1;
+	}
       bcopy((char *)hp->h_addr,(char *)&p->w_telsa.sin_addr.s_addr, hp->h_length);
       p->w_telsa.sin_family = hp->h_addrtype;
     }
   p->w_telsa.sin_port = htons(port);
-    if (port != TEL_DEFPORT)
+  if (port != TEL_DEFPORT)
     sprintf(buf, "Trying %s %d...", inet_ntoa(p->w_telsa.sin_addr), port);
   else
     sprintf(buf, "Trying %s...", inet_ntoa(p->w_telsa.sin_addr));
@@ -215,7 +219,7 @@ int *lenp;
 	  fore->w_telbuf[fore->w_telbufl++] = '\n';
 	  tb = fore->w_telbuf;
 	  tl = fore->w_telbufl;
-	  Process(&tb, &tl);
+	  LayProcess(&tb, &tl);
 	  fore->w_telbufl = 0;
 	  continue;
 	}
@@ -476,7 +480,8 @@ struct win *p;
       if (p->w_telsubidx != 2 || p->w_telsubbuf[1] != 1)
 	return;
       l = strlen(screenterm);
-      ASSERT(l < 20);
+      if (l >= 20)
+	break;
       sprintf(trepl, "%c%c%c%c%s%c%c", TC_IAC, TC_SB, TO_TTYPE, 0, screenterm, TC_IAC, TC_SE);
       TelReply(p, trepl, l + 6);
       break;

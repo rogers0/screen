@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -75,7 +75,7 @@ struct viewport
 struct display
 {
   struct display *d_next;	/* linked list */
-  struct user *d_user;		/* user who owns that display */
+  struct acluser *d_user;		/* user who owns that display */
   struct canvas *d_cvlist;	/* the canvases of this display */
   struct canvas *d_forecv;	/* current input focus */
   void (*d_processinput) __P((char *, int));
@@ -93,11 +93,15 @@ struct display
   int	d_top, d_bot;		/* scrollregion start/end */
   int	d_x, d_y;		/* cursor position */
   struct mchar d_rend;		/* current rendition */
+  int   d_col16change;		/* the 16col bits changed in attr */
   char	d_atyp;			/* current attribute types */
-#ifdef KANJI
+#ifdef DW_CHARS
   int   d_mbcs;			/* saved char for multibytes charset */
-  int   d_kanji;		/* what kanji type the display is */
-  int   d_lp_mbcs;		/* mbcs part of lp_missing */
+#endif
+#ifdef ENCODINGS
+  int   d_encoding;		/* what encoding type the display is */
+  int   d_decodestate;		/* state of our decoder */
+  int   d_realfont;		/* real font of terminal */
 #endif
   int	d_insert;		/* insert mode flag */
   int	d_keypad;		/* application keypad flag */
@@ -107,6 +111,10 @@ struct display
   int   d_has_hstatus;		/* display has hardstatus line */
   int	d_hstatus;		/* hardstatus used */
   int	d_lp_missing;		/* last character on bot line missing */
+  int   d_mouse;		/* mouse mode */
+#ifdef RXVT_OSC
+  int   d_xtermosc[4];		/* osc used */
+#endif
   struct mchar d_lpchar;	/* missing char */
   time_t d_status_time;		/* time of status display */
   int   d_status;		/* is status displayed? */
@@ -116,10 +124,12 @@ struct display
   int   d_status_buflen;	/* last message buffer len */
   int	d_status_lastx;		/* position of the cursor */
   int	d_status_lasty;		/*   before status was displayed */
-  int	d_status_delayed;	/* status not displayed yet */
+  int   d_status_obuflen;	/* saved obuflen */ 
+  int   d_status_obuffree;	/* saved obuffree */ 
   struct event d_statusev;	/* timeout event */
   struct event d_hstatusev;	/* hstatus changed event */
-  int	d_ESCseen;		/* Was the last char an ESC (^a) */
+  int	d_kaablamm;		/* display kaablamm msg */
+  struct action *d_ESCseen;	/* Was the last char an ESC (^a) */
   int	d_userpid;		/* pid of attacher */
   char	d_usertty[MAXPATHLEN];	/* tty we are attached to */
   int	d_userfd;		/* fd of the tty */
@@ -128,6 +138,7 @@ struct display
   struct mode d_OldMode;	/* tty mode when screen was started */
   struct mode d_NewMode;	/* New tty mode */
   int	d_flow;			/* tty's flow control on/off flag*/
+  int   d_intrc;		/* current intr when flow is on */
   char *d_obuf;			/* output buffer */
   int   d_obuflen;		/* len of buffer */
   int	d_obufmax;		/* len where we are blocking the pty */
@@ -149,6 +160,7 @@ struct display
   union	tcu d_tcs[T_N];		/* terminal capabilities */
   char *d_attrtab[NATTR];	/* attrib emulation table */
   char  d_attrtyp[NATTR];	/* attrib group table */
+  int   d_hascolor;		/* do we support color */
   short	d_dospeed;		/* baudrate of tty */
 #ifdef FONT
   char	d_c0_tab[256];		/* conversion for C0 */
@@ -197,10 +209,12 @@ extern struct display TheDisplay;
 #define D_x		DISPLAY(d_x)
 #define D_y		DISPLAY(d_y)
 #define D_rend		DISPLAY(d_rend)
+#define D_col16change	DISPLAY(d_col16change)
 #define D_atyp		DISPLAY(d_atyp)
 #define D_mbcs		DISPLAY(d_mbcs)
-#define D_kanji		DISPLAY(d_kanji)
-#define D_lp_mbcs	DISPLAY(d_lp_mbcs)
+#define D_encoding	DISPLAY(d_encoding)
+#define D_decodestate	DISPLAY(d_decodestate)
+#define D_realfont	DISPLAY(d_realfont)
 #define D_insert	DISPLAY(d_insert)
 #define D_keypad	DISPLAY(d_keypad)
 #define D_cursorkeys	DISPLAY(d_cursorkeys)
@@ -209,6 +223,8 @@ extern struct display TheDisplay;
 #define D_has_hstatus	DISPLAY(d_has_hstatus)
 #define D_hstatus	DISPLAY(d_hstatus)
 #define D_lp_missing	DISPLAY(d_lp_missing)
+#define D_mouse		DISPLAY(d_mouse)
+#define D_xtermosc	DISPLAY(d_xtermosc)
 #define D_lpchar	DISPLAY(d_lpchar)
 #define D_status	DISPLAY(d_status)
 #define D_status_time	DISPLAY(d_status_time)
@@ -218,9 +234,11 @@ extern struct display TheDisplay;
 #define D_status_buflen	DISPLAY(d_status_buflen)
 #define D_status_lastx	DISPLAY(d_status_lastx)
 #define D_status_lasty	DISPLAY(d_status_lasty)
-#define D_status_delayed	DISPLAY(d_status_delayed)
+#define D_status_obuflen	DISPLAY(d_status_obuflen)
+#define D_status_obuffree	DISPLAY(d_status_obuffree)
 #define D_statusev	DISPLAY(d_statusev)
 #define D_hstatusev	DISPLAY(d_hstatusev)
+#define D_kaablamm	DISPLAY(d_kaablamm)
 #define D_ESCseen	DISPLAY(d_ESCseen)
 #define D_userpid	DISPLAY(d_userpid)
 #define D_usertty	DISPLAY(d_usertty)
@@ -228,6 +246,7 @@ extern struct display TheDisplay;
 #define D_OldMode	DISPLAY(d_OldMode)
 #define D_NewMode	DISPLAY(d_NewMode)
 #define D_flow		DISPLAY(d_flow)
+#define D_intr		DISPLAY(d_intr)
 #define D_obuf		DISPLAY(d_obuf)
 #define D_obuflen	DISPLAY(d_obuflen)
 #define D_obufmax	DISPLAY(d_obufmax)
@@ -244,6 +263,7 @@ extern struct display TheDisplay;
 #define D_tcs		DISPLAY(d_tcs)
 #define D_attrtab	DISPLAY(d_attrtab)
 #define D_attrtyp	DISPLAY(d_attrtyp)
+#define D_hascolor	DISPLAY(d_hascolor)
 #define D_dospeed	DISPLAY(d_dospeed)
 #define D_c0_tab	DISPLAY(d_c0_tab)
 #define D_xtable	DISPLAY(d_xtable)
@@ -273,7 +293,7 @@ extern struct display TheDisplay;
 #define AddChar(c)		\
 do				\
   {				\
-    if (--D_obuffree == 0)	\
+    if (--D_obuffree <= 0)	\
       Resize_obuf();		\
     *D_obufp++ = (c);		\
   }				\
