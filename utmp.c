@@ -21,10 +21,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: utmp.c,v 1.7 1994/05/31 12:33:21 mlschroe Exp $ FAU")
-
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -360,7 +356,7 @@ RemoveLoginSlot()
       char *tty;
       debug("couln't zap slot -> do mesg n\n");
       D_loginttymode = 0;
-      if ((tty = ttyname(D_userfd)) && stat(tty, &stb) == 0 && stb.st_uid == real_uid && ((int)stb.st_mode & 0777) != 0666)
+      if ((tty = ttyname(D_userfd)) && stat(tty, &stb) == 0 && (int)stb.st_uid == real_uid && ((int)stb.st_mode & 0777) != 0666)
 	{
 	  D_loginttymode = (int)stb.st_mode & 0777;
 	  chmod(D_usertty, stb.st_mode & 0600);
@@ -405,14 +401,14 @@ int
 SetUtmp(wi)
 struct win *wi;
 {
-  register char *p;
   register slot_t slot;
   struct utmp u;
   int saved_ut;
 #ifdef UTHOST
+  char *p;
   char host[sizeof(D_loginhost) + 15];
 #else
-  int host = 0;
+  char *host = 0;
 #endif /* UTHOST */
 
   wi->w_slot = (slot_t)0;
@@ -832,7 +828,7 @@ getttyent()
 char *
 getlogin()
 {
-  char *tty;
+  char *tty = NULL;
 #ifdef utmp
 # undef utmp
 #endif

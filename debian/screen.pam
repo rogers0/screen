@@ -1,6 +1,0 @@
-# $Id: screen.pam,v 1.1 2002/02/06 19:06:42 laz Exp $
-#
-# This is the PAM configuration file for screen(1)
-#
-
-auth	required	pam_unix.so

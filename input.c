@@ -21,9 +21,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: input.c,v 1.2 1994/05/31 12:32:08 mlschroe Exp $ FAU")
-
 #include <sys/types.h>
 #include "config.h"
 #include "screen.h"

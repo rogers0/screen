@@ -1,4 +1,4 @@
-$Id: README.Debian,v 1.5 2002/03/20 22:19:41 laz Exp $
+$Id: README.Debian,v 1.9 2003/10/08 11:39:03 zal Exp $
 
 Screen Information
 ------------------
@@ -16,6 +16,18 @@ Debian Modifications
 Debian Screen Q&A
 -----------------
 
+Q: shift+page up in xterm/gnome-terminal/konsole used to let me scroll back a
+   bit, but now it doesn't. How can I make it work with scrollback?
+
+A: It doesn't scrollback consistently because screen (the program) displays in
+   xterm's alternate screen buffer.
+
+   To have screen use xterm's normal screen buffer (which includes scrollback),
+   you can add the following to your .screenrc:
+
+   termcapinfo xterm|xterms|xs|rxvt ti@:te@
+
+
 Q: Screen sets my xterm titlebar. I don't like this, how do I make it stop?
 
 A: The titlebar setting is set in the /etc/screenrc by telling screen that some
@@ -29,7 +41,7 @@ A: The titlebar setting is set in the /etc/screenrc by telling screen that some
    the /etc/screenrc or you can override it in your personal screenrc by adding
    the following line:
 
-   termcapinfo xterm*|rxvt*|kterm*|Eterm* hs@
+   hardstatus alwaysmessage
 
 
 Q: Why do I get #!$@#$@!% trailing spaces when I cut and paste from mutt
@@ -38,8 +50,8 @@ Q: Why does the statusbar in my irc client extend to the end of the screen
    in xterm but not in screen?
 
 A: This has to do with handling of the bce terminal attribute, or lack
-   thereof by default in screen. You can enable bce on a per-user by adding the
-   following to your .screenrc:
+   thereof by default in screen. You can enable bce on a per-user basis by
+   adding the following to your .screenrc:
 
    defbce on
    term screen-bce

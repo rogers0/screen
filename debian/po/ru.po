@@ -1,0 +1,45 @@
+#
+#    Translators, if you are not familiar with the PO format, gettext
+#    documentation is worth reading, especially sections dedicated to
+#    this format, e.g. by running:
+#         info -n '(gettext)PO Files'
+#         info -n '(gettext)Header Entry'
+#
+#    Some information specific to po-debconf are available at
+#            /usr/share/doc/po-debconf/README-trans
+#         or http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+#    Developers do not need to manually edit POT or PO files.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2003-07-23 07:08+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=KOI8-R\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Description
+#: ../templates:4
+msgid "You may lose currently running screen sessions. Continue the install?"
+msgstr ""
+"Сейчас вы можете потерять запущенные сессии screen. Продолжить установку?"
+
+#. Description
+#: ../templates:4
+msgid ""
+"This version of screen is incompatible with all versions before 3.9.5-5."
+msgstr "Эта версия screen несовместима со всеми версиями до 3.9.5-5."
+
+#. Description
+#: ../templates:4
+msgid ""
+"If you continue with the installation, you will not be able to access "
+"currently running screen sessions."
+msgstr ""
+"Если вы продолжите установку, то вы лишитесь запущенных сейчас сессий screen."

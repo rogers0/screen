@@ -19,4 +19,7 @@ if [ -d /var/run/screens ] ; then
     rm -rf /var/run/screens
 fi
 
+# add screen to /etc/shells
+/usr/sbin/add-shell /usr/bin/screen || true
+
 #DEBHELPER#

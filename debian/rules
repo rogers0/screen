@@ -12,7 +12,7 @@ export DH_COMPAT=3
 
 package = screen
 
-ROOT = $$PWD/debian/$(package)
+ROOT = $(shell pwd)/debian/$(package)
 
 # statically define this... sucko
 TTYGROUP = 5
@@ -24,6 +24,8 @@ configure-stamp:
 		    --mandir='$$(prefix)/share/man' \
 		    --with-socket-dir=/var/run/screen \
 		    --enable-pam \
+		    --with-pty-mode=0620 \
+		    --with-pty-group=${TTYGROUP} \
 		    --enable-rxvt_osc \
 		    --with-sys-screenrc=/etc/screenrc
 #		    --enable-colors256
@@ -32,7 +34,11 @@ configure-stamp:
 build: build-stamp
 build-stamp: configure-stamp
 	dh_testdir
-	$(MAKE) CFLAGS='-O2 -g -Wall -DUSE_PAM -DPTYMODE=0620 -DPTYGROUP=$(TTYGROUP)'
+	$(MAKE) CFLAGS+='-O2 -g -Wall'
+	for file in doc/screen.texinfo doc/screen.1 ; do \
+	    sed -f debian/mod_docs.sed $${file} > $${file}.new && \
+	    mv $${file}.new $${file} ; \
+	done
 	touch $@
 
 clean:
@@ -49,7 +55,9 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	$(MAKE) prefix=$(ROOT)/usr SCREENENCODINGS='$$(prefix)/share/screen/utf8encodings' install
+	# can't call the normal install target b/c it installs the info files
+	# and other crud
+	$(MAKE) prefix=$(ROOT)/usr SCREENENCODINGS='$$(prefix)/share/screen/utf8encodings' installdirs install_bin
 	# install the debian screenrc to etc
 	install -m 644 debian/screenrc $(ROOT)/etc
 	# hack around the fact that the install target makes screen a symlink
@@ -57,10 +65,10 @@ install: build
 	rm -f $(ROOT)/usr/bin/screen
 	mv -f $(ROOT)/usr/bin/screen* $(ROOT)/usr/bin/screen
 	# make it setgid utmp
-	chmod 2755 $(ROOT)/usr/bin/screen
 	chown root:utmp $(ROOT)/usr/bin/screen
-	chmod 775 $(ROOT)/var/run/screen
+	chmod 2755 $(ROOT)/usr/bin/screen
 	chown root:utmp $(ROOT)/var/run/screen
+	chmod 775 $(ROOT)/var/run/screen
 	# lintian overrides for the setgid bin etc
 	install -m 755 -d $(ROOT)/usr/share/lintian/overrides
 	install -m 644 debian/screen.lintian.overrides $(ROOT)/usr/share/lintian/overrides/screen
@@ -76,10 +84,10 @@ binary-arch: build install
 	dh_installdebconf
 	dh_installdocs
 	dh_installexamples
-	dh_installpam
 	dh_installman || true
 	dh_installinfo
 	dh_installchangelogs -k patchlevel.h
+	dh_installinit --no-start --init-script='screen-cleanup' --update-rcd-params='start 70 S .'
 	dh_strip
 	dh_compress
 	dh_fixperms -X/usr/bin/screen -X/var/run/screen

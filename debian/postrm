@@ -13,4 +13,7 @@ esac
 
 rm -rf /var/run/screen
 
+# remove from /etc/shells
+/usr/sbin/remove-shell /usr/bin/screen || true
+
 #DEBHELPER#

@@ -24,7 +24,6 @@
  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
  *
  ****************************************************************
- * $Id: bd-tsi.c,v 1.1 1995/09/06 15:46:36 jnweiger Exp jnweiger $
  */
 
 #include "config.h"
@@ -281,13 +280,17 @@ struct key2rc *tab;
   if (tab[i].key != -1 && tab[i].nr != RC_ILLEGAL)
     {
       char *args[3];
+      int argl[2];
       
       struct action act;
       args[0] = tab[i].arg1;
       args[1] = tab[i].arg2;
       args[2] = 0;
+      argl[0] = args[0] ? strlen(args[0]) : 0;
+      argl[1] = args[1] ? strlen(args[1]) : 0;
       act.nr = tab[i].nr;
       act.args = args;
+      act.argl = argl;
       display = bd.bd_dpy;
       DoAction(&act, -2);
     }

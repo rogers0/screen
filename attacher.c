@@ -21,9 +21,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: attacher.c,v 1.8 1994/05/31 12:31:32 mlschroe Exp $ FAU")
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -660,7 +657,7 @@ LockTerminal()
   sigret_t (*sigs[NSIG])__P(SIGPROTOARG);
 
   for (sig = 1; sig < NSIG; sig++)
-    sigs[sig] = signal(sig, SIG_IGN);
+    sigs[sig] = signal(sig, sig == SIGCHLD ? SIG_DFL : SIG_IGN);
   signal(SIGHUP, LockHup);
   printf("\n");
 
@@ -810,7 +807,7 @@ screen_builtin_lck()
   pam_handle_t *pamh = 0;
   int pam_error;
 #else
-  char *pass, mypass[9];
+  char *pass, mypass[16 + 1], salt[3];
 #endif
 
 #ifndef USE_PAM
@@ -819,8 +816,8 @@ screen_builtin_lck()
     {
       if ((pass = getpass("Key:   ")))
         {
-          strncpy(mypass, pass, 8);
-          mypass[8] = 0;
+          strncpy(mypass, pass, sizeof(mypass) - 1);
+          mypass[sizeof(mypass) - 1] = 0;
           if (*mypass == 0)
             return;
           if ((pass = getpass("Again: ")))
@@ -839,7 +836,12 @@ screen_builtin_lck()
           sleep(2);
           return;
         }
-      pass = 0;
+
+      salt[0] = 'A' + (int)(time(0) % 26);
+      salt[1] = 'A' + (int)((time(0) >> 6) % 26);
+      salt[2] = 0;
+      pass = crypt(mypass, salt);
+      pass = ppp->pw_passwd = SaveStr(pass);
     }
 #endif
 
@@ -881,16 +883,8 @@ screen_builtin_lck()
       if (pam_error == PAM_SUCCESS)
 	break;
 #else
-      if (pass)
-        {
-          if (!strncmp(crypt(cp1, pass), pass, strlen(pass)))
-            break;
-        }
-      else
-        {
-          if (!strcmp(cp1, mypass))
-            break;
-        }
+      if (!strncmp(crypt(cp1, pass), pass, strlen(pass)))
+	break;
 #endif
       debug("screen_builtin_lck: NO!!!!!\n");
       bzero(cp1, strlen(cp1));

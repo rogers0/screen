@@ -1,4 +1,4 @@
-# $Id: screenrc,v 1.8 2002/03/20 22:20:21 laz Exp $
+# $Id: screenrc,v 1.15 2003/10/08 11:39:03 zal Exp $
 #
 # /etc/screenrc
 #
@@ -39,26 +39,20 @@ defscrollback 1024
 # ------------------------------------------------------------------------------
 
 # Remove some stupid / dangerous key bindings
-bind '^k'
-#bind 'L'
-bind '^\'
+bind ^k
+#bind L
+bind ^\
 # Make them better
-bind '\\' quit
-bind 'K' kill
-bind 'I' login on
-bind 'O' login off
-bind '}' history
-
-#bind 'R' colon "screen -ln rlogin faui -8^b^b^b"
-bind 'P' colon "^p"
+bind \\ quit
+bind K kill
+bind I login on
+bind O login off
+bind } history
 
 # An example of a "screen scraper" which will launch urlview on the current
 # screen window
 #
 #bind ^B eval "hardcopy_append off" "hardcopy -h $HOME/.screen-urlview" "screen urlview $HOME/.screen-urlview"
-
-# on Debian backspace should send char `\177':
-bindkey -k kb stuff "\177"
 
 # ------------------------------------------------------------------------------
 # TERMINAL SETTINGS
@@ -88,8 +82,11 @@ termcapinfo xterm*|linux*|rxvt*|Eterm* OP
 #  in bug #134198)
 termcapinfo xterm 'is=\E[r\E[m\E[2J\E[H\E[?7h\E[?1;4;6l'
 
-# Do not use xterms alternate window buffer (won't add lines to scrollback bfr)
-#termcapinfo xterm|xterms|xs ti=\E7\E[?47l
+# To get screen to add lines to xterm's scrollback buffer, uncomment the
+# following termcapinfo line which tells xterm to use the normal screen buffer
+# (which has scrollback), not the alternate screen buffer.
+#
+#termcapinfo xterm|xterms|xs|rxvt ti@:te@
 
 # ------------------------------------------------------------------------------
 # STARTUP SCREENS

@@ -1,20 +1,119 @@
-screen (3.9.11-5woody1) stable-security; urgency=high
+screen (4.0.2-3) unstable; urgency=high
 
-  * Non-maintainer upload by the Security Team
-  * Applied patch by Timo Sirainen <tss@iki.fi> to fix buffer integer
-    overflow (CAN-2003-0972)
+  * security: fix hole in stale session cleanup init script which allows
+    arbitrary file deletion on startup. Thanks to Roderick Schertler for
+    pointing this out.                                      (closes: #238139)
 
- -- Martin Schulze <joey@infodrom.org>  Sun, 21 Dec 2003 19:46:24 +0100
+ -- Adam Lazur <zal@debian.org>  Mon, 15 Mar 2004 20:46:35 -0500
+
+screen (4.0.2-2) unstable; urgency=low
+
+  * fix depends on passwd to include epoch                   (closes: #224192)
+
+ -- Adam Lazur <zal@debian.org>  Tue,  6 Jan 2004 23:12:51 -0500
+
+screen (4.0.2-1) unstable; urgency=low
+
+  * ack NMU                                         (closes: #223085, #222420)
+  * add rxvt to scrollback example in README.Debian and /etc/screenrc
+                                                             (closes: #206193)
+  * fix typo in example bind line in screenrc                (closes: #214727)
+  * add Brazilian Portuguese debconf translation (thanks Andre Luis Lopes)
+                                                             (closes: #218809)
+  * add screen to /etc/shells                                (closes: #148715)
+
+ -- Adam Lazur <zal@debian.org>  Sat,  6 Dec 2003 18:25:10 -0500
+
+screen (4.0.2-0.1) unstable; urgency=medium
+
+  * NMU
+  * New upstream release. No upstream changelog found. ansi.c has been changed
+    to fix CAN-2003-0972, a signed integer overflow that allowed for arbitrary 
+    code execution as group utmp (or as root on systems where screen was 
+    installed setuid root). (Addresses #222385 for sid)
+  * [debian/rules] Changed the order of chmod/chown of the screen binary and
+    the run directory to chown, chmod as chown no longer preserves setuid and
+    setgid bits as of coreutils 5.0.1. (Closes: #222420)
+
+ -- J.H.M. Dassen (Ray) <jdassen@debian.org>  Sat,  6 Dec 2003 18:43:11 +0100
+
+screen (4.0.1-3) unstable; urgency=low
+
+  * fix autoconf varargs detection (using vsprintf) on alpha, which leads to
+    a binary that segfaults                                  (closes: #213842)
+
+ -- Adam Lazur <zal@debian.org>  Thu,  2 Oct 2003 23:14:39 -0400
+
+screen (4.0.1-2) unstable; urgency=low
+
+  * build-depend on libncursesw5 to get autoconf to pick it up... doh
+
+ -- Adam Lazur <zal@debian.org>  Tue, 30 Sep 2003 23:40:11 -0400
+
+screen (4.0.1-1) unstable; urgency=low
+
+  * New Upstream Release                                     (closes: #210280)
+    * rewritten command parser
+    * zmodem support (catch & passthrough)
+    * new screenblanker
+
+  * remove bindkey -kb from system screenrc as advised by upstream
+                                                             (closes: #187302)
+  * link against libncursesw                                 (closes: #211511)
+  * fix Hurd build problem                                   (closes: #201909)
+  * bump up debhelper versioned dependency                   (closes: #197432)
+  * switch to gettext-based debconf templates                (closes: #202549)
+
+ -- Adam Lazur <zal@debian.org>  Tue, 30 Sep 2003 23:14:05 -0400
+
+screen (3.9.15-1) unstable; urgency=low
+
+  * New Upstream Release
+    * unicode combining character support
+    * chinese GBK encoding added
+    * backtick screen escape to substitute command output
+
+  * add Danish translation (thanks Morten Brix Pedersen)     (closes: #174745)
+  * add startup script to reap stale screen named pipes      (closes: #164447)
+  * remove extraneous /etc/pam.d/screen as other works fine
+
+ -- Adam Lazur <zal@debian.org>  Mon, 17 Mar 2003 22:56:01 -0500
+
+screen (3.9.13-3) unstable; urgency=low
+
+  * add note about xterm scrollback and screen to README.Debian and update
+    comment in /etc/screenrc.
+
+ -- Adam Lazur <zal@debian.org>  Thu, 17 Oct 2002 16:41:11 -0400
+
+screen (3.9.13-2) unstable; urgency=medium
+
+  * avoid pkg installing docs resulting in /usr/share/info/dir.gz files in
+    the .deb                                                 (closes: #162940)
+
+  * apply 2 patches from upstream:
+    1) Fix console grabbing on linux. The kernel handles TIOCCONS too
+       restrictive, had to implement a workaround.
+    2) Fix WrapChar bug that prevented removal of a bad scroll-region.
+
+ -- Adam Lazur <zal@debian.org>  Thu, 10 Oct 2002 22:53:24 -0400
+
+screen (3.9.13-1) unstable; urgency=low
+
+  * New Upstream Release
+  * correction to a FAQ answer in README.Debian              (closes: #153323)
+
+ -- Adam Lazur <zal@debian.org>  Tue, 17 Sep 2002 09:19:14 -0400
 
 screen (3.9.11-5) unstable; urgency=high
 
-  * remove (%n.%t) from hardstatus string                      (closes: #137095)
-  * bump up max window title length to 60                      (closes: #135391)
+  * remove (%n.%t) from hardstatus string                    (closes: #137095)
+  * bump up max window title length to 60                    (closes: #135391)
   * debconf templates:
-    * add french translation (thanks Philippe Batailler)       (closes: #141676)
-    * add russian translation (thanks Ilgiz Kalmetev)          (closes: #137682)
+    * add french translation (thanks Philippe Batailler)     (closes: #141676)
+    * add russian translation (thanks Ilgiz Kalmetev)        (closes: #137682)
     * split translations out into their own files
-  * fix debconf prompt when upgrading from versions < 3.9.5-5  (closes: #137743)
+  * fix debconf prompt when upgrading from versions < 3.9.5-5 (closes: #137743)
   * edit the long description a bit
   * update README.Debian as to current state of screen-bce
 
@@ -25,8 +124,8 @@ screen (3.9.11-4) unstable; urgency=low
   * patches to fix Japanese support:
         screen-3.9.11.hcGR-patch
         screen-3.9.11.paste-patch
-        screen-3.9.11.encoding-patch                           (closes: #136740)
-  * add spanish debconf template translation                   (closes: #136447)
+        screen-3.9.11.encoding-patch                         (closes: #136740)
+  * add spanish debconf template translation                 (closes: #136447)
 
  -- Adam Lazur <zal@debian.org>  Thu,  7 Mar 2002 09:13:56 -0500
 
@@ -34,7 +133,7 @@ screen (3.9.11-3) unstable; urgency=high
 
   * Security Fix: override autoconf detected default group and mode on ptys
                   as it is not autodetected properly for buildd's that run
-                  as cronjobs                                  (closes: #135018)
+                  as cronjobs                                (closes: #135018)
   * add note to README.Debian about setting xterm titlebar/icon and how to
     override the default
   * add note to README.Debian about mutt padding lines with whitespace (bce)
@@ -44,8 +143,8 @@ screen (3.9.11-3) unstable; urgency=high
 
 screen (3.9.11-2) unstable; urgency=high
 
-  * Apply patch to fix non utf8 locales                        (closes: #134200)
-  * fix problems with screenrc changes that affected konsole   (closes: #134198)
+  * Apply patch to fix non utf8 locales                      (closes: #134200)
+  * fix problems with screenrc changes that affected konsole (closes: #134198)
     * remove line that was borking TERM=xterm
     * re-add line which mods xterm initialization string
   * Add screen-bce terminal type to screeninfo.src and add a note about it in
@@ -72,10 +171,10 @@ screen (3.9.11-1) unstable; urgency=low
       (thanks to overfiend for pointing this out)
     * Add examples of running programs at screen startup
 
-  * Add german template translation                            (closes: #126180)
+  * Add german template translation                          (closes: #126180)
   * Now (ab)use upstream's makefile for most of the file installation
   * compile with --enable-rxvt_osc to allow rxvt icon setting from within
-    screen                                                     (closes: #133333)
+    screen                                                   (closes: #133333)
 
  -- Adam Lazur <zal@debian.org>  Fri, 15 Feb 2002 10:18:07 -0500
 

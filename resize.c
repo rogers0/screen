@@ -21,9 +21,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: resize.c,v 1.5 1994/05/31 12:32:47 mlschroe Exp $ FAU")
-
 #include <sys/types.h>
 #include <signal.h>
 #ifndef sun
@@ -46,6 +43,7 @@ static int  AllocMline __P((struct mline *ml, int));
 static void MakeBlankLine __P((unsigned char *, int));
 static void kaablamm __P((void));
 static int  BcopyMline __P((struct mline *, int, struct mline *, int, int, int));
+static void SwapAltScreen __P((struct win *));
 
 extern struct layer *flayer;
 extern struct display *display, *displays;
@@ -56,7 +54,7 @@ extern int Z0width, Z1width;
 extern int captionalways;
 
 #if defined(TIOCGWINSZ) || defined(TIOCSWINSZ)
-  struct winsize glwz;
+struct winsize glwz;
 #endif
 
 static struct mline mline_zero = {
@@ -130,6 +128,10 @@ int change_flag;
       debug("CheckScreenSize: No change -> return.\n");
       return;
     }
+#ifdef BLANKER_PRG
+  KillBlanker();
+#endif
+  ResetIdle();
   ChangeScreenSize(wi, he, change_flag);
 /* XXX Redisplay logic */
 #if 0
@@ -370,7 +372,7 @@ struct display *norefdisp;
   p = Layer2Window(l);
 
   if (oldflayer && (l == oldflayer || Layer2Window(oldflayer) == p))
-    while(oldflayer->l_next)
+    while (oldflayer->l_next)
       oldflayer = oldflayer->l_next;
     
   if (p)
@@ -383,7 +385,7 @@ struct display *norefdisp;
 		flayer = cv->c_layer;
 		if (flayer->l_next)
 		  d->d_kaablamm = 1;
-	        while(flayer->l_next)
+	        while (flayer->l_next)
 		  ExitOverlayPage();
 	      }
 	  }
@@ -398,9 +400,10 @@ struct display *norefdisp;
     }
   else
     {
-      if (flayer->l_next && display)
-	D_kaablamm = 1;
-      while(flayer->l_next)
+      if (flayer->l_next)
+        for (cv = flayer->l_cvlist; cv; cv = cv->c_lnext)
+	  cv->c_display->d_kaablamm = 1;
+      while (flayer->l_next)
 	ExitOverlayPage();
     }
   if (p)
@@ -678,17 +681,6 @@ int wi, he, hi;
 
   if (wi == 0)
     he = hi = 0;
-
-  if (wi > 1000)
-    {
-      Msg(0, "Window width too large, truncated");
-      wi = 1000;
-    }
-  if (he > 1000)
-    {
-      Msg(0, "Window height too large, truncated");
-      he = 1000;
-    }
 
   if (p->w_width == wi && p->w_height == he && p->w_histheight == hi)
     {
@@ -1030,10 +1022,83 @@ int wi, he, hi;
     {
       ml = OLDWIN(fy);
       ASSERT(ml->image);
-      for (l = 0; l < p->w_width; l++)
-      ASSERT((unsigned char)ml->image[l] >= ' ');
+# ifdef UTF8
+      if (p->w_encoding == UTF8)
+	{
+	  for (l = 0; l < p->w_width; l++)
+	    ASSERT(ml->image[l] >= ' ' || ml->font[l]);
+	}
+      else
+#endif
+        for (l = 0; l < p->w_width; l++)
+          ASSERT(ml->image[l] >= ' ');
     }
 #endif
   return 0;
 }
 
+void
+FreeAltScreen(p)
+struct win *p;
+{
+  int i;
+
+  if (p->w_alt_mlines)
+    for (i = 0; i < p->w_alt_height; i++)
+      FreeMline(p->w_alt_mlines + i);
+  p->w_alt_mlines = 0;
+  p->w_alt_width = 0;
+  p->w_alt_height = 0;
+  p->w_alt_x = 0;
+  p->w_alt_y = 0;
+#ifdef COPY_PASTE
+  if (p->w_alt_hlines)
+    for (i = 0; i < p->w_alt_histheight; i++)
+      FreeMline(p->w_alt_hlines + i);
+  p->w_alt_hlines = 0;
+  p->w_alt_histidx = 0;
+#endif
+  p->w_alt_histheight = 0;
+}
+
+static void
+SwapAltScreen(p)
+struct win *p;
+{
+  struct mline *ml;
+  int t;
+
+  ml = p->w_alt_mlines; p->w_alt_mlines = p->w_mlines; p->w_mlines = ml;
+  t = p->w_alt_width; p->w_alt_width = p->w_width; p->w_width = t;
+  t = p->w_alt_height; p->w_alt_height = p->w_height; p->w_height = t;
+  t = p->w_alt_histheight; p->w_alt_histheight = p->w_histheight; p->w_histheight = t;
+  t = p->w_alt_x; p->w_alt_x = p->w_x; p->w_x = t;
+  t = p->w_alt_y; p->w_alt_y = p->w_y; p->w_y = t;
+#ifdef COPY_PASTE
+  ml = p->w_alt_hlines; p->w_alt_hlines = p->w_hlines; p->w_hlines = ml;
+  t = p->w_alt_histidx; p->w_alt_histidx = p->w_histidx; p->w_histidx = t;
+#endif
+}
+
+void
+EnterAltScreen(p)
+struct win *p;
+{
+  int ox = p->w_x, oy = p->w_y;
+  FreeAltScreen(p);
+  SwapAltScreen(p);
+  ChangeWindowSize(p, p->w_alt_width, p->w_alt_height, p->w_alt_histheight);
+  p->w_x = ox;
+  p->w_y = oy;
+}
+
+void
+LeaveAltScreen(p)
+struct win *p;
+{
+  if (!p->w_alt_mlines)
+    return;
+  SwapAltScreen(p);
+  ChangeWindowSize(p, p->w_alt_width, p->w_alt_height, p->w_alt_histheight);
+  FreeAltScreen(p);
+}

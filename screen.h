@@ -98,7 +98,7 @@
  */
 #define MAXHISTHEIGHT		3000
 #define DEFAULTHISTHEIGHT	100
-#ifdef NAME_MAX
+#if defined(NAME_MAX) && NAME_MAX < 16
 # define DEFAULT_BUFFERFILE     "/tmp/screen-xchg"
 #else
 # define DEFAULT_BUFFERFILE	"/tmp/screen-exchange"
@@ -287,3 +287,9 @@ struct baud_values
   int bps;	/* bits per seconds */
   int sym;	/* symbol defined in ttydev.h */
 };
+
+/*
+ * windowlist orders
+ */
+#define WLIST_NUM 0
+#define WLIST_MRU 1
