@@ -1,0 +1,41 @@
+# Portuguese translation for screen's debconf messages.
+# 2005, Miguel Figueiredo <elmig@debianpt.org>
+#
+# 2005-12-24 - Initial translation
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: screen 4.0.2-4.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-12-10 10:06-0700\n"
+"PO-Revision-Date: 2005-12-28 18:23+0000\n"
+"Last-Translator: Miguel Figueiredo <elmig@debianpt.org>\n"
+"Language-Team: Portuguese <traduz@debianpt.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: boolean
+#. Description
+#: ../templates:4
+msgid "You may lose currently running screen sessions. Continue the install?"
+msgstr "Pode perder sessões de screen que estão actualmente a correr. "
+"Continuar a instalação?"
+
+#. Type: boolean
+#. Description
+#: ../templates:4
+msgid ""
+"This version of screen is incompatible with all versions before 3.9.5-5."
+msgstr ""
+"Esta versão de screen é incompatível com todas as versões anteriores a 3.9.5-5."
+
+#. Type: boolean
+#. Description
+#: ../templates:4
+msgid ""
+"If you continue with the installation, you will not be able to access "
+"currently running screen sessions."
+msgstr ""
+"Se continuar com a instalação, não poderá aceder a sessões de screen "
+"actualmente a correr"

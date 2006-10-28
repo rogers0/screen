@@ -1,9 +1,16 @@
-screen (4.0.2-4.1sarge1) stable-security; urgency=high
+screen (4.0.3-0.1) unstable; urgency=high
 
-  * Fix out-of-bands write when processing character codes in
-    UTF-8 sequences. (CVE-2006-4573)
+  * Non-maintainer upload to fix a security issue
+  * New upstream version fixing utf8 combining characters handling. The
+    bugs could be used to crash/hang screen by writing a special string
+    to a window (CVE-2006-4573). Closes: #395225
+  * Debconf translation updates:
+    - Finnish added. Closes: #303818
+    - Swedish added. Closes: #331583
+    - Portuguese added. Closes: #345059
+    - Italian updated. Closes: #358160
 
- -- Moritz Muehlenhoff <jmm@debian.org>  Tue, 24 Oct 2006 21:39:21 +0000
+ -- Christian Perrier <bubulle@debian.org>  Sat, 28 Oct 2006 07:35:57 +0200
 
 screen (4.0.2-4.1) unstable; urgency=low
 
