@@ -1,3 +1,13 @@
+screen (4.0.3-0.2) unstable; urgency=low
+
+  * Non-maintainer upload to fix a forgotten l10n issue in last NMU
+  * Debconf translation updates:
+    - Added Vietnamese. Closes: #317922
+  * Modify the debconf dependency to better handle the cdebconf transition
+    Closes: #332089
+
+ -- Christian Perrier <bubulle@debian.org>  Wed,  8 Nov 2006 20:46:01 +0100
+
 screen (4.0.3-0.1) unstable; urgency=high
 
   * Non-maintainer upload to fix a security issue

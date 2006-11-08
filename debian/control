@@ -8,7 +8,7 @@ Build-Depends: libncursesw5-dev, texinfo, libpam0g-dev, base-passwd (>= 2.0.3.4)
 Package: screen
 Architecture: any
 Depends: ${shlibs:Depends}, base-passwd (>= 2.0.3.4), passwd (>= 1:4.0.3-10)
-Pre-Depends: debconf (>= 0.2.17)
+Pre-Depends: ${misc:Depends}
 Conflicts: suidmanager (<< 0.52)
 Description: a terminal multiplexor with VT100/ANSI terminal emulation
  screen is a terminal multiplexor that runs several separate "screens" on a
