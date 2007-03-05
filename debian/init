@@ -3,6 +3,16 @@
 #
 # Script to remove stale screen named pipes on bootup.
 #
+
+### BEGIN INIT INFO
+# Provides:          screen-cleanup
+# Required-Start:    $local_fs $remote_fs
+# Required-Stop:     $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: screen sessions cleaning
+### END INIT INFO
+
 set -e
 
 SCREENDIR=/var/run/screen

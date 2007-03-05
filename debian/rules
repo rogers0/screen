@@ -76,6 +76,8 @@ install: build
 	# dir for dh_installdocs to pick up later
 	install -m 644 debian/README.terminfo terminfo
 
+binary-indep: build install
+
 binary: binary-arch
 
 binary-arch: build install

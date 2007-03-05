@@ -19,20 +19,21 @@ msgstr ""
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=iso-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit"
 
 #. Description
 #: ../templates:4
 msgid "You may lose currently running screen sessions. Continue the install?"
-msgstr "Du kan förlora screen som körs för närvarande. Fortsätta installationen?"
+msgstr ""
+"Du kan fÃ¶rlora screen som kÃ¶rs fÃ¶r nÃ¤rvarande. FortsÃ¤tta installationen?"
 
 #. Description
 #: ../templates:4
 msgid ""
 "This version of screen is incompatible with all versions before 3.9.5-5."
 msgstr ""
-"Denna version av screen är inte kompatibel med alla versioner före 3.9.5-5."
+"Denna version av screen Ã¤r inte kompatibel med alla versioner fÃ¶re 3.9.5-5."
 
 #. Description
 #: ../templates:4
@@ -40,5 +41,5 @@ msgid ""
 "If you continue with the installation, you will not be able to access "
 "currently running screen sessions."
 msgstr ""
-"Om du fortsätter med installationen kommer du inte kunna hämta upp nuvarande screen-sessioner som körs."
-
+"Om du fortsÃ¤tter med installationen kommer du inte kunna hÃ¤mta upp nuvarande "
+"screen-sessioner som kÃ¶rs."

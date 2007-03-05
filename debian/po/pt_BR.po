@@ -11,31 +11,31 @@
 #
 #    Developers do not need to manually edit POT or PO files.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: screen_4.0.1-3\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2003-07-23 07:08+0200\n"
 "PO-Revision-Date: 2003-11-02 15:59-0300\n"
-"Last-Translator: André Luís Lopes <andrelop@debian.org>\n"
+"Last-Translator: AndrÃ© LuÃ­s Lopes <andrelop@debian.org>\n"
 "Language-Team: Debian-BR Project <debian-l10n-portuguese@lists.debian.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #. Description
 #: ../templates:4
 msgid "You may lose currently running screen sessions. Continue the install?"
-msgstr "Você pode perder sessões screen em execução. Continuar a instalação ?"
+msgstr ""
+"VocÃª pode perder sessÃµes screen em execuÃ§Ã£o. Continuar a instalaÃ§Ã£o ?"
 
 #. Description
 #: ../templates:4
 msgid ""
 "This version of screen is incompatible with all versions before 3.9.5-5."
 msgstr ""
-"Esta versão do screen é incompatível com todas as versões anteriores "
-"a versão 3.9.5-5."
+"Esta versÃ£o do screen Ã© incompatÃ­vel com todas as versÃµes anteriores a "
+"versÃ£o 3.9.5-5."
 
 #. Description
 #: ../templates:4
@@ -43,5 +43,5 @@ msgid ""
 "If you continue with the installation, you will not be able to access "
 "currently running screen sessions."
 msgstr ""
-"Caso você continue com a instalação você não será capaz de acessar as "
-"sessões screen em execução."
+"Caso vocÃª continue com a instalaÃ§Ã£o vocÃª nÃ£o serÃ¡ capaz de acessar as "
+"sessÃµes screen em execuÃ§Ã£o."

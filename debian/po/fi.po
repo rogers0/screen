@@ -26,7 +26,9 @@ msgstr ""
 #. Description
 #: ../templates:4
 msgid "You may lose currently running screen sessions. Continue the install?"
-msgstr "Yhteys käynnissä oleviin screen-istuntoihin voi katketa. Jatketaanko asennusta?"
+msgstr ""
+"Yhteys käynnissä oleviin screen-istuntoihin voi katketa. Jatketaanko "
+"asennusta?"
 
 #. Description
 #: ../templates:4

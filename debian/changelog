@@ -1,3 +1,15 @@
+screen (4.0.3-0.3) unstable; urgency=low
+
+  * Non-maintainer upload to fix pending l10n isses.
+  * Debconf translations:
+    - Galician. Closes: #407960
+    - Catalan. Closes: #412581
+    - Convert all PO files, but Japanese, to UTF-8
+  * Add an empty binary-indep target to debian/rules. Closes: #395743
+  * Provide a simple LSB header to the init script
+
+ -- Christian Perrier <bubulle@debian.org>  Mon,  5 Mar 2007 09:14:35 +0100
+
 screen (4.0.3-0.2) unstable; urgency=low
 
   * Non-maintainer upload to fix a forgotten l10n issue in last NMU

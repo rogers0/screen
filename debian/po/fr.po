@@ -19,21 +19,27 @@ msgstr ""
 "Last-Translator: Philippe Batailler <philippe.batailler@free.fr>\n"
 "Language-Team: French <debian-l10n-french@lists.debian.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-15\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
 #. Description
 #: ../templates:4
 msgid "You may lose currently running screen sessions. Continue the install?"
-msgstr "You may lose currently running screen sessions. Continue the install?"
+msgstr "Risque de perte des sessions screen. Continuer l'installationÂ ?"
 
 #. Description
 #: ../templates:4
-msgid "This version of screen is incompatible with all versions before 3.9.5-5."
-msgstr "Cette version est incompatible avec toutes les versions antérieures à la version 3.9.5-5."
+msgid ""
+"This version of screen is incompatible with all versions before 3.9.5-5."
+msgstr ""
+"Cette version est incompatible avec toutes les versions antÃ©rieures Ã  la "
+"version 3.9.5-5."
 
 #. Description
 #: ../templates:4
-msgid "If you continue with the installation, you will not be able to access currently running screen sessions."
-msgstr "Si vous continuez l'installation, vous ne pourrez plus accéder aux sessions de screen en cours."
-
+msgid ""
+"If you continue with the installation, you will not be able to access "
+"currently running screen sessions."
+msgstr ""
+"Si vous continuez l'installation, vous ne pourrez plus accÃ©der aux sessions "
+"de screen en cours."

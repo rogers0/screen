@@ -19,8 +19,9 @@ msgstr ""
 #. Description
 #: ../templates:4
 msgid "You may lose currently running screen sessions. Continue the install?"
-msgstr "Pode perder sessões de screen que estão actualmente a correr. "
-"Continuar a instalação?"
+msgstr ""
+"Pode perder sessões de screen que estão actualmente a correr. Continuar a "
+"instalação?"
 
 #. Type: boolean
 #. Description
@@ -28,7 +29,8 @@ msgstr "Pode perder sessões de screen que estão actualmente a correr. "
 msgid ""
 "This version of screen is incompatible with all versions before 3.9.5-5."
 msgstr ""
-"Esta versão de screen é incompatível com todas as versões anteriores a 3.9.5-5."
+"Esta versão de screen é incompatível com todas as versões anteriores a 3.9.5-"
+"5."
 
 #. Type: boolean
 #. Description
