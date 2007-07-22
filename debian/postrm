@@ -1,19 +1,13 @@
 #!/bin/sh
 set -e
 
-case "$1" in
-  remove) ;;
-  purge) ;;
-  upgrade|failed-upgrade|abort-install|abort-upgrade|disappear) exit 0 ;;
-  *)
-    echo "ERROR: screen postrm called with unknown argument \"$1\"."
-    echo "Aborting removal of screen package."
-    exit 1 ;;
-esac
+if [ "$1" = purge ] || [ "$1" = remove ]; then
+  rm -rf /var/run/screen
+fi
 
-rm -rf /var/run/screen
-
-# remove from /etc/shells
-/usr/sbin/remove-shell /usr/bin/screen || true
+if [ "$1" = disappear ]; then
+  # remove from /etc/shells
+  /usr/sbin/remove-shell /usr/bin/screen || true
+fi
 
 #DEBHELPER#

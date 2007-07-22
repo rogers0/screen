@@ -1,0 +1,17 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 12fix_texinfo_syntax.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Fix a texinfo syntax error...
+
+@DPATCH@
+--- screen-4.0.3.orig/doc/screen.texinfo	2007-07-23 23:28:56.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2007-07-23 23:29:05.000000000 +0200
+@@ -2888,7 +2888,7 @@
+ users.
+ If your terminal sends characters, that cause you to abort copy mode,
+ then this command may help by binding these characters to do nothing.
+-The no-op character is `@' and is used like this: @code{markkeys @@=L=H}
++The no-op character is `@@' and is used like this: @code{markkeys @@=L=H}
+ if you do not want to use the `H' or `L' commands any longer. 
+ As shown in this example, multiple keys can be assigned to one function
+ in a single statement.

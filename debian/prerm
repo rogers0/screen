@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = remove ] || [ "$1" = deconfigure ]; then
+  # remove from /etc/shells
+  /usr/sbin/remove-shell /usr/bin/screen || true
+fi 
+
+#DEBHELPER#

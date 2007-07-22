@@ -63,3 +63,15 @@ A: This has to do with handling of the bce terminal attribute, or lack
          /usr/share/doc/screen/terminfo/screeninfo.src and you can compile it
          on the remote machine using tic(1).
 
+
+Q: Screen doesn't notice when I resize the term - what's wrong?
+
+A: Firstly look for the same question in FAQ.gz. If the problem persists:
+   There have been reports of sshd instances blocking SIGWINCH (presumably
+   restarted from aptitude and thus inheriting its signal mask) which therefore
+   also prohibit remote screen sessions from ever seeing the signal. Have a
+   look at the old bugreport <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=392302>
+   for means to determine whether you are affected. (You might have to restart
+   sshd with a crontab entry or similar magic if ssh is your only way to access
+   the box.)
+

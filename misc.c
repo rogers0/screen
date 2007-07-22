@@ -613,11 +613,11 @@ char *value;
    */
 # endif /* NEEDSETENV */
 #else /* USESETENV */
-# if defined(__GLIBC__) || defined(__convex__) || (BSD >= 199103)
+# if defined(linux) || defined(__convex__) || (BSD >= 199103)
   setenv(var, value, 1);
 # else
   setenv(var, value);
-# endif /* __GLIBC__ || convex || BSD >= 199103 */
+# endif /* linux || convex || BSD >= 199103 */
 #endif /* USESETENV */
 }
 

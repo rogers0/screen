@@ -643,11 +643,6 @@ dnl
 AC_CHECKING(for tgetent)
 AC_TRY_LINK(,tgetent((char *)0, (char *)0);,,
 olibs="$LIBS"
-if test -f /usr/lib/libncursesw.so ; then
-    LIBS="-lncursesw $olibs"
-fi
-AC_CHECKING(libncursesw)
-AC_TRY_LINK(,tgetent((char *)0, (char *)0);,,
 LIBS="-lcurses $olibs"
 AC_CHECKING(libcurses)
 AC_TRY_LINK(,[
@@ -666,7 +661,7 @@ AC_TRY_LINK(,tgetent((char *)0, (char *)0);,,
 LIBS="-lncurses $olibs"
 AC_CHECKING(libncurses)
 AC_TRY_LINK(,tgetent((char *)0, (char *)0);,,
-AC_MSG_ERROR(!!! no tgetent - no screen)))))))
+AC_MSG_ERROR(!!! no tgetent - no screen))))))
 
 AC_TRY_RUN([
 main()
@@ -1211,7 +1206,7 @@ fi
 rm -f /tmp/conftest*
 
 AC_MSG_CHECKING(for vsprintf)
-AC_TRY_LINK([#include <stdarg.h>],[va_list valist; vsprintf(0,0,valist);], AC_MSG_RESULT(yes);AC_DEFINE(USEVARARGS), AC_MSG_RESULT(no))
+AC_TRY_LINK(,[vsprintf(0,0,0);], AC_MSG_RESULT(yes);AC_DEFINE(USEVARARGS), AC_MSG_RESULT(no))
 
 AC_HEADER_DIRENT
 

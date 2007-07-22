@@ -19,10 +19,17 @@ SCREENDIR=/var/run/screen
 
 case "$1" in
 start)
-    if find $SCREENDIR -type p | grep '^' >/dev/null; then
-        echo -n 'Cleaning up stale screen sessions... '
-        find $SCREENDIR -type p -print0 | xargs -0 rm -f
-        echo "done."
+    if ! test -d $SCREENDIR; then
+        mkdir $SCREENDIR
+        chown root:utmp $SCREENDIR
+    fi
+    find $SCREENDIR -type p -print0 | xargs -0r rm -f --
+# If the local admin has used dpkg-statoverride to install screen setuid,
+# change the permissions of /var/run/screen accordingly
+    if [ `stat -c%a /usr/bin/screen` -ge 4000 ]; then
+        chmod 0755 $SCREENDIR
+    else
+        chmod 0775 $SCREENDIR
     fi
     ;;
 stop|restart|reload|force-reload)

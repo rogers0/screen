@@ -1,0 +1,23 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 06replace_linux_feature_macro.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Don't test for linux, but for __GLIBC__, because this has nothing
+## DP: to do with the system we're running on (setenv is part of glibc).
+
+@DPATCH@
+--- screen-4.0.3.orig/misc.c
++++ screen-4.0.3/misc.c
+@@ -613,11 +613,11 @@
+    */
+ # endif /* NEEDSETENV */
+ #else /* USESETENV */
+-# if defined(linux) || defined(__convex__) || (BSD >= 199103)
++# if defined(__GLIBC__) || defined(__convex__) || (BSD >= 199103)
+   setenv(var, value, 1);
+ # else
+   setenv(var, value);
+-# endif /* linux || convex || BSD >= 199103 */
++# endif /* __GLIBC__ || convex || BSD >= 199103 */
+ #endif /* USESETENV */
+ }
+ 

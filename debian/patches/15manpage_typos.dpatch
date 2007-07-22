@@ -1,0 +1,37 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 15manpage_typos.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Fix a few typos in the documentation.
+
+@DPATCH@
+--- screen-4.0.3.orig/doc/screen.1	2007-07-24 01:37:18.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2007-07-24 01:37:59.000000000 +0200
+@@ -283,7 +283,7 @@
+ command.
+ .TP 5
+ .BI "\-p " number_or_name
+-Preselect a window. This is usefull when you want to reattach to a
++Preselect a window. This is useful when you want to reattach to a
+ specific windor or you want to send a command via the \*Q-X\*U
+ option to a specific window. As with screen's select commant, \*Q-\*U
+ selects the blank window. As a special case for reattach, \*Q=\*U
+@@ -3172,7 +3172,7 @@
+ Specify the transmission of eight (or seven) bits per byte.
+ .IP "ixon or -ixon"
+ Enables (or disables) software flow-control (CTRL-S/CTRL-Q) for sending data.
+-.IP "ixoff or -ixon"
++.IP "ixoff or -ixoff"
+ Enables (or disables) software flow-control for receiving data.
+ .IP "istrip or -istrip"
+ Clear (or keep) the eight bit in each received byte.
+--- screen-4.0.3.orig/doc/screen.texinfo	2007-07-24 01:37:18.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2007-07-24 01:38:15.000000000 +0200
+@@ -345,7 +345,7 @@
+ @end table
+ 
+ @item -p @var{name_or_number}
+-Preselect a window. This is usefull when you want to reattach to a
++Preselect a window. This is useful when you want to reattach to a
+ specific windor or you want to send a command via the @samp{-X}
+ option to a specific window. As with screen's select commant, @samp{-}
+ selects the blank window. As a special case for reattach, @samp{=}

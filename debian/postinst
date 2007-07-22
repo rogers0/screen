@@ -1,25 +1,13 @@
 #!/bin/sh
 set -e
 
-# gotta source this b/c the package uses debconf and we don't want lintian to
-# whine about it...
-. /usr/share/debconf/confmodule
-
-case "$1" in
-  configure) ;;
-  abort-upgrade|abort-deconfigure|abort-remove) exit 0 ;;
-  *)
-    echo "ERROR: screen postinst called with unknown argument \"$1\"."
-    echo "Aborting configuration of screen package."
-    exit 1 ;;
-esac
-
-# /var/run/screens was used in previous releases and is now depricated
-if [ -d /var/run/screens ] ; then
-    rm -rf /var/run/screens
+if [ "$1" = configure ]; then
+  if ! test -d /var/run/screen; then
+    install -g utmp -m 0775 -d /var/run/screen
+    [ `stat -c%a /usr/bin/screen` -lt 4000 ] || chmod 0755 /var/run/screen
+  fi
+  # add screen to /etc/shells
+  /usr/sbin/add-shell /usr/bin/screen || true
 fi
-
-# add screen to /etc/shells
-/usr/sbin/add-shell /usr/bin/screen || true
 
 #DEBHELPER#

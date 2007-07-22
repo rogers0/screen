@@ -1,3 +1,43 @@
+screen (4.0.3-1) unstable; urgency=low
+
+  * New maintainer. Thanks for your work, Adam!
+    Move Adam to Uploaders.
+  * Acknowledge NMUs. Thanks to all committers!
+  * Start the package overhaul. Take 1:
+    The "wishlist stuff will have to wait at least until -2"-release.
+  * Bump policy compliance level to 3.7.2.
+  * Bump debhelper to v5, and prefer debian/compat over DH_VERSION.
+  * Clean up old dependencies and conflicts. Closes: #334084.
+  * Introduce a patch system (dpatch) and move all orig changes to patches.
+  * Assert that the package is built with fifos instead of sockets.
+    Close the accompanying bug reports - if there's still a buildd that
+    fails the fifo test, I'll get an FTBFS now. Closes: #387156, #413674.
+  * Document the SIGWINCH issue in README.Debian. As this is not a bug
+    in screen, this closes: #392302, #248699 as far as this package is
+    concerned.
+  * Make the clean target live up to its name again.
+  * Fix a syntax error in the texinfo doc that surfaced now that the clean
+    target really cleans everything.
+  * Fix the commands in doc/Makefile.in to generate splitted info files
+    (because that's how they are distributed by upstream).
+  * Clean up the maintainer scripts:
+    * Stop using debconf. Its only purpose was to display a warning message
+      when upgrading from << 3.9.5-5, which was uploaded in the 20th century.
+    * Drop debian/preinst completely.
+    * Replace case constructions in the other scripts with if blocks.
+    * Stop trying to remove /var/run/screens - I couldn't find any reference
+      to that directory. Move remove-shell call to prerm. Closes: #374471.
+    * Mute the init script. Closes: #385895.
+    * Recreate /var/run/screen on install/reboot if necessary (e.g. tmpfs) with
+      the appriopriate permissions (depending on the screen binary - some
+      admins might choose to install it setuid using dpkg-statoverride).
+      Closes: #357578, #390506, #397088.
+  * Fix a couple of manpage typos. Closes: #414241, #417647.
+  * Enhance the copyright message (add the GPL boilerplate, formatting fixups).
+    Addresses #403896, but the year issue is still pending.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Sun, 22 Jul 2007 13:39:43 +0200
+
 screen (4.0.3-0.4) unstable; urgency=low
 
   * Porter NMU.

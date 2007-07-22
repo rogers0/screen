@@ -1,0 +1,9 @@
+01configure_fix_alpha_vsprintf
+02configure_use_ncursesw
+03AUTOCONF
+05fix_osdef_include
+06replace_linux_feature_macro
+11replace_doc_paths
+12fix_texinfo_syntax
+13split_info_files
+15manpage_typos
