@@ -1,0 +1,25 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 20defmonitor.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Fix defmonitor / ^a-M behaviour.
+## DP: Note that this is only one half of it - ^A-i still shows
+## DP: the "mon" flag based solely on fore->w_monitor, which is
+## DP: tremendously ugly. Fix pending.
+
+@DPATCH@
+--- screen-4.0.3.orig/process.c	2007-08-03 01:59:42.000000000 +0200
++++ screen-4.0.3/process.c	2007-08-03 02:03:36.000000000 +0200
+@@ -1986,7 +1986,12 @@
+       WriteString(fore, "\033c", 2);
+       break;
+     case RC_MONITOR:
+-      n = fore->w_monitor != MON_OFF;
++#ifdef MULTIUSER
++      if (display)
++        n = !!(ACLBYTE(fore->w_mon_notify, D_user->u_id) & ACLBIT(D_user->u_id));
++      else
++#endif
++        n = fore->w_monitor != MON_OFF;
+       if (ParseSwitch(act, &n))
+ 	break;
+       if (n)

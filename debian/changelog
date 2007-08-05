@@ -1,3 +1,29 @@
+screen (4.0.3-2) unstable; urgency=low
+
+  * Overhaul, Take 2: The "let -1 migrate to testing first" release.
+  * Better warnings now than worries later: add -Wextra to CFLAGS
+    (and counter with "-Wno-unused-parameter -Wno-missing-field-initializers"
+    to get the noise back to an acceptable level).
+  * Now that more warnings are visible, kill a few of them (new patch, ready
+    to be submitted upstream: 16fix_gcc_warnings).
+  * Drop Pre-Depends from debian/control (wasn't even used, so this is just
+    cosmetical).
+  * Clarify debian/copyright after consulting upstream. Closes: #403896.
+  * Increase MAXSTR by a sufficient amount. The usage pattern of this macro
+    doesn't justify a switch to dynamic allocation, so simply increasing it
+    is fine with me. Closes: #271384.
+  * Fix upstream #20277 by expanding SCREENENCODINGS twice during configure.
+    Closes: #435340. Thanks Victor Hsieh!
+  * Advise against using the "sessionname" command. The problem has been acked
+    upstream, so there's nothing more I can do - besides, there are alternatives.
+    Closes: #103771.
+  * Fix the "C-a M" toggle command that was broken when combined with a setting
+    of 'defmonitor on' in one's .screenrc. Closes: #310568.
+  * Correct a manpage error (defining a limitation that actually doesn't exist).
+    Closes: #197557.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Sun, 05 Aug 2007 16:59:24 +0200
+
 screen (4.0.3-1) unstable; urgency=low
 
   * New maintainer. Thanks for your work, Adam!

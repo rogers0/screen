@@ -9,7 +9,6 @@ Build-Depends: libncursesw5-dev, texinfo, libpam0g-dev, debhelper (>> 5), dpatch
 Package: screen
 Architecture: any
 Depends: ${shlibs:Depends}
-Pre-Depends: ${misc:Depends}
 Description: a terminal multiplexor with VT100/ANSI terminal emulation
  screen is a terminal multiplexor that runs several separate "screens" on a
  single physical character-based terminal.  Each virtual terminal emulates a

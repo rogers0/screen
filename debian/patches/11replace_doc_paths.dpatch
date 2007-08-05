@@ -1,5 +1,5 @@
 #! /bin/sh /usr/share/dpatch/dpatch-run
-## 99replace_doc_paths.dpatch by  <hesso@pool.math.tu-berlin.de>
+## 11replace_doc_paths.dpatch by  <hesso@pool.math.tu-berlin.de>
 ##
 ## DP: Fix the references to configuration and pipe paths to match the
 ## DP: locations Debian uses.

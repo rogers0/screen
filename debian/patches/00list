@@ -1,9 +1,15 @@
 01configure_fix_alpha_vsprintf
 02configure_use_ncursesw
-03AUTOCONF
+03fully_expand_screenencodings
+04AUTOCONF
 05fix_osdef_include
 06replace_linux_feature_macro
 11replace_doc_paths
 12fix_texinfo_syntax
 13split_info_files
+14more_maxstr
 15manpage_typos
+16fix_gcc_warnings
+17manpage_sessionname_warning
+18manpage_maxwin_limit
+20defmonitor

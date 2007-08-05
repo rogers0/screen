@@ -1,0 +1,18 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 03fully_expand_screenencodings.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: SCREENENCODINGS contains ${prefix} from $datadir, which needs
+## DP: an extra expansion step.
+
+@DPATCH@
+--- screen-4.0.3/configure.inO	2007-07-31 13:15:03.000000000 +0200
++++ screen-4.0.3/configure.in	2007-07-31 13:15:56.000000000 +0200
+@@ -1283,7 +1283,7 @@
+ SCREENENCODINGS="\"/usr/local/lib/screen/utf8encodings\""
+ if test -n "$datadir"; then
+ eval SCREENENCODINGS="$datadir/screen/utf8encodings"
+-SCREENENCODINGS="\"$SCREENENCODINGS\""
++eval SCREENENCODINGS="\\\"$SCREENENCODINGS\\\""
+ fi
+ AC_MSG_CHECKING(for the utf8-encodings location)
+ AC_DEFINE_UNQUOTED(SCREENENCODINGS,$SCREENENCODINGS)

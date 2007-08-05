@@ -1,0 +1,42 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 18manpage_maxwin_limit.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: The builtin 'screen' command can directly reference window IDs
+## DP: up to MAXWIN, not only {0-9}.
+
+@DPATCH@
+--- screen-4.0.3/doc/screen.1O	2007-08-05 16:52:52.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2007-08-05 16:56:16.000000000 +0200
+@@ -2537,9 +2537,9 @@
+ and scrollback option (\fB-h\fP <num>) may be specified with each command. 
+ The option (\fB-M\fP) turns monitoring on for this window.
+ The option (\fB-L\fP) turns output logging on for this window.
+-If an optional number \fIn\fP in the range 0..9 is given, the window
+-number \fIn\fP is assigned to the newly created window (or, if this
+-number is already in-use, the next available number).
++If an optional number \fIn\fP in the range 0..MAXWIN-1 is given,
++the window number \fIn\fP is assigned to the newly created window
++(or, if this number is already in-use, the next available number).
+ If a command is specified after \*Qscreen\*U, this command (with the given
+ arguments) is started in the window; otherwise, a shell is created.
+ Thus, if your \*Q.screenrc\*U contains the lines
+--- screen-4.0.3/doc/screen.texinfoO	2007-08-05 16:52:49.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2007-08-05 16:56:00.000000000 +0200
+@@ -1165,7 +1165,7 @@
+ 
+ This section describes the commands for creating a new window for
+ running programs.  When a new window is created, the first available
+-number from the range 0@dots{}9 is assigned to it.
++number is assigned to it.
+ The number of windows is limited at compile-time by the MAXWIN
+ configuration parameter.
+ 
+@@ -1209,7 +1209,7 @@
+ (@samp{-h @var{num}}) may be specified with each command. 
+ The option (@samp{-M}) turns monitoring on for this window.
+ The option (@samp{-L}) turns output logging on for this window.
+-If an optional number @var{n} in the range 0@dots{}9 is given,
++If an optional number @var{n} in the range 0@dots{}MAXWIN-1 is given,
+ the window number @var{n} is assigned to the newly created window (or,
+ if this number is already in-use, the next available number).  If a
+ command is specified after @code{screen}, this command (with the given

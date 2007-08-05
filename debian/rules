@@ -43,8 +43,8 @@ configure-stamp:
 build: build-stamp
 build-stamp: configure
 	dh_testdir
-	$(MAKE) CFLAGS+='-O2 -g -Wall'
-	$(MAKE) CFLAGS+='-O2 -g -Wall' -C doc
+	$(MAKE) CFLAGS+='-O2 -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
+	$(MAKE) CFLAGS+='-O2 -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers' -C doc
 	touch $@
 
 install: build

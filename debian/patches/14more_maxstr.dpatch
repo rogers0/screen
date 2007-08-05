@@ -1,0 +1,21 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 14more_maxstr.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Increase the MAXSTR macro. It is used in a dozen places to
+## DP: allocate static string buffers, most of them temporarily on
+## DP: the stack. Switching all those to dynamic allocation ain't
+## DP: worth the effort, and given this usage pattern multiplying
+## DP: by 3 doesn't noticeably increase the memory footprint.
+
+@DPATCH@
+--- screen-4.0.3.orig/screen.h	2007-07-31 00:55:30.000000000 +0200
++++ screen-4.0.3/screen.h	2007-07-31 00:55:39.000000000 +0200
+@@ -86,7 +86,7 @@
+ 
+ #define Ctrl(c) ((c)&037)
+ 
+-#define MAXSTR		256
++#define MAXSTR		768
+ #define MAXARGS 	64
+ #define MSGWAIT 	5
+ #define MSGMINWAIT 	1

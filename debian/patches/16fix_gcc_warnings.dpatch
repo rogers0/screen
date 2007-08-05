@@ -1,0 +1,27 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 16fix_gcc_warnings.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Fix a few typos in the documentation.
+
+--- screen-4.0.3.orig/fileio.c	2007-07-31 01:07:32.000000000 +0200
++++ screen-4.0.3/fileio.c	2007-07-31 01:07:41.000000000 +0200
+@@ -779,7 +779,7 @@
+ #ifdef SIGPIPE
+       signal(SIGPIPE, SIG_DFL);
+ #endif
+-      execl("/bin/sh", "sh", "-c", cmd, 0);
++      execl("/bin/sh", "sh", "-c", cmd, NULL);
+       Panic(errno, "/bin/sh");
+     default:
+       break;
+--- screen-4.0.3.orig/layer.c	2007-07-31 01:07:35.000000000 +0200
++++ screen-4.0.3/layer.c	2007-07-31 01:07:54.000000000 +0200
+@@ -460,7 +460,7 @@
+ void
+ LClearLine(l, y, xs, xe, bce, ol)
+ struct layer *l;
+-int xs, xe, bce;
++int y, xs, xe, bce;
+ struct mline *ol;
+ {
+   struct canvas *cv;

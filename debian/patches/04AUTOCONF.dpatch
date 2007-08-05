@@ -1,13 +1,13 @@
 #! /bin/sh /usr/share/dpatch/dpatch-run
-## 03AUTOCONF.dpatch by  <hesso@pool.math.tu-berlin.de>
+## 04AUTOCONF.dpatch by  <hesso@pool.math.tu-berlin.de>
 ##
 ## DP: Rerun autoconf. Adding it as a build-dep is likely to cause surprises
 ## DP: when versions change, so I'd rather take the burden to run it manually
 ## DP: and check its output.
 
 @DPATCH@
---- screen-4.0.3.orig/configure 2007-07-22 13:36:39.000000000 +0200
-+++ screen-4.0.3/configure      2007-07-24 00:02:36.000000000 +0200
+--- screen-4.0.3.orig/configure	2007-07-31 13:23:32.000000000 +0200
++++ screen-4.0.3/configure	2007-07-31 14:31:04.000000000 +0200
 @@ -1,37 +1,101 @@
  #! /bin/sh
  # From configure.in Revision: 1.18 .
@@ -9176,7 +9176,8 @@
  SCREENENCODINGS="\"/usr/local/lib/screen/utf8encodings\""
  if test -n "$datadir"; then
  eval SCREENENCODINGS="$datadir/screen/utf8encodings"
- SCREENENCODINGS="\"$SCREENENCODINGS\""
+-SCREENENCODINGS="\"$SCREENENCODINGS\""
++eval SCREENENCODINGS="\\\"$SCREENENCODINGS\\\""
  fi
 -echo "$as_me:$LINENO: checking for the utf8-encodings location" >&5
 -echo $ECHO_N "checking for the utf8-encodings location... $ECHO_C" >&6
