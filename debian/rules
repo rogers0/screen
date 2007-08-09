@@ -63,8 +63,6 @@ install: build
 	# make it setgid utmp
 	chown root:utmp $(ROOT)/usr/bin/screen
 	chmod 2755 $(ROOT)/usr/bin/screen
-	# don't distribute /var/run/screen, it is created in postinst
-	rm -rf $(ROOT)/var
 	# lintian overrides for the setgid bin etc
 	install -m 755 -d $(ROOT)/usr/share/lintian/overrides
 	install -m 644 debian/screen.lintian.overrides $(ROOT)/usr/share/lintian/overrides/screen

@@ -7,9 +7,15 @@
 11replace_doc_paths
 12fix_texinfo_syntax
 13split_info_files
-14more_maxstr
+14size_matters
 15manpage_typos
 16fix_gcc_warnings
 17manpage_sessionname_warning
 18manpage_maxwin_limit
+19flowcontrol_lockup
 20defmonitor
+21manpage_nethack_activation
+22no_public_exchange
+23exitcode_q_ls
+24option_parser
+50EXP_tilde_expansion

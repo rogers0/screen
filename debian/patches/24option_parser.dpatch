@@ -1,0 +1,18 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 24option_parser.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: This is not getopt() and we don't have two leading dashes, so
+## DP: parse and match the long options in full.
+
+@DPATCH@
+--- screen-4.0.3.orig/screen.c	2007-08-09 18:14:50.000000000 +0200
++++ screen-4.0.3/screen.c	2007-08-09 18:15:57.000000000 +0200
+@@ -619,6 +619,8 @@
+ 		    }
+ 		  break;
+ 		case 'w':
++		  if (strcmp(ap+1, "ipe"))
++		    exit_with_usage(myname, "Unknown option %s", --ap);
+ 		  lsflag = 1;
+ 		  wipeflag = 1;
+ 		  if (ac > 1 && !SockMatch)

@@ -75,3 +75,16 @@ A: Firstly look for the same question in FAQ.gz. If the problem persists:
    sshd with a crontab entry or similar magic if ssh is your only way to access
    the box.)
 
+
+Q: Multiuser mode is not working - how can I enable it?
+
+A: Screen has to be setuid root to accomplish this. (Note the security implications
+   this has!) If you still want to enable the feature, enter the following commands:
+
+] dpkg-statoverride --add root utmp 4755 /usr/bin/screen
+] chmod 0755 /var/run/screen
+
+   dpkg-statoverride will make sure that the modified permissions remain in effect
+   even if a new version of the screen package is installed. /var/run/screen will
+   be automatically recreated with the proper permissions if the directory lives
+   on volatile storage (doesn't persist between subsequent reboots).

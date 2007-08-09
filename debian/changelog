@@ -1,3 +1,27 @@
+screen (4.0.3-3) unstable; urgency=low
+
+  * Take 3: The "less bugreports than upstream" release. Whew.
+  * Add full tilde expansion to the builtin 'source' command. Inspired by
+    a patch by Nico Golde. Thanks! Closes: #308818.
+  * Add a kluge to prevent screen from locking up when doing strange things
+    with xon and flow control enabled. Still waiting for upstream to properly
+    fix this problem, so this only addresses: #157873.
+  * Extend the documentation about the strange activation of the nethack
+    feature. Closes: #205531.
+  * Don't create /tmp/screen-exchange with default mode 0666. Closes: #433338.
+  * Add a Q&A pair to README.Debian on how to enable the multiuser feature.
+    The problem is mentioned in the manpage under '-r', too, so I consider this
+    sufficiently documented now. Closes: #92036.
+  * Fix the exitcode mess of '-q -ls' (and its combinations with -d, -r and -x)
+    to keep the promises the manpage makes. Doing this on my own, no comment
+    from upstream yet. Closes: #426328.
+  * More documentation typo fixes.
+  * Properly parse the long commandline options like '-wipe'. Don't accept
+    as soon as it's unambiguous - this is not getopt(). Closes: #222023.
+  * Increase the maximum length of the input buffer (C-a :). Closes: #379384.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Thu, 09 Aug 2007 22:51:19 +0200
+
 screen (4.0.3-2) unstable; urgency=low
 
   * Overhaul, Take 2: The "let -1 migrate to testing first" release.
