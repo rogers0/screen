@@ -1,3 +1,19 @@
+screen (4.0.3-4) unstable; urgency=low
+
+  * Take 4: The "the FHS is a fine thing after all" release.
+  * Move example config files into /usr/share/doc/screen/examples.
+  * Move fifo dir from /var/run/screen to /tmp/.screen. Closes: #214796.
+    Create preinst to make the upgrade fail early (i.e. before the unpack
+    phase) if /tmp/.screen is otherwise occupied.
+    Add another Q&A pair to README.Debian to explain how all this is done.
+  * Redo 11replace_doc_paths.dpatch from scratch due to these reorganisations.
+  * Drop po/ subdirectory (after dropping debconf usage in 4.0.3-1).
+    Closes: #440725 (sorry). Closes: #440410.
+    Also stop calling dh_installdebconf.
+  * Update the FSF address in the source files.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Thu, 30 Aug 2007 18:31:53 +0200
+
 screen (4.0.3-3) unstable; urgency=low
 
   * Take 3: The "less bugreports than upstream" release. Whew.

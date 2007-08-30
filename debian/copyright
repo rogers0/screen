@@ -8,7 +8,7 @@ See the info documentation for contact information for the upstream authors.
 
 License:
 
-	screen - a terminal multiplexor with VT100/ANSI terminal emulation
+	screen - terminal multiplexor with VT100/ANSI terminal emulation
 	Copyright (C) 1987      Oliver Laumann
 	Copyright (C) 1991      Wayne Davidson
 	Copyright (C) 1993-2006 Juergen Weigert <jnweiger@immd4.informatik.uni-erlangen.de>

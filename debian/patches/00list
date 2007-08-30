@@ -18,4 +18,6 @@
 22no_public_exchange
 23exitcode_q_ls
 24option_parser
+25allow_symlink_sockdir
+30fix_fsf_address
 50EXP_tilde_expansion

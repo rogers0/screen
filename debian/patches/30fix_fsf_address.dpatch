@@ -1,0 +1,36 @@
+#! /bin/bash
+## 30fix_fsf_address.dpatch by Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
+##
+## DP: Update the FSF address in the GPL header of the source files
+## DP: until upstream does.
+
+set -o errexit
+
+non_ascii_source_files="acls.c process.c help.c"
+original_encoding=iso-8859-1
+patched_encoding=utf-8
+
+convert_encoding () {
+    local in_encoding=$1
+    local out_encoding=$2
+    local in_file=$3
+    local out_file=$(tempfile)
+    iconv --from-code $in_encoding --to-code $out_encoding $in_file > $out_file
+    mv $out_file $in_file
+}
+
+dpatch_patch () {
+    for file in *.c; do
+        sed -i -e 's/59 Temple Place - Suite 330, Boston, MA  02111-1307, USA/51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA/' $file
+    done
+}
+
+dpatch_unpatch () {
+    for file in *.c; do
+        sed -i -e 's/51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA/59 Temple Place - Suite 330, Boston, MA  02111-1307, USA/' $file
+    done
+}
+
+DPATCH_LIB_NO_DEFAULT=1
+
+. /usr/share/dpatch/dpatch.lib.sh

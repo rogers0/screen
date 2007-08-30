@@ -1,1 +1,4 @@
 screen: setgid-binary usr/bin/screen 2755 root/utmp
+screen: possibly-insecure-handling-of-tmp-files-in-maintainer-script postinst:5
+screen: possibly-insecure-handling-of-tmp-files-in-maintainer-script postrm:5
+screen: possibly-insecure-handling-of-tmp-files-in-maintainer-script preinst:5

@@ -8,7 +8,7 @@
 #export DH_VERBOSE=1
 
 package := screen
-ROOT := $(shell pwd)/debian/$(package)
+ROOT := $(CURDIR)/debian/$(package)
 # statically define this... sucko
 TTYGROUP := 5
 
@@ -29,7 +29,7 @@ configure-stamp:
 	./configure --prefix=/usr \
 		    --infodir='$$(prefix)/share/info' \
 		    --mandir='$$(prefix)/share/man' \
-		    --with-socket-dir=/var/run/screen \
+		    --with-socket-dir=/tmp/.screen \
 		    --enable-pam \
 		    --with-pty-mode=0620 \
 		    --with-pty-group=${TTYGROUP} \
@@ -57,7 +57,7 @@ install: build
 	$(MAKE) prefix=$(ROOT)/usr SCREENENCODINGS='$$(prefix)/share/screen/utf8encodings' installdirs install_bin
 	# install the debian screenrc to etc
 	install -m 644 debian/screenrc $(ROOT)/etc
-	# hack around the fact that the install target makes screen a symlink to screen-$(VERSION)
+	# hack around the fact that the install target makes screen a symlink to screen-$$(VERSION)
 	rm -f $(ROOT)/usr/bin/screen
 	mv -f $(ROOT)/usr/bin/screen* $(ROOT)/usr/bin/screen
 	# make it setgid utmp
@@ -72,7 +72,6 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installdebconf
 	dh_installdocs
 	cp debian/README.terminfo $(ROOT)/usr/share/doc/screen/terminfo/
 	dh_installexamples

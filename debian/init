@@ -15,17 +15,19 @@
 
 set -e
 
-SCREENDIR=/var/run/screen
+SCREENDIR=/tmp/.screen
 
 case "$1" in
 start)
+    rm -rf /var/run/screen
     if ! test -d $SCREENDIR; then
+        rm -f $SCREENDIR
         mkdir $SCREENDIR
         chown root:utmp $SCREENDIR
     fi
     find $SCREENDIR -type p -print0 | xargs -0r rm -f --
 # If the local admin has used dpkg-statoverride to install screen setuid,
-# change the permissions of /var/run/screen accordingly
+# change the permissions of $SCREENDIR accordingly
     if [ `stat -c%a /usr/bin/screen` -ge 4000 ]; then
         chmod 0755 $SCREENDIR
     else

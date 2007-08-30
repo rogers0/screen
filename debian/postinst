@@ -2,11 +2,27 @@
 set -e
 
 if [ "$1" = configure ]; then
-  if ! test -d /var/run/screen; then
-    install -g utmp -m 0775 -d /var/run/screen
-    [ `stat -c%a /usr/bin/screen` -lt 4000 ] || chmod 0755 /var/run/screen
+  if test -e /tmp/.screen -a ! -d /tmp/.screen; then
+    echo "The new location of screen's socket directory, /tmp/.screen, is"
+    echo "occupied by something else. Please move it aside."
+    exit 1
   fi
-  # add screen to /etc/shells
+
+  if dpkg --compare-versions "$2" lt-nl 4.0.3-4; then
+    echo -n "Migrating socket directory (/var/run/screen -> /tmp/.screen)..."
+    if ln -s /var/run/screen /tmp/.screen; then
+      echo " done."
+    else
+      echo " failed!"
+      exit 1
+    fi
+  else
+    if ! test -d /tmp/.screen; then
+      install -g utmp -m 0775 -d /tmp/.screen
+      [ `stat -c%a /usr/bin/screen` -lt 4000 ] || chmod 0755 /tmp/.screen
+    fi
+  fi
+
   /usr/sbin/add-shell /usr/bin/screen || true
 fi
 

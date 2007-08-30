@@ -2,11 +2,10 @@
 set -e
 
 if [ "$1" = purge ] || [ "$1" = remove ]; then
-  rm -rf /var/run/screen
+  rm -rf /var/run/screen /tmp/.screen
 fi
 
 if [ "$1" = disappear ]; then
-  # remove from /etc/shells
   /usr/sbin/remove-shell /usr/bin/screen || true
 fi
 

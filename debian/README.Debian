@@ -1,5 +1,3 @@
-$Id: README.Debian,v 1.9 2003/10/08 11:39:03 zal Exp $
-
 Screen Information
 ------------------
 See the copyright file for information about where to get screen, licensing,
@@ -15,6 +13,22 @@ Debian Modifications
 
 Debian Screen Q&A
 -----------------
+
+Q: The last upgrade said it changed the socket directory to /tmp/.screen, but
+   all I see is a symlink back to the old location - is that intentional?
+
+A: Because /var/run and /tmp might live on different filesystems (especially
+   /var/run may be on some kind of volatile filesystem like shmfs), screen's
+   socket directory cannot simply be moved around, as that would break existing
+   screen sessions.
+
+   Upon upgrade the installation scripts install a symlink so further invo-
+   cations of screen (which already have the new location compiled in) can
+   continue to access the existing sessions, and create new ones under the old
+   location. The next time the initscript is called in order to clean up the
+   socket directory (i.e. usually at the next reboot), this state is detected
+   and cleaned up, making /tmp/.screen a proper directory.
+
 
 Q: shift+page up in xterm/gnome-terminal/konsole used to let me scroll back a
    bit, but now it doesn't. How can I make it work with scrollback?
