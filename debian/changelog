@@ -1,3 +1,10 @@
+screen (4.0.3-6) unstable; urgency=low
+
+  * One last fix for the migration. I knew this would get ugly...
+    Closes: #443813.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Mon, 24 Sep 2007 12:14:52 +0200
+
 screen (4.0.3-5) unstable; urgency=low
 
   * Take 5: The "(w)hacking at the wishlist" release.
