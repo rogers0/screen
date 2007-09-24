@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" = configure ]; then
-  if test -e /tmp/.screen -a ! -d /tmp/.screen; then
+  if test -e /tmp/.screen -o -L /tmp/.screen; then
     echo "The new location of screen's socket directory, /tmp/.screen, is"
     echo "occupied by something else. Please move it aside."
     exit 1

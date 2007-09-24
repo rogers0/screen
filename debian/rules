@@ -34,9 +34,9 @@ configure-stamp:
 		    --with-pty-mode=0620 \
 		    --with-pty-group=${TTYGROUP} \
 		    --enable-rxvt_osc \
-		    --with-sys-screenrc=/etc/screenrc
-#		    --enable-colors256
-	# Asserting the use of fifos instead of sockets
+		    --with-sys-screenrc=/etc/screenrc \
+		    --enable-colors256
+	# Assert the use of fifos instead of sockets
 	grep -q "define.*NAMEDPIPE.*1" config.h
 	touch $@
 

@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" = upgrade ] && dpkg --compare-versions "$2" lt-nl 4.0.3-4; then
-  if test -e /tmp/.screen -a ! -d /tmp/.screen; then
+  if test -e /tmp/.screen -o -L /tmp/.screen; then
 cat - <<"EOMSG"
 Error: the new location of screen's socket directory, /tmp/.screen, is already
 occupied (probably by a user-created file). Please move it aside and retry.

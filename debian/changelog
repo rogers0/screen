@@ -1,3 +1,23 @@
+screen (4.0.3-5) unstable; urgency=low
+
+  * Take 5: The "(w)hacking at the wishlist" release.
+  * Build with 256-color support. Closes: #348099.
+  * Change the comments in the digraph table to give a description of the
+    composed char, which retains its informational value regardless of the
+    viewer's encoding. Closes: #437024. Thanks, Ben Finney!
+  * Add "defnonblock 5" to the default screenrc which ought to improve
+    screen's behaviour on flaky/slow ssh lines. Closes: #434014.
+  * Include the patch for upstream #16666 which fixes the display of certain
+    CJK glyphs. Thanks to Victor Hsieh for the hint and Yi-Hsuan Hsin for
+    providing the patch! Closes: #437223.
+  * Improve and augment the documentation:
+    * Tidy up README.Debian. Among other changes this closes: #228220.
+    * Add a few sentences concerning Debian's MAXWIN setting (closes: #344863)
+      and envvar-passing when calling screen with STY set (closes: #259684).
+  * Fix a thinko in the socket directory migration. Closes: #443768.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Mon, 24 Sep 2007 02:03:56 +0200
+
 screen (4.0.3-4) unstable; urgency=low
 
   * Take 4: The "the FHS is a fine thing after all" release.

@@ -5,7 +5,7 @@
 ## DP: No description.
 
 @DPATCH@
---- screen-4.0.3/fileio.cO	2007-08-08 03:12:49.000000000 +0200
+--- screen-4.0.3.orig/fileio.c	2007-08-08 03:12:49.000000000 +0200
 +++ screen-4.0.3/fileio.c	2007-08-08 03:18:48.000000000 +0200
 @@ -451,7 +451,17 @@
  	  fnbuf[sizeof(fnbuf) - 1] = 0;

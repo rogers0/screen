@@ -2,12 +2,13 @@
 ## 18manpage_maxwin_limit.dpatch by  <hesso@pool.math.tu-berlin.de>
 ##
 ## DP: The builtin 'screen' command can directly reference window IDs
-## DP: up to MAXWIN, not only {0-9}.
+## DP: up to MAXWIN, not only {0-9}. Additionally mention Debian's
+## DP: MAXWIN default in the man and info pages.
 
 @DPATCH@
---- screen-4.0.3/doc/screen.1O	2007-08-05 16:52:52.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2007-08-05 16:56:16.000000000 +0200
-@@ -2537,9 +2537,9 @@
+--- screen-4.0.3.orig/doc/screen.1	2007-09-22 13:19:33.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2007-09-22 13:19:58.000000000 +0200
+@@ -2540,9 +2540,9 @@
  and scrollback option (\fB-h\fP <num>) may be specified with each command. 
  The option (\fB-M\fP) turns monitoring on for this window.
  The option (\fB-L\fP) turns output logging on for this window.
@@ -20,18 +21,30 @@
  If a command is specified after \*Qscreen\*U, this command (with the given
  arguments) is started in the window; otherwise, a shell is created.
  Thus, if your \*Q.screenrc\*U contains the lines
---- screen-4.0.3/doc/screen.texinfoO	2007-08-05 16:52:49.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2007-08-05 16:56:00.000000000 +0200
-@@ -1165,7 +1165,7 @@
+@@ -2588,7 +2588,7 @@
+ is assigned to this window.
+ Thus, the first window can be activated by \*Qselect 0\*U.
+ The number of windows is limited at compile-time by the MAXWIN
+-configuration parameter.
++configuration parameter (which defaults to 40 in Debian).
+ There are two special WindowIDs, \*Q-\*U selects the
+ internal blank window and \*Q.\*U selects the current window. The
+ latter is useful if used with screen's \*Q-X\*U option.
+--- screen-4.0.3.orig/doc/screen.texinfo	2007-09-22 13:19:37.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2007-09-22 13:20:05.000000000 +0200
+@@ -1166,9 +1166,9 @@
  
  This section describes the commands for creating a new window for
  running programs.  When a new window is created, the first available
 -number from the range 0@dots{}9 is assigned to it.
 +number is assigned to it.
  The number of windows is limited at compile-time by the MAXWIN
- configuration parameter.
+-configuration parameter.
++configuration parameter (which defaults to 40 in Debian).
  
-@@ -1209,7 +1209,7 @@
+ @menu
+ * Chdir::                       Change the working directory for new windows.
+@@ -1210,7 +1210,7 @@
  (@samp{-h @var{num}}) may be specified with each command. 
  The option (@samp{-M}) turns monitoring on for this window.
  The option (@samp{-L}) turns output logging on for this window.
