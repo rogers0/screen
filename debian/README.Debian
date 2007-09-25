@@ -7,28 +7,12 @@ and other assorted information.
 Debian Modifications
 --------------------
   * added Debian package maintenance files
-  * Use /tmp/.screen as socket directory
+  * Use /var/run/screen as socket directory
   * Make it set-gid "utmp" instead of setuid root
 
 
 Debian Screen Q&A
 -----------------
-
-Q: The last upgrade said it changed the socket directory to /tmp/.screen, but
-   all I see is a symlink back to the old location - is that intentional?
-
-A: Because /var/run and /tmp might live on different filesystems (especially
-   /var/run may be on some kind of volatile filesystem like shmfs), screen's
-   socket directory cannot simply be moved around, as that would break existing
-   screen sessions.
-
-   Upon upgrade the installation scripts install a symlink so further invo-
-   cations of screen (which already have the new location compiled in) can
-   continue to access the existing sessions, and create new ones under the old
-   location. The next time the initscript is called in order to clean up the
-   socket directory (i.e. usually at the next reboot), this state is detected
-   and cleaned up, making /tmp/.screen a proper directory.
-
 
 Q: shift+page up in xterm/gnome-terminal/konsole used to let me scroll back a
    bit, but now it doesn't. How can I make it work with scrollback?
@@ -98,9 +82,9 @@ A: Screen has to be setuid root to accomplish this. (Note the security implicati
    the feature, you may do so with the following commands:
 
 ] dpkg-statoverride --add root utmp 4755 /usr/bin/screen
-] chmod 0755 /tmp/.screen
+] chmod 0755 /var/run/screen
 
    dpkg-statoverride will make sure that the modified permissions remain in effect
-   even if a new version of the screen package is installed. /tmp/.screen will
+   even if a new version of the screen package is installed. /var/run/screen will
    be automatically recreated with the proper permissions if the directory lives
    on volatile storage (doesn't persist between subsequent reboots).

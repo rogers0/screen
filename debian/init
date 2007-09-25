@@ -15,12 +15,11 @@
 
 set -e
 
-SCREENDIR=/tmp/.screen
+SCREENDIR=/var/run/screen
 
 case "$1" in
 start)
-    rm -rf /var/run/screen
-    if ! test -d $SCREENDIR; then
+    if test -L $SCREENDIR || ! test -d $SCREENDIR; then
         rm -f $SCREENDIR
         mkdir $SCREENDIR
         chown root:utmp $SCREENDIR

@@ -5,8 +5,8 @@
 ## DP: locations Debian uses.
 
 @DPATCH@
---- screen-4.0.3.orig/doc/screen.1	2007-08-11 02:22:31.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2007-08-11 02:40:07.000000000 +0200
+--- screen-4.0.3.orig/doc/screen.1	2007-07-23 23:15:03.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2007-07-23 23:15:13.000000000 +0200
 @@ -99,7 +99,7 @@
  The above example would start the emacs editor (editing prog.c) and switch
  to its window.
@@ -25,24 +25,16 @@
  This can also be defined through the \*Qdeflogin\*U .screenrc command.
  .TP 5
  .BR \-ls " and " \-list
-@@ -580,8 +580,8 @@
- 
+@@ -581,7 +581,7 @@
  
  .SH CUSTOMIZATION
--The \*Qsocket directory\*U defaults either to $HOME/.screen or simply to
+ The \*Qsocket directory\*U defaults either to $HOME/.screen or simply to
 -/tmp/screens or preferably to /usr/local/screens chosen at compile-time. If
-+The \*Qsocket directory\*U defaults to $HOME/.screen or /tmp/screens,
-+but this can be overridden by the compile-time constant SOCKDIR. If
++/tmp/screens or preferably to /var/run/screen chosen at compile-time. If
  .I screen
  is installed setuid-root, then the administrator
  should compile
-@@ -590,11 +590,13 @@
- .I screen
- is not running setuid-root, the user can specify any mode 700 directory
- in the environment variable $SCREENDIR.
-+.B Note:
-+Debian uses /tmp/.screen as socket directory - see \*QFILES\*Q below.
- .PP
+@@ -594,7 +594,7 @@
  When
  .I screen
  is invoked, it executes initialization commands from the files
@@ -51,19 +43,7 @@
  \*Q.screenrc\*U in the user's home directory. These are the \*Qprogrammer's
  defaults\*U that can be overridden in the following ways: for the
  global screenrc file 
-@@ -623,8 +625,9 @@
- variable substitution shall be performed. A string in single-quotes is also
- protected from variable substitution.
- .PP
--Two configuration files are shipped as examples with your screen distribution:
--\*Qetc/screenrc\*U and \*Qetc/etcscreenrc\*U. They contain a number of
-+Two configuration files are shipped as examples with your screen distribution
-+and installed into /usr/share/doc/screen/examples:
-+\*Qscreenrc\*U and \*Qetcscreenrc\*U. They contain a number of
- useful examples for various commands.
- .PP
- Customization can also be done 'on-line'. To enter the command mode type
-@@ -1669,7 +1672,7 @@
+@@ -1669,7 +1669,7 @@
  The echo command may be used to annoy 
  .I screen
  users with a 'message of the
@@ -72,24 +52,7 @@
  The option \*Q-n\*U may be used to suppress the line feed.
  See also \*Qsleep\*U.
  Echo is also useful for online checking of environment variables.
-@@ -2080,7 +2083,7 @@
- .B lockscreen
- .PP
- Lock this display.
--Call a screenlock program (/local/bin/lck or /usr/bin/lock or a builtin if no
-+Call a screenlock program (/usr/bin/lck or /usr/bin/lock or a builtin if no
- other is available). Screen does not accept any command keys until this program
- terminates. Meanwhile processes in the windows may continue, as the windows 
- are in the `detached' state. The screenlock program may be changed through the
-@@ -4410,27 +4413,23 @@
- 
- .SH FILES
- .PD 0
--.IP .../screen-4.?.??/etc/screenrc 34
--.IP .../screen-4.?.??/etc/etcscreenrc
-+.IP /usr/share/doc/screen/examples/screenrc 34
-+.IP /usr/share/doc/screen/examples/etcscreenrc
- Examples in the 
+@@ -4416,14 +4416,14 @@
  .I screen
  distribution package for private and global initialization files.
  .IP $SYSSCREENRC 
@@ -103,18 +66,11 @@
 +Read in after /etc/screenrc
  .IP $SCREENDIR/S-<login>
 -.IP /local/screens/S-<login>
-+.IP /tmp/.screen/S-<login>
++.IP /var/run/screen/S-<login>
  Socket directories (default)
--.IP /usr/tmp/screens/S-<login>
--Alternate socket directories.
- .IP "<socket directory>/.termcap"
- Written by the "termcap" output function
--.IP /usr/tmp/screens/screen-exchange
--or
- .IP /tmp/screen-exchange
- .I screen
- `interprocess communication buffer'
-@@ -4442,7 +4441,7 @@
+ .IP /usr/tmp/screens/S-<login>
+ Alternate socket directories.
+@@ -4442,7 +4442,7 @@
  or
  .IP /etc/termcap
  Terminal capability databases
@@ -123,7 +79,7 @@
  Login records
  .IP $LOCKPRG
  Program that locks a terminal.
-@@ -4555,9 +4554,9 @@
+@@ -4555,9 +4555,9 @@
  must be installed as set-uid with owner root on most systems in order
  to be able to correctly change the owner of the tty device file for
  each window.
@@ -135,8 +91,8 @@
  .I screen
  is killed with SIGKILL.
  This will cause some programs (like "w" or "rwho")
---- screen-4.0.3.orig/doc/screen.texinfo	2007-08-11 02:22:32.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2007-08-11 02:45:01.000000000 +0200
+--- screen-4.0.3.orig/doc/screen.texinfo	2007-07-23 23:15:06.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2007-07-23 23:15:14.000000000 +0200
 @@ -176,7 +176,7 @@
  variable) who will use it to create the new window.  The above example would 
  start the @code{emacs} editor (editing @file{prog.c}) and switch to its window.
@@ -164,28 +120,7 @@
  following ways:
  For the global screenrc file @code{screen} searches for the environment
  variable @code{$SYSSCREENRC} (this override feature may be disabled at
-@@ -469,7 +469,8 @@
- single-quotes is also protected from variable substitution.
- 
- Two configuration files are shipped as examples with your screen
--distribution: @file{etc/screenrc} and @file{etc/etcscreenrc}. They
-+distribution and installed into /usr/share/doc/screen/examples:
-+@file{screenrc} and @file{etcscreenrc}. They
- contain a number of useful examples for various commands.
- 
- @node Source, Colon, Startup Files, Customization
-@@ -512,8 +513,8 @@
- (@pxref{Customization}).  As of version 3.3, all commands can be bound
- to keys, although some may be less useful than others.
- For a number of real life working examples of the most important
--commands see the files @file{etc/screenrc} and @file{etc/etcscreenrc}
--of your screen distribution.
-+commands see the files @file{/usr/share/doc/screen/examples/screenrc}
-+and @file{/usr/share/doc/screen/examples/etcscreenrc}.
- 
- In this manual, a command definition looks like this:
- 
-@@ -997,7 +998,7 @@
+@@ -997,7 +997,7 @@
  @item logfile @var{filename}
  Place where to collect logfiles.  @xref{Log}.
  @item login [@var{state}]
@@ -194,16 +129,7 @@
  @item logtstamp [@var{state}]
  Configure logfile time-stamps.  @xref{Log}.
  @item mapdefault
-@@ -1561,7 +1562,7 @@
- @kindex C-x
- @deffn Command lockscreen
- (@kbd{C-a x}, @kbd{C-a C-x})@*
--Call a screenlock program (@file{/local/bin/lck} or @file{/usr/bin/lock}
-+Call a screenlock program (@file{/usr/bin/lck} or @file{/usr/bin/lock}
- or a builtin, if no other is available). Screen does not accept any
- command keys until this program terminates. Meanwhile processes in the
- windows may continue, as the windows are in the detached state.
-@@ -1900,7 +1901,7 @@
+@@ -1900,7 +1900,7 @@
  * Naming Windows::		Control the name of the window
  * Console::			See the host's console messages
  * Kill::                        Destroy an unwanted window
@@ -212,7 +138,7 @@
  * Mode::                        Control the file mode of the pty
  * Monitor::                     Watch for activity in a window
  * Windows::			List the active windows
-@@ -2109,7 +2110,7 @@
+@@ -2109,7 +2109,7 @@
  @kindex L
  @deffn Command login [state]
  (@kbd{C-a L})@*
@@ -221,15 +147,7 @@
  This controls whether or not the window is @dfn{logged in}.  In addition
  to this toggle, it is convenient to have ``log in'' and ``log out''
  keys.  For instance, @code{bind I login on} and @code{bind O 
-@@ -4956,33 +4957,29 @@
- @cindex files
- 
- @table @file
--@item .../screen-4.?.??/etc/screenrc
--@itemx .../screen-4.?.??/etc/etcscreenrc
-+@item /usr/share/doc/screen/examples/screenrc
-+@itemx /usr/share/doc/screen/examples/etcscreenrc
- Examples in the @code{screen} distribution package for private and
+@@ -4962,17 +4962,17 @@
  global initialization files.
  
  @item @code{$SYSSCREENRC}
@@ -246,22 +164,11 @@
  @item @code{$SCREENDIR}/S-@var{login}
  
 -@item /local/screens/S-@var{login}
-+@item /tmp/.screen/S-@var{login}
++@item /var/run/screen/S-@var{login}
  Socket directories (default)
  
--@item /usr/tmp/screens/S-@var{login}
--Alternate socket directories.
--
- @item @var{socket directory}/.termcap
- Written by the @code{dumptermcap} command
- 
--@item /usr/tmp/screens/screen-exchange or
--@itemx /tmp/screen-exchange
-+@item /tmp/screen-exchange
- @code{screen} interprocess communication buffer
- 
- @item hardcopy.[0-9]
-@@ -4995,7 +4992,7 @@
+ @item /usr/tmp/screens/S-@var{login}
+@@ -4995,7 +4995,7 @@
  @itemx /etc/termcap
  Terminal capability databases
  
@@ -270,7 +177,7 @@
  Login records
  
  @item @code{$LOCKPRG}
-@@ -5100,10 +5097,10 @@
+@@ -5100,10 +5100,10 @@
  in order to be able to
  correctly change the owner of the tty device file for each window.
  Special permission may also be required to write the file
@@ -283,22 +190,12 @@
  with SIGKILL.  This will cause some programs (like "w" or "rwho") to
  advertise that a user is logged on who really isn't.
  
-@@ -5183,13 +5180,14 @@
- @section Socket Directory
+@@ -5184,7 +5184,7 @@
  @cindex socket directory
  
--The socket directory defaults either to @file{$HOME/.screen} or simply to 
+ The socket directory defaults either to @file{$HOME/.screen} or simply to 
 -@file{/tmp/screens} or preferably to @file{/usr/local/screens} chosen at 
--compile-time. If @code{screen} is installed
-+The socket directory defaults to @file{$HOME/.screen} or @file{/tmp/screens},
-+but this can be overridden by the compile-time constant SOCKDIR.
-+If @code{screen} is installed
++@file{/tmp/screens} or preferably to @file{/var/run/screen} chosen at 
+ compile-time. If @code{screen} is installed
  setuid root, then the administrator should compile screen with an
  adequate (not NFS mounted) @code{SOCKDIR}. If @code{screen} is not
- running setuid-root, the user can specify any mode 700 directory in the
--environment variable @code{$SCREENDIR}.
-+environment variable @code{$SCREENDIR}. Note: Debian uses /tmp/.screen as
-+socket directory.
- 
- @node Compiling Screen,  , Socket Directory, Installation
- @section Compiling Screen

@@ -1,15 +1,13 @@
 #!/bin/sh
+
 set -e
 
-if [ "$1" = upgrade ] && dpkg --compare-versions "$2" lt-nl 4.0.3-4; then
-  if test -e /tmp/.screen -o -L /tmp/.screen; then
-cat - <<"EOMSG"
-Error: the new location of screen's socket directory, /tmp/.screen, is already
-occupied (probably by a user-created file). Please move it aside and retry.
-
-Your screen sessions will not be interrupted at any point during the upgrade.
-EOMSG
-    exit 1
+if [ "$1" = upgrade ]; then
+  if dpkg --compare-versions "$2" lt-nl 4.0.3-7 && \
+     dpkg --compare-versions "$2" gt 4.0.3-3; then
+    if ! test -L /tmp/.screen && test -d /tmp/.screen && test -n "`find /tmp/.screen -type p 2>/dev/null`"; then
+      ln -s /tmp/.screen /var/run/screen
+    fi
   fi
 fi
 

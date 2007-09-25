@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" = purge ] || [ "$1" = remove ]; then
-  rm -rf /var/run/screen /tmp/.screen
+  rm -rf /var/run/screen
 fi
 
 if [ "$1" = disappear ]; then

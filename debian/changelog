@@ -1,3 +1,13 @@
+screen (4.0.3-7) unstable; urgency=low
+
+  * Completely undo the socket dir migration after discussion on #debian-devel.
+    * Restore original location /var/run/screen.
+    * Revive old version of dpatch 11.
+    * Readjust maintainer scripts and lintian overrides (intentionally
+      keeping the /tmp warning as a reminder).
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Tue, 25 Sep 2007 03:22:39 +0200
+
 screen (4.0.3-6) unstable; urgency=low
 
   * One last fix for the migration. I knew this would get ugly...
