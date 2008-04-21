@@ -1,3 +1,19 @@
+screen (4.0.3-8) unstable; urgency=low
+
+  * The "resuming the bughunt" release.
+  * Bump Standards level to 3.7.3, debhelper to level 6.
+  * Include Ubuntu's 07norootpassword.dpatch, thanks to Martin Pitt!
+    See Ubuntu #6760. Closes: #447756.
+  * Fix another error in the info documentation. Closes: #447668.
+  * Fix blankerprg semantics. Closes: #330036.
+  * Empty Default-Stop section in the LSB initscript header. Closes: #461438.
+  * Fix multiuser activation howto in README.Debian.
+  * New feature: sort sessions by (and show) creation time, and pick the
+    youngest instead of an arbitrary one when called with '-rR'.
+    Closes: #206572.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Mon, 21 Apr 2008 23:41:42 +0200
+
 screen (4.0.3-7) unstable; urgency=low
 
   * Completely undo the socket dir migration after discussion on #debian-devel.

@@ -4,6 +4,7 @@
 04AUTOCONF
 05fix_osdef_include
 06replace_linux_feature_macro
+07norootpassword
 11replace_doc_paths
 12fix_texinfo_syntax
 13split_info_files
@@ -21,6 +22,8 @@
 25allow_symlink_sockdir
 26source_encoding
 27doc_sty_noenvpassing
+28blankerprg_callsemantics
 30fix_fsf_address
 40cjk_eastasian
 50EXP_tilde_expansion
+51EXP_session_creation_time
