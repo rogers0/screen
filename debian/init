@@ -6,9 +6,9 @@
 
 ### BEGIN INIT INFO
 # Provides:          screen-cleanup
-# Required-Start:    $local_fs $remote_fs
-# Required-Stop:     $local_fs $remote_fs
-# Default-Start:     2 3 4 5
+# Required-Start:    $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     S
 # Default-Stop:
 # Short-Description: screen sessions cleaning
 ### END INIT INFO

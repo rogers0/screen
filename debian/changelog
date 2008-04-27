@@ -1,3 +1,18 @@
+screen (4.0.3-9) unstable; urgency=low
+
+  * The "I broke it, I fix it" release.
+  * Fix a race condition that made session resumption difficult if there
+    was only one. Closes: #477739.
+  * Enhance dpatch 16fix_gcc_warnings (buildlog is now free of warnings).
+  * Apply initscript LSB header changes as suggested by Kel Modderman -
+    thanks! Closes: #477779.
+  * Extend the tilde expansion patch to also apply to 'chdir' commands.
+    Thanks to Steve Kemp! Closes: #477210.
+  * Document my dpatch numbering style in 00list (and move one patch to
+    make things fit again).
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Sun, 27 Apr 2008 14:34:00 +0200
+
 screen (4.0.3-8) unstable; urgency=low
 
   * The "resuming the bughunt" release.

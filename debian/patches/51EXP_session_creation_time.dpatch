@@ -80,7 +80,7 @@
    char *name, *n;
 -  int firsts = -1, sockfd;
 -  char *firstn = NULL;
-+  int sockfd;
++  int sockfd = -1;
    int nfound = 0, ngood = 0, ndead = 0, nwipe = 0, npriv = 0;
 +  time_t sysboot = time(NULL) - GetUptime();
    struct sent
@@ -112,7 +112,7 @@
  	    {
  	      while (*n >= '0' && *n <= '9')
  		n++;
-@@ -226,11 +227,17 @@
+@@ -226,12 +227,24 @@
        debug("  store it.\n");
        if ((sent = (struct sent *)malloc(sizeof(struct sent))) == 0)
  	continue;
@@ -122,17 +122,30 @@
 +      sent->created = sysboot + SessionCreationTime(name);
 +      sent->good = 0;
 +
-+      for (slisttail = &slist; *slisttail; slisttail = &((*slisttail)->next)) {
-+	if ((*slisttail)->created < sent->created) break;
-+      }
++      for (slisttail = &slist; *slisttail; slisttail = &((*slisttail)->next))
++	{
++	  if ((*slisttail)->created < sent->created) break;
++	}
 +
 +      sent->next = *slisttail;
        *slisttail = sent;
 -      slisttail = &sent->next;
        nfound++;
++      if (sockfd >= 0)
++	{
++	  close(sockfd);
++	  sockfd = -1;
++	}
        sockfd = MakeClientSocket(0);
  #ifdef USE_SETEUID
-@@ -295,17 +302,9 @@
+       /* MakeClientSocket sets ids back to eff */
+@@ -290,22 +303,14 @@
+ 	  (!dflag && !rflag && !xflag))
+ 	{
+ 	  close(sockfd);
++	  sockfd = -1;
+ 	  debug("  no!\n");
+ 	  npriv++;		/* a good socket that was not for us */
  	  continue;
  	}
        ngood++;
@@ -149,11 +162,10 @@
 -	} 
 +      sent->good = 1;
 +      debug("  added to list.\n");
-+      close(sockfd);
      }
    (void)closedir(dirp);
    if (nfound && (lsflag || ngood != 1) && !quietflag)
-@@ -324,34 +323,42 @@
+@@ -324,34 +329,42 @@
  	}
        for (sent = slist; sent; sent = sent->next)
  	{
@@ -204,7 +216,7 @@
  	      break;
  	    }
  	}
-@@ -364,10 +371,22 @@
+@@ -364,13 +377,37 @@
        else
          Msg(0, m, ndead > 1 ? "s" : "", ndead > 1 ? "" : "es");	/* other args for nethack */
      }
@@ -221,15 +233,30 @@
 +    }
 +  if (schosen && fdp)
 +    {
-+      sprintf(SockPath + sdirlen, "/%s", schosen->name);
-+      *fdp = MakeClientSocket(0);
++      if (sockfd >= 0 && !strcmp(SockPath + sdirlen + 1, schosen->name))
++	{
++	  *fdp = sockfd;
++	  sockfd = -1;
++	}
++      else
++	{
++	  sprintf(SockPath + sdirlen, "/%s", schosen->name);
++	  *fdp = MakeClientSocket(0);
 +#ifdef USE_SETEUID
-+      xseteuid(real_uid);
-+      xsetegid(real_gid);
++	  xseteuid(real_uid);
++	  xsetegid(real_gid);
 +#endif
++	}
      }
    else
      SockPath[sdirlen] = 0;
++  if (sockfd >= 0)
++    {
++      close(sockfd);
++    }
+   for (sent = slist; sent; sent = nsent)
+     {
+       nsent = sent->next;
 --- screen-4.0.3.orig/doc/screen.1	2008-04-21 22:34:11.000000000 +0200
 +++ screen-4.0.3/doc/screen.1	2008-04-21 22:50:37.000000000 +0200
 @@ -238,7 +238,7 @@

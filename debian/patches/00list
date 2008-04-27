@@ -1,10 +1,12 @@
+# 00-09: fixes to configure, altering preprocessor macros etc.
 01configure_fix_alpha_vsprintf
 02configure_use_ncursesw
 03fully_expand_screenencodings
 04AUTOCONF
 05fix_osdef_include
 06replace_linux_feature_macro
-07norootpassword
+# 10-49: "regular" code and documentation fixes
+10norootpassword
 11replace_doc_paths
 12fix_texinfo_syntax
 13split_info_files
@@ -25,5 +27,6 @@
 28blankerprg_callsemantics
 30fix_fsf_address
 40cjk_eastasian
+# 50-99: experimental patches, new features etc.
 50EXP_tilde_expansion
 51EXP_session_creation_time
