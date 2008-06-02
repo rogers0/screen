@@ -5,8 +5,9 @@
 ## DP: screen the environment variable will go up in smoke.
 
 @DPATCH@
---- screen-4.0.3.orig/doc/screen.1	2007-09-23 23:09:25.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2007-09-23 23:19:53.000000000 +0200
+diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
+--- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:44:58.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2008-06-01 23:45:00.000000000 +0200
 @@ -97,7 +97,9 @@
  manager (specified in the $STY environment variable) who will use it to
  create the new window.
@@ -18,8 +19,9 @@
  .PP
  If \*Q/var/run/utmp\*U is writable by
  .IR screen ,
---- screen-4.0.3.orig/doc/screen.texinfo	2007-09-23 23:09:27.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2007-09-23 23:20:46.000000000 +0200
+diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
+--- screen-4.0.3.orig/doc/screen.texinfo	2008-06-01 23:44:58.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:45:00.000000000 +0200
 @@ -175,6 +175,9 @@
  name and its arguments to the window manager (specified in the $STY environment
  variable) who will use it to create the new window.  The above example would 

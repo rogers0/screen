@@ -4,21 +4,10 @@
 ## DP: Fix a few typos and groff errors in the documentation.
 
 @DPATCH@
---- screen-4.0.3.orig/doc/screen.1	2007-08-09 02:51:38.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2007-08-09 02:52:11.000000000 +0200
-@@ -283,9 +283,9 @@
- command.
- .TP 5
- .BI "\-p " number_or_name
--Preselect a window. This is usefull when you want to reattach to a
-+Preselect a window. This is useful when you want to reattach to a
- specific windor or you want to send a command via the \*Q-X\*U
--option to a specific window. As with screen's select commant, \*Q-\*U
-+option to a specific window. As with screen's select command, \*Q-\*U
- selects the blank window. As a special case for reattach, \*Q=\*U
- brings up the windowlist on the blank window.
- .TP 5
-@@ -3172,7 +3172,7 @@
+diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
+--- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:40:31.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2008-06-01 23:40:42.000000000 +0200
+@@ -3185,7 +3185,7 @@
  Specify the transmission of eight (or seven) bits per byte.
  .IP "ixon or -ixon"
  Enables (or disables) software flow-control (CTRL-S/CTRL-Q) for sending data.
@@ -27,24 +16,7 @@
  Enables (or disables) software flow-control for receiving data.
  .IP "istrip or -istrip"
  Clear (or keep) the eight bit in each received byte.
---- screen-4.0.3.orig/doc/screen.texinfo	2007-08-09 02:51:40.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2007-08-09 02:52:17.000000000 +0200
-@@ -345,9 +345,9 @@
- @end table
- 
- @item -p @var{name_or_number}
--Preselect a window. This is usefull when you want to reattach to a
-+Preselect a window. This is useful when you want to reattach to a
- specific windor or you want to send a command via the @samp{-X}
--option to a specific window. As with screen's select commant, @samp{-}
-+option to a specific window. As with screen's select command, @samp{-}
- selects the blank window. As a special case for reattach, @samp{=}
- brings up the windowlist on the blank window.
- 
-diff -Naur doc.orig/screen.1 doc/screen.1
---- screen-4.0.3.orig/doc/screen.1	2008-04-17 13:03:10.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2008-04-17 13:03:21.000000000 +0200
-@@ -4015,7 +4015,7 @@
+@@ -4028,7 +4028,7 @@
  Background Black
  .TP 27
  \h'\w'ESC [ Ps = 'u'\fB...\fP

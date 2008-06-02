@@ -1,18 +1,21 @@
-# 00-09: fixes to configure, altering preprocessor macros etc.
+# before doing anything else, advance to CVS HEAD
+01CVS
+# 01-09: fixes to configure, altering preprocessor macros etc.
 01configure_fix_alpha_vsprintf
 02configure_use_ncursesw
 03fully_expand_screenencodings
 04AUTOCONF
 05fix_osdef_include
-06replace_linux_feature_macro
+## <06 REMOVED>
 # 10-49: "regular" code and documentation fixes
 10norootpassword
 11replace_doc_paths
-12fix_texinfo_syntax
+## <12 REMOVED>
 13split_info_files
 14size_matters
 15manpage_typos
 16fix_gcc_warnings
+16fix_gcc_warnings_II
 17manpage_sessionname_warning
 18manpage_maxwin_limit
 19flowcontrol_lockup

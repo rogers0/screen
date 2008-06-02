@@ -5,9 +5,10 @@
 ## DP: issues on kfreebsd-amd64. (See #357232)
 
 @DPATCH@
---- screen-4.0.3.orig/osdef.h.in
-+++ screen-4.0.3/osdef.h.in
-@@ -107,6 +107,7 @@
+diff -Naur screen-4.0.3.orig/osdef.h.in screen-4.0.3/osdef.h.in
+--- screen-4.0.3.orig/osdef.h.in	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/osdef.h.in	2008-06-01 23:40:11.000000000 +0200
+@@ -106,6 +106,7 @@
  extern char *tgoto __P((char *, int, int));
  
  #ifdef POSIX

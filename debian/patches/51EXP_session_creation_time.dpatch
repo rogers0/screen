@@ -10,9 +10,71 @@
 ## DP:   arbitrary one
 
 @DPATCH@
---- screen-4.0.3.orig/extern.h	2003-08-22 14:27:57.000000000 +0200
-+++ screen-4.0.3/extern.h	2008-04-21 14:25:42.000000000 +0200
-@@ -379,6 +379,8 @@
+diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
+--- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:45:00.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2008-06-01 23:45:02.000000000 +0200
+@@ -238,7 +238,7 @@
+ .IR screen ,
+ but prints a list of
+ .I pid.tty.host
+-strings identifying your
++strings and creation timestamps identifying your
+ .I screen
+ sessions.
+ Sessions marked `detached' can be resumed with \*Qscreen -r\*U. Those marked
+@@ -317,7 +317,7 @@
+ sessions in another user's directory. This requires setuid-root.
+ .TP 5
+ .B \-R
+-attempts to resume the first detached
++attempts to resume the youngest (in terms of creation time) detached
+ .I screen
+ session it finds.  If successful, all other command-line options are ignored.
+ If no detached session exists, starts a new session using the specified
+@@ -327,6 +327,8 @@
+ .I screen
+ is run as a login-shell (actually screen uses \*Q-xRR\*U in that case).
+ For combinations with the \fB\-d\fP/\fB\-D\fP option see there.
++.B Note:
++Time-based session selection is a Debian addition.
+ .TP 5
+ .B \-s
+ sets the default shell to the program specified, instead of the value
+diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
+--- screen-4.0.3.orig/doc/screen.texinfo	2008-06-01 23:45:00.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:45:02.000000000 +0200
+@@ -315,7 +315,8 @@
+ @itemx -list [@var{match}]
+ Do not start @code{screen}, but instead print a list of session
+ identification strings (usually of the form @var{pid.tty.host};
+-@pxref{Session Name}).  Sessions marked @samp{detached} can be resumed
++@pxref{Session Name}) and the corresponding creation timestamps.
++Sessions marked @samp{detached} can be resumed
+ with @code{screen -r}.  Those marked @samp{attached} are running and
+ have a controlling terminal.  If the session runs in multiuser mode,
+ it is marked @samp{multi}.  Sessions marked as @samp{unreachable} either
+@@ -376,14 +377,15 @@
+ sessions in another user's directory. This requires setuid-root.
+ 
+ @item -R
+-Resume the first appropriate detached @code{screen} session.  If
+-successful, all other command-line options are ignored.  If no detached
++Resume the most-recently created appropriate detached @code{screen} session.
++If successful, all other command-line options are ignored.  If no detached
+ session exists, start a new session using the specified options, just as
+ if @samp{-R} had not been specified.  This option is set by default if
+ screen is run as a login-shell (actually screen uses @samp{-xRR} in
+ that case).
+ For combinations with the 
+ @samp{-D}/@samp{-d} option see there.
++@samp{Note:} Time-based session selection is a Debian addition.
+ 
+ @item -s @var{program}
+ Set the default shell to be @var{program}.  By default, @code{screen}
+diff -Naur screen-4.0.3.orig/extern.h screen-4.0.3/extern.h
+--- screen-4.0.3.orig/extern.h	2008-06-01 23:45:02.000000000 +0200
++++ screen-4.0.3/extern.h	2008-06-01 23:45:02.000000000 +0200
+@@ -391,6 +391,8 @@
  #else
  extern int   xsnprintf __P(());
  #endif
@@ -21,8 +83,9 @@
  
  
  /* acl.c */
---- screen-4.0.3.orig/misc.c	2003-12-05 14:45:41.000000000 +0100
-+++ screen-4.0.3/misc.c	2008-04-21 22:20:43.000000000 +0200
+diff -Naur screen-4.0.3.orig/misc.c screen-4.0.3/misc.c
+--- screen-4.0.3.orig/misc.c	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/misc.c	2008-06-01 23:45:02.000000000 +0200
 @@ -24,6 +24,7 @@
  #include <sys/types.h>
  #include <sys/stat.h>	/* mkdir() declaration */
@@ -72,9 +135,10 @@
 +  close(fd);
 +  return atol(uptimestr);
 +}
---- screen-4.0.3.orig/socket.c	2003-09-08 16:26:50.000000000 +0200
-+++ screen-4.0.3/socket.c	2008-04-21 22:25:16.000000000 +0200
-@@ -115,15 +115,17 @@
+diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
+--- screen-4.0.3.orig/socket.c	2008-06-01 23:41:50.000000000 +0200
++++ screen-4.0.3/socket.c	2008-06-01 23:45:02.000000000 +0200
+@@ -116,15 +116,17 @@
    int sdirlen;
    int  matchlen = 0;
    char *name, *n;
@@ -95,7 +159,7 @@
  	  
    if (match)
      {
-@@ -150,7 +152,6 @@
+@@ -151,7 +153,6 @@
      Panic(errno, "Cannot opendir %s", SockPath);
  
    slist = 0;
@@ -103,7 +167,7 @@
    while ((dp = readdir(dirp)))
      {
        name = dp->d_name;
-@@ -161,7 +162,7 @@
+@@ -162,7 +163,7 @@
  	{
  	  n = name;
  	  /* if we don't want to match digits. Skip them */
@@ -112,7 +176,7 @@
  	    {
  	      while (*n >= '0' && *n <= '9')
  		n++;
-@@ -226,12 +227,24 @@
+@@ -227,12 +228,24 @@
        debug("  store it.\n");
        if ((sent = (struct sent *)malloc(sizeof(struct sent))) == 0)
  	continue;
@@ -139,7 +203,7 @@
        sockfd = MakeClientSocket(0);
  #ifdef USE_SETEUID
        /* MakeClientSocket sets ids back to eff */
-@@ -290,22 +303,14 @@
+@@ -291,22 +304,14 @@
  	  (!dflag && !rflag && !xflag))
  	{
  	  close(sockfd);
@@ -165,7 +229,7 @@
      }
    (void)closedir(dirp);
    if (nfound && (lsflag || ngood != 1) && !quietflag)
-@@ -324,34 +329,42 @@
+@@ -325,34 +330,42 @@
  	}
        for (sent = slist; sent; sent = sent->next)
  	{
@@ -174,7 +238,7 @@
 +	    {
 +	      sprintf(timestr, "???");
 +	    } else {
-+	      strftime(timestr, 64, "%d/%m/%Y %H:%M:%S", localtime(&sent->created));
++	      strftime(timestr, 64, "%x %X", localtime(&sent->created));
 +	    }
 +	  printf("\t%s\t(%s)", sent->name, timestr);
  	  switch (sent->mode)
@@ -216,7 +280,7 @@
  	      break;
  	    }
  	}
-@@ -364,13 +377,37 @@
+@@ -365,13 +378,37 @@
        else
          Msg(0, m, ndead > 1 ? "s" : "", ndead > 1 ? "" : "es");	/* other args for nethack */
      }
@@ -257,62 +321,3 @@
    for (sent = slist; sent; sent = nsent)
      {
        nsent = sent->next;
---- screen-4.0.3.orig/doc/screen.1	2008-04-21 22:34:11.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2008-04-21 22:50:37.000000000 +0200
-@@ -238,7 +238,7 @@
- .IR screen ,
- but prints a list of
- .I pid.tty.host
--strings identifying your
-+strings and creation timestamps identifying your
- .I screen
- sessions.
- Sessions marked `detached' can be resumed with \*Qscreen -r\*U. Those marked
-@@ -317,7 +317,7 @@
- sessions in another user's directory. This requires setuid-root.
- .TP 5
- .B \-R
--attempts to resume the first detached
-+attempts to resume the youngest (in terms of creation time) detached
- .I screen
- session it finds.  If successful, all other command-line options are ignored.
- If no detached session exists, starts a new session using the specified
-@@ -327,6 +327,8 @@
- .I screen
- is run as a login-shell (actually screen uses \*Q-xRR\*U in that case).
- For combinations with the \fB\-d\fP/\fB\-D\fP option see there.
-+.B Note:
-+Time-based session selection is a Debian addition.
- .TP 5
- .B \-s
- sets the default shell to the program specified, instead of the value
---- screen-4.0.3.orig/doc/screen.texinfo	2008-04-21 22:34:11.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2008-04-21 22:49:45.000000000 +0200
-@@ -315,7 +315,8 @@
- @itemx -list [@var{match}]
- Do not start @code{screen}, but instead print a list of session
- identification strings (usually of the form @var{pid.tty.host};
--@pxref{Session Name}).  Sessions marked @samp{detached} can be resumed
-+@pxref{Session Name}) and the corresponding creation timestamps.
-+Sessions marked @samp{detached} can be resumed
- with @code{screen -r}.  Those marked @samp{attached} are running and
- have a controlling terminal.  If the session runs in multiuser mode,
- it is marked @samp{multi}.  Sessions marked as @samp{unreachable} either
-@@ -376,14 +377,15 @@
- sessions in another user's directory. This requires setuid-root.
- 
- @item -R
--Resume the first appropriate detached @code{screen} session.  If
--successful, all other command-line options are ignored.  If no detached
-+Resume the most-recently created appropriate detached @code{screen} session.
-+If successful, all other command-line options are ignored.  If no detached
- session exists, start a new session using the specified options, just as
- if @samp{-R} had not been specified.  This option is set by default if
- screen is run as a login-shell (actually screen uses @samp{-xRR} in
- that case).
- For combinations with the 
- @samp{-D}/@samp{-d} option see there.
-+@samp{Note:} Time-based session selection is a Debian addition.
- 
- @item -s @var{program}
- Set the default shell to be @var{program}.  By default, @code{screen}

@@ -12,9 +12,10 @@
 ## DP: as upstream hasn't come up with anything better.
 
 @DPATCH@
---- screen-4.0.3.orig/display.c	2007-08-06 22:22:20.000000000 +0200
-+++ screen-4.0.3/display.c	2007-08-06 22:59:29.000000000 +0200
-@@ -3137,6 +3137,8 @@
+diff -Naur screen-4.0.3.orig/display.c screen-4.0.3/display.c
+--- screen-4.0.3.orig/display.c	2008-06-01 23:41:50.000000000 +0200
++++ screen-4.0.3/display.c	2008-06-01 23:44:57.000000000 +0200
+@@ -3556,6 +3556,8 @@
  {
    register int l;
    register char *p;
@@ -23,7 +24,7 @@
  
    ASSERT(display);
    l = D_obufp - D_obuf;
-@@ -3151,15 +3153,29 @@
+@@ -3570,15 +3572,29 @@
        return;
      }
    p = D_obuf;
@@ -57,7 +58,7 @@
  	    continue;
  	  debug1("Writing to display: %d\n", errno);
  	  wr = l;
-@@ -3172,11 +3188,6 @@
+@@ -3591,11 +3607,6 @@
      }
    D_obuffree += l;
    D_obufp = D_obuf;

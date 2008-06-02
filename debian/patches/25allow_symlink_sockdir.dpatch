@@ -7,10 +7,10 @@
 ## DP: #ifdef HAVE_LSTAT as it should.)
 
 @DPATCH@
-diff -Nau screen-4.0.3.orig/screen.c screen-4.0.3/screen.c
---- screen-4.0.3.orig/screen.c
-+++ screen-4.0.3/screen.c
-@@ -971,7 +971,7 @@
+diff -Naur screen-4.0.3.orig/screen.c screen-4.0.3/screen.c
+--- screen-4.0.3.orig/screen.c	2008-06-01 23:44:59.000000000 +0200
++++ screen-4.0.3/screen.c	2008-06-01 23:44:59.000000000 +0200
+@@ -989,7 +989,7 @@
        else
  	{
  	  SockDir = SOCKDIR;

@@ -1,3 +1,23 @@
+screen (4.0.3-10) unstable; urgency=low
+
+  * The "Whoa, this feels like a time machine" release.
+  * Apply ~5k lines of unified diff to the source (CVS HEAD against
+    last release). Closes: #444146.
+    * Rediff all dpatches - drop 06 and 12 (fixed upstream).
+    * Add a second 16fix_gcc_warnings dpatch to get all those new
+      gcc warnings out of the buildlogs.
+    * Upstream has changed its mind and defaults to sockets now if both
+      sockets and fifos are available - enforce fifos for our build.
+  * Use the locale's timeformat for the session creation timestamps.
+    Closes: #481445.
+  * Update 40cjk_eastasian.dpatch as suggested in the BTS. Thanks
+    to Akira Tagoh and Deng Xiyue for providing and testing the new
+    version! Closes: #478884.
+  * Correct the bug number in the changelog entry for 4.0.3-9, item 5.
+  * Bump debhelper level once more to 7.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Mon, 02 Jun 2008 19:16:16 +0200
+
 screen (4.0.3-9) unstable; urgency=low
 
   * The "I broke it, I fix it" release.
@@ -7,7 +27,7 @@ screen (4.0.3-9) unstable; urgency=low
   * Apply initscript LSB header changes as suggested by Kel Modderman -
     thanks! Closes: #477779.
   * Extend the tilde expansion patch to also apply to 'chdir' commands.
-    Thanks to Steve Kemp! Closes: #477210.
+    Thanks to Steve Kemp! Closes: #447210.
   * Document my dpatch numbering style in 00list (and move one patch to
     make things fit again).
 

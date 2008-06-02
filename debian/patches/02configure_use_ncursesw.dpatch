@@ -6,9 +6,10 @@
 ## DP: is more of a hassle than running it manually from time to time.)
 
 @DPATCH@
---- screen-4.0.3.orig/configure.in	2007-07-23 23:56:53.000000000 +0200
-+++ screen-4.0.3/configure.in	2007-07-23 23:56:32.000000000 +0200
-@@ -643,6 +643,12 @@
+diff -Naur screen-4.0.3.orig/configure.in screen-4.0.3/configure.in
+--- screen-4.0.3.orig/configure.in	2008-06-01 23:39:57.000000000 +0200
++++ screen-4.0.3/configure.in	2008-06-01 23:39:59.000000000 +0200
+@@ -647,6 +647,12 @@
  AC_CHECKING(for tgetent)
  AC_TRY_LINK(,tgetent((char *)0, (char *)0);,,
  olibs="$LIBS"
@@ -21,7 +22,7 @@
  LIBS="-lcurses $olibs"
  AC_CHECKING(libcurses)
  AC_TRY_LINK(,[
-@@ -658,10 +664,7 @@
+@@ -662,10 +668,7 @@
  LIBS="-ltermlib $olibs"
  AC_CHECKING(libtermlib)
  AC_TRY_LINK(,tgetent((char *)0, (char *)0);,,

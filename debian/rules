@@ -37,7 +37,7 @@ configure-stamp:
 		    --with-sys-screenrc=/etc/screenrc \
 		    --enable-colors256
 	# Assert the use of fifos instead of sockets
-	grep -q "define.*NAMEDPIPE.*1" config.h
+	grep -q "define.*NAMEDPIPE.*1" config.h || echo "#define NAMEDPIPE 1" >> config.h
 	touch $@
 
 build: build-stamp

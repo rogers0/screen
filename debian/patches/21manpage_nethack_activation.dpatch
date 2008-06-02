@@ -5,9 +5,10 @@
 ## DP: being activated by default...
 
 @DPATCH@
---- screen-4.0.3.orig/doc/screen.1	2007-08-06 23:39:11.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2007-08-06 23:40:24.000000000 +0200
-@@ -2260,7 +2260,8 @@
+diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
+--- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:44:57.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2008-06-01 23:44:58.000000000 +0200
+@@ -2268,7 +2268,8 @@
  .I screen
  was compiled with the NETHACK flag defined. The
  default setting is then determined by the presence of the environment 
@@ -17,9 +18,10 @@
  .sp
  .ne 3
  .B next
---- screen-4.0.3.orig/doc/screen.texinfo	2007-08-06 23:39:12.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2007-08-06 23:43:15.000000000 +0200
-@@ -4444,7 +4444,8 @@
+diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
+--- screen-4.0.3.orig/doc/screen.texinfo	2008-06-01 23:44:57.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:44:58.000000000 +0200
+@@ -4447,7 +4447,8 @@
  This option is only available if @code{screen} was compiled with the
  NETHACK flag defined (@pxref{Installation}). The default setting is then
  determined by the presence of the environment variable

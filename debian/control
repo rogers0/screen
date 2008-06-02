@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
 Uploaders: Adam Lazur <zal@debian.org>
 Standards-Version: 3.7.3
-Build-Depends: libncursesw5-dev, texinfo, libpam0g-dev, debhelper (>> 6), dpatch
+Build-Depends: libncursesw5-dev, texinfo, libpam0g-dev, debhelper (>> 7), dpatch
 
 Package: screen
 Architecture: any

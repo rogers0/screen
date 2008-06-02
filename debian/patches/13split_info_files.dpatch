@@ -5,8 +5,9 @@
 ## DP: of the orig tarball.
 
 @DPATCH@
---- screen-4.0.3.orig/doc/Makefile.in	2007-07-23 23:32:50.000000000 +0200
-+++ screen-4.0.3/doc/Makefile.in	2007-07-23 23:33:11.000000000 +0200
+diff -Naur screen-4.0.3.orig/doc/Makefile.in screen-4.0.3/doc/Makefile.in
+--- screen-4.0.3.orig/doc/Makefile.in	2006-10-23 15:06:32.000000000 +0200
++++ screen-4.0.3/doc/Makefile.in	2008-06-01 23:40:33.000000000 +0200
 @@ -27,7 +27,7 @@
  
  info screen.info: screen.texinfo

@@ -5,8 +5,9 @@
 ## DP: locations Debian uses.
 
 @DPATCH@
---- screen-4.0.3.orig/doc/screen.1	2007-07-23 23:15:03.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2007-07-23 23:15:13.000000000 +0200
+diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
+--- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:39:48.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2008-06-01 23:40:25.000000000 +0200
 @@ -99,7 +99,7 @@
  The above example would start the emacs editor (editing prog.c) and switch
  to its window.
@@ -25,7 +26,7 @@
  This can also be defined through the \*Qdeflogin\*U .screenrc command.
  .TP 5
  .BR \-ls " and " \-list
-@@ -581,7 +581,7 @@
+@@ -588,7 +588,7 @@
  
  .SH CUSTOMIZATION
  The \*Qsocket directory\*U defaults either to $HOME/.screen or simply to
@@ -34,7 +35,7 @@
  .I screen
  is installed setuid-root, then the administrator
  should compile
-@@ -594,7 +594,7 @@
+@@ -601,7 +601,7 @@
  When
  .I screen
  is invoked, it executes initialization commands from the files
@@ -43,7 +44,7 @@
  \*Q.screenrc\*U in the user's home directory. These are the \*Qprogrammer's
  defaults\*U that can be overridden in the following ways: for the
  global screenrc file 
-@@ -1669,7 +1669,7 @@
+@@ -1676,7 +1676,7 @@
  The echo command may be used to annoy 
  .I screen
  users with a 'message of the
@@ -52,7 +53,7 @@
  The option \*Q-n\*U may be used to suppress the line feed.
  See also \*Qsleep\*U.
  Echo is also useful for online checking of environment variables.
-@@ -4416,14 +4416,14 @@
+@@ -4429,14 +4429,14 @@
  .I screen
  distribution package for private and global initialization files.
  .IP $SYSSCREENRC 
@@ -70,7 +71,7 @@
  Socket directories (default)
  .IP /usr/tmp/screens/S-<login>
  Alternate socket directories.
-@@ -4442,7 +4442,7 @@
+@@ -4455,7 +4455,7 @@
  or
  .IP /etc/termcap
  Terminal capability databases
@@ -79,7 +80,7 @@
  Login records
  .IP $LOCKPRG
  Program that locks a terminal.
-@@ -4555,9 +4555,9 @@
+@@ -4568,9 +4568,9 @@
  must be installed as set-uid with owner root on most systems in order
  to be able to correctly change the owner of the tty device file for
  each window.
@@ -91,8 +92,9 @@
  .I screen
  is killed with SIGKILL.
  This will cause some programs (like "w" or "rwho")
---- screen-4.0.3.orig/doc/screen.texinfo	2007-07-23 23:15:06.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2007-07-23 23:15:14.000000000 +0200
+diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
+--- screen-4.0.3.orig/doc/screen.texinfo	2008-06-01 23:39:48.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:40:25.000000000 +0200
 @@ -176,7 +176,7 @@
  variable) who will use it to create the new window.  The above example would 
  start the @code{emacs} editor (editing @file{prog.c}) and switch to its window.
@@ -111,7 +113,7 @@
  is equivalent to the @code{deflogin} command (@pxref{Login}).
  
  @item -ls [@var{match}]
-@@ -447,7 +447,7 @@
+@@ -450,7 +450,7 @@
  @cindex screenrc
  When @code{screen} is invoked, it executes initialization commands from
  the files @file{.screenrc} in the user's home directory and
@@ -120,7 +122,7 @@
  following ways:
  For the global screenrc file @code{screen} searches for the environment
  variable @code{$SYSSCREENRC} (this override feature may be disabled at
-@@ -997,7 +997,7 @@
+@@ -1000,7 +1000,7 @@
  @item logfile @var{filename}
  Place where to collect logfiles.  @xref{Log}.
  @item login [@var{state}]
@@ -129,7 +131,7 @@
  @item logtstamp [@var{state}]
  Configure logfile time-stamps.  @xref{Log}.
  @item mapdefault
-@@ -1900,7 +1900,7 @@
+@@ -1903,7 +1903,7 @@
  * Naming Windows::		Control the name of the window
  * Console::			See the host's console messages
  * Kill::                        Destroy an unwanted window
@@ -138,7 +140,7 @@
  * Mode::                        Control the file mode of the pty
  * Monitor::                     Watch for activity in a window
  * Windows::			List the active windows
-@@ -2109,7 +2109,7 @@
+@@ -2112,7 +2112,7 @@
  @kindex L
  @deffn Command login [state]
  (@kbd{C-a L})@*
@@ -147,7 +149,7 @@
  This controls whether or not the window is @dfn{logged in}.  In addition
  to this toggle, it is convenient to have ``log in'' and ``log out''
  keys.  For instance, @code{bind I login on} and @code{bind O 
-@@ -4962,17 +4962,17 @@
+@@ -4970,17 +4970,17 @@
  global initialization files.
  
  @item @code{$SYSSCREENRC}
@@ -168,7 +170,7 @@
  Socket directories (default)
  
  @item /usr/tmp/screens/S-@var{login}
-@@ -4995,7 +4995,7 @@
+@@ -5003,7 +5003,7 @@
  @itemx /etc/termcap
  Terminal capability databases
  
@@ -177,7 +179,7 @@
  Login records
  
  @item @code{$LOCKPRG}
-@@ -5100,10 +5100,10 @@
+@@ -5108,10 +5108,10 @@
  in order to be able to
  correctly change the owner of the tty device file for each window.
  Special permission may also be required to write the file
@@ -190,7 +192,7 @@
  with SIGKILL.  This will cause some programs (like "w" or "rwho") to
  advertise that a user is logged on who really isn't.
  
-@@ -5184,7 +5184,7 @@
+@@ -5192,7 +5192,7 @@
  @cindex socket directory
  
  The socket directory defaults either to @file{$HOME/.screen} or simply to 

@@ -4,9 +4,10 @@
 ## DP: Discourage the use of 'sessionname' (see #103771).
 
 @DPATCH@
---- screen-4.0.3.orig/doc/screen.1	2007-07-31 17:17:00.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2007-07-31 17:19:11.000000000 +0200
-@@ -2595,9 +2595,10 @@
+diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
+--- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:40:56.000000000 +0200
++++ screen-4.0.3/doc/screen.1	2008-06-01 23:44:56.000000000 +0200
+@@ -2603,9 +2603,10 @@
  .PP
  Rename the current session. Note, that for \*Qscreen -list\*U the
  name shows up with the process-id prepended. If the argument \*Qname\*U
@@ -20,9 +21,10 @@
  The default is constructed from the tty and host names.
  .sp
  .ne 3
---- screen-4.0.3.orig/doc/screen.texinfo	2007-08-01 20:11:43.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2007-08-01 20:13:19.000000000 +0200
-@@ -1754,9 +1754,11 @@
+diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
+--- screen-4.0.3.orig/doc/screen.texinfo	2008-06-01 23:40:31.000000000 +0200
++++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:44:56.000000000 +0200
+@@ -1757,9 +1757,11 @@
  Rename the current session. Note that for @code{screen -list} the name
  shows up with the process-id prepended. If the argument @var{name} is
  omitted, the name of this session is displayed.@*

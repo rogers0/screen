@@ -3,51 +3,11 @@
 ##
 ## DP: Get rid of several minor gcc warnings.
 
---- screen-4.0.3.orig/fileio.c	2007-07-31 01:07:32.000000000 +0200
-+++ screen-4.0.3/fileio.c	2007-07-31 01:07:41.000000000 +0200
-@@ -779,7 +779,7 @@
- #ifdef SIGPIPE
-       signal(SIGPIPE, SIG_DFL);
- #endif
--      execl("/bin/sh", "sh", "-c", cmd, 0);
-+      execl("/bin/sh", "sh", "-c", cmd, NULL);
-       Panic(errno, "/bin/sh");
-     default:
-       break;
---- screen-4.0.3.orig/layer.c	2007-07-31 01:07:35.000000000 +0200
-+++ screen-4.0.3/layer.c	2007-07-31 01:07:54.000000000 +0200
-@@ -460,7 +460,7 @@
- void
- LClearLine(l, y, xs, xe, bce, ol)
- struct layer *l;
--int xs, xe, bce;
-+int y, xs, xe, bce;
- struct mline *ol;
- {
-   struct canvas *cv;
---- screen-4.0.3.orig/process.c	2008-04-26 21:21:48.000000000 +0000
-+++ screen-4.0.3/process.c	2008-04-26 21:48:04.000000000 +0000
-@@ -3049,7 +3049,7 @@
-           int newnr, fl = 0, kf = 0, af = 0, df = 0, mf = 0;
- 	  struct display *odisp = display;
- 	  int used = 0;
--          struct kmap_ext *kme;
-+          struct kmap_ext *kme = 0;
- 
- 	  for (; *args && **args == '-'; args++, argl++)
- 	    {
-@@ -5466,7 +5466,7 @@
-       *buf = 0;
-       return;
-     }
--  act.nr = (int)data;
-+  act.nr = (intptr_t)data;
-   act.args = noargs;
-   act.argl = 0;
-   DoAction(&act, -1);
---- screen-4.0.3.orig/attacher.c	2008-04-26 21:21:45.000000000 +0000
-+++ screen-4.0.3/attacher.c	2008-04-26 21:36:27.000000000 +0000
-@@ -807,7 +807,7 @@
+@DPATCH@
+diff -Naur screen-4.0.3.orig/attacher.c screen-4.0.3/attacher.c
+--- screen-4.0.3.orig/attacher.c	2008-06-01 23:40:23.000000000 +0200
++++ screen-4.0.3/attacher.c	2008-06-01 23:41:01.000000000 +0200
+@@ -820,7 +820,7 @@
    pam_handle_t *pamh = 0;
    int pam_error;
  #endif
@@ -56,9 +16,34 @@
    int using_pam = 1;
  
  #ifdef USE_PAM
---- screen-4.0.3.orig/screen.c	2008-04-26 21:21:39.000000000 +0000
-+++ screen-4.0.3/screen.c	2008-04-26 21:23:37.000000000 +0000
-@@ -2301,7 +2301,7 @@
+diff -Naur screen-4.0.3.orig/layer.c screen-4.0.3/layer.c
+--- screen-4.0.3.orig/layer.c	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/layer.c	2008-06-01 23:41:01.000000000 +0200
+@@ -451,7 +451,7 @@
+ void
+ LClearLine(l, y, xs, xe, bce, ol)
+ struct layer *l;
+-int xs, xe, bce;
++int y, xs, xe, bce;
+ struct mline *ol;
+ {
+   struct canvas *cv;
+diff -Naur screen-4.0.3.orig/process.c screen-4.0.3/process.c
+--- screen-4.0.3.orig/process.c	2008-06-01 23:40:40.000000000 +0200
++++ screen-4.0.3/process.c	2008-06-01 23:41:01.000000000 +0200
+@@ -3123,7 +3123,7 @@
+           int newnr, fl = 0, kf = 0, af = 0, df = 0, mf = 0;
+ 	  struct display *odisp = display;
+ 	  int used = 0;
+-          struct kmap_ext *kme;
++          struct kmap_ext *kme = 0;
+ 
+ 	  for (; *args && **args == '-'; args++, argl++)
+ 	    {
+diff -Naur screen-4.0.3.orig/screen.c screen-4.0.3/screen.c
+--- screen-4.0.3.orig/screen.c	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/screen.c	2008-06-01 23:41:01.000000000 +0200
+@@ -2360,7 +2360,7 @@
    int truncpos = -1;
    int truncper = 0;
    int trunclong = 0;
@@ -67,14 +52,3 @@
   
    if (winmsg_numrend >= 0)
      winmsg_numrend = 0;
---- screen-4.0.3.orig/utmp.c	2008-04-26 21:51:18.000000000 +0000
-+++ screen-4.0.3/utmp.c	2008-04-26 21:51:46.000000000 +0000
-@@ -618,7 +618,7 @@
- #endif /* sgi */
-   strncpy(u->ut_line, line, sizeof(u->ut_line));
-   u->ut_pid = pid;
--  (void)time((time_t *)&u->ut_time);
-+  u->ut_time = time(0);
- }
- 
- static slot_t

@@ -1,0 +1,5169 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 01CVS.dpatch by  <screen-devel@savannah.gnu.org>
+##
+## DP: Diff between 4.0.3 and CVS HEAD (checked out on 2008/06/01).
+
+@DPATCH@
+diff -Naur screen-4.0.3.orig/Makefile.in screen-4.0.3/Makefile.in
+--- screen-4.0.3.orig/Makefile.in	2006-10-23 15:06:32.000000000 +0200
++++ screen-4.0.3/Makefile.in	2008-06-01 23:39:31.000000000 +0200
+@@ -78,7 +78,7 @@
+ # This doesn't work if $(bindir)/screen is a symlink
+ 	-if [ -f $(DESTDIR)$(bindir)/screen ] && [ ! -f $(DESTDIR)$(bindir)/screen.old ]; then mv $(DESTDIR)$(bindir)/screen $(DESTDIR)$(bindir)/screen.old; fi
+ 	rm -f $(DESTDIR)$(bindir)/screen
+-	(cd $(DESTDIR)$(bindir) && ln -sf $(SCREEN) screen)
++	(cd $(DESTDIR)$(bindir) && ln -f -s $(SCREEN) screen)
+ 	cp $(srcdir)/utf8encodings/?? $(DESTDIR)$(SCREENENCODINGS)
+ 
+ ###############################################################################
+diff -Naur screen-4.0.3.orig/NEWS screen-4.0.3/NEWS
+--- screen-4.0.3.orig/NEWS	2003-07-21 20:04:05.000000000 +0200
++++ screen-4.0.3/NEWS	2008-06-01 23:39:31.000000000 +0200
+@@ -1,4 +1,18 @@
+                   ------------------------------
++                   What's new in screen-4.0.3 ?
++                  ------------------------------
++
++* zombie command has new option 'onerror'
++
++* buffer overflow in resize.c fixed
++
++* minor docu update
++
++* more robust startup
++
++* use setresuid; SendAttachMsg() for fd-passing added; DoCSI enhanced.
++
++                  ------------------------------
+                    What's new in screen-4.0.0 ?
+                   ------------------------------
+ 
+diff -Naur screen-4.0.3.orig/ansi.c screen-4.0.3/ansi.c
+--- screen-4.0.3.orig/ansi.c	2003-12-05 14:57:05.000000000 +0100
++++ screen-4.0.3/ansi.c	2008-06-01 23:39:31.000000000 +0200
+@@ -1225,18 +1225,42 @@
+ 	  SaveCursor();
+ 	  break;
+ 	case 't':
+-	  if (a1 != 8)
+-	    break;
+-	  a1 = curr->w_args[2];
+-	  if (a1 < 1)
+-	    a1 = curr->w_width;
+-	  if (a2 < 1)
+-	    a2 = curr->w_height;
+-	  if (a1 > 10000 || a2 > 10000)
+-	    break;
+-	  WChangeSize(curr, a1, a2);
+-	  cols = curr->w_width;
+-	  rows = curr->w_height;
++	  switch(a1)
++	    {
++	    case 11:
++	      if (curr->w_layer.l_cvlist)
++		Report("\033[1t", 0, 0);
++	      else
++		Report("\033[2t", 0, 0);
++	      break;
++	    case 7:
++	      LRefreshAll(&curr->w_layer, 0);
++	      break;
++	    case 21:
++	      a1 = strlen(curr->w_title);
++	      if ((unsigned)(curr->w_inlen + 5 + a1) <= sizeof(curr->w_inbuf))
++		{
++		  bcopy("\033]l", curr->w_inbuf + curr->w_inlen, 3);
++		  bcopy(curr->w_title, curr->w_inbuf + curr->w_inlen + 3, a1);
++		  bcopy("\033\\", curr->w_inbuf + curr->w_inlen + 3 + a1, 2);
++		  curr->w_inlen += 5 + a1;
++		}
++	      break;
++	    case 8:
++	      a1 = curr->w_args[2];
++	      if (a1 < 1)
++		a1 = curr->w_width;
++	      if (a2 < 1)
++		a2 = curr->w_height;
++	      if (a1 > 10000 || a2 > 10000)
++		break;
++	      WChangeSize(curr, a1, a2);
++	      cols = curr->w_width;
++	      rows = curr->w_height;
++	      break;
++	    default:
++	      break;
++	    }
+ 	  break;
+ 	case 'u':
+ 	  RestoreCursor();
+diff -Naur screen-4.0.3.orig/ansi.h screen-4.0.3/ansi.h
+--- screen-4.0.3.orig/ansi.h	2003-02-24 17:55:08.000000000 +0100
++++ screen-4.0.3/ansi.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: ansi.h,v 1.6 1994/05/31 12:31:28 mlschroe Exp $ FAU
++ * $Id: ansi.h,v 1.28 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ #define NATTR		6
+diff -Naur screen-4.0.3.orig/attacher.c screen-4.0.3/attacher.c
+--- screen-4.0.3.orig/attacher.c	2003-09-08 16:24:48.000000000 +0200
++++ screen-4.0.3/attacher.c	2008-06-01 23:39:31.000000000 +0200
+@@ -57,7 +57,7 @@
+ extern int xflag, dflag, rflag, quietflag, adaptflag;
+ extern struct mode attach_Mode;
+ extern struct NewWindow nwin_options;
+-extern int MasterPid;
++extern int MasterPid, attach_fd;
+ 
+ #ifdef MULTIUSER
+ extern char *multi;
+@@ -87,6 +87,9 @@
+  *  returns 1 if we could attach one, or 0 if none.
+  *  Understands  MSG_ATTACH, MSG_DETACH, MSG_POW_DETACH
+  *               MSG_CONT, MSG_WINCH and nothing else!
++ *
++ *  if type == MSG_ATTACH and sockets are used, attaches
++ *  tty filedescriptor.
+  */
+ 
+ static int
+@@ -96,6 +99,11 @@
+ {
+   int r, l = sizeof(*m);
+ 
++#ifndef NAMEDPIPE
++  if (m->type == MSG_ATTACH)
++    return SendAttachMsg(s, m, attach_fd);
++#endif
++
+   while(l > 0)
+     {
+       r = write(s, (char *)m + (sizeof(*m) - l), l);
+@@ -184,8 +192,13 @@
+     {
+       real_uid = multi_uid;
+       eff_uid  = own_uid;
++#ifdef HAVE_SETRESUID
++      if (setresuid(multi_uid, own_uid, multi_uid))
++	Panic(errno, "setresuid");
++#else
+       xseteuid(multi_uid);
+       xseteuid(own_uid);
++#endif
+       if (chmod(attach_tty, 0666))
+ 	Panic(errno, "chmod %s", attach_tty);
+       tty_oldmode = tty_mode;
+diff -Naur screen-4.0.3.orig/braille.h screen-4.0.3/braille.h
+--- screen-4.0.3.orig/braille.h	2001-04-28 15:26:42.000000000 +0200
++++ screen-4.0.3/braille.h	2008-06-01 23:39:31.000000000 +0200
+@@ -22,7 +22,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: braille.h,v 1.1 1995/09/06 15:51:18 jnweiger Exp jnweiger $ FAU
++ * $Id: braille.h,v 1.12 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ #ifdef HAVE_BRAILLE
+diff -Naur screen-4.0.3.orig/comm.c screen-4.0.3/comm.c
+--- screen-4.0.3.orig/comm.c	2003-09-08 16:25:08.000000000 +0200
++++ screen-4.0.3/comm.c	2008-06-01 23:39:31.000000000 +0200
+@@ -183,7 +183,9 @@
+   { "fit",		NEED_DISPLAY|ARGS_0 },
+   { "flow",		NEED_FORE|ARGS_01 },
+   { "focus",		NEED_DISPLAY|ARGS_01 },
++  { "focusminsize",	ARGS_02 },
+   { "gr",		NEED_FORE|ARGS_01 },
++  { "group",            NEED_FORE|ARGS_01 },
+   { "hardcopy",		ARGS_012 },
+   { "hardcopy_append",	ARGS_1 },
+   { "hardcopydir",	ARGS_01 },
+@@ -202,6 +204,7 @@
+ #endif
+   { "kill",		NEED_FORE|ARGS_0 },
+   { "lastmsg",		NEED_DISPLAY|ARGS_0 },
++  { "layout",           ARGS_1|ARGS_ORMORE},
+   { "license",		NEED_LAYER|ARGS_0 },
+ #ifdef LOCK
+   { "lockscreen",	NEED_DISPLAY|ARGS_0 },
+@@ -267,7 +270,7 @@
+   { "removebuf",	ARGS_0 },
+ #endif
+   { "reset",		NEED_FORE|ARGS_0 },
+-  { "resize",		NEED_DISPLAY|ARGS_01 },
++  { "resize",		NEED_DISPLAY|ARGS_0|ARGS_ORMORE },
+   { "screen",		ARGS_0|ARGS_ORMORE },
+ #ifdef COPY_PASTE
+   { "scrollback",	NEED_FORE|ARGS_1 },
+@@ -284,7 +287,7 @@
+   { "slowpaste",	NEED_FORE|ARGS_01 },
+   { "sorendition",      ARGS_012 },
+   { "source",		ARGS_1 },
+-  { "split",		NEED_DISPLAY|ARGS_0 },
++  { "split",		NEED_DISPLAY|ARGS_01 },
+   { "startup_message",	ARGS_1 },
+   { "stuff",		NEED_LAYER|ARGS_12 },
+ #ifdef MULTIUSER
+@@ -311,7 +314,7 @@
+   { "version",		ARGS_0 },
+   { "wall",		NEED_DISPLAY|ARGS_1},
+   { "width",		ARGS_0123 },
+-  { "windowlist",	NEED_DISPLAY|ARGS_012 },
++  { "windowlist",	ARGS_012 },
+   { "windows",		NEED_DISPLAY|ARGS_0 },
+   { "wrap",		NEED_FORE|ARGS_01 },
+ #ifdef COPY_PASTE
+@@ -323,5 +326,5 @@
+ #ifdef ZMODEM
+   { "zmodem",		ARGS_012 },
+ #endif
+-  { "zombie",		ARGS_01 }
++  { "zombie",		ARGS_012 }
+ };
+diff -Naur screen-4.0.3.orig/config.h.in screen-4.0.3/config.h.in
+--- screen-4.0.3.orig/config.h.in	2006-10-23 15:06:32.000000000 +0200
++++ screen-4.0.3/config.h.in	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: config.h.in,v 1.12 1994/05/31 12:31:36 mlschroe Exp $ FAU
++ * $Id: config.h.in,v 1.26 2005/12/19 16:13:08 jnweiger Exp $ FAU
+  */
+ 
+ 
+@@ -458,6 +458,7 @@
+  * define HAVE_SETREUID. Otherwise screen will use a forked process to
+  * safely create output files without retaining any special privileges.
+  */
++#undef HAVE_SETRESUID
+ #undef HAVE_SETREUID
+ 
+ /*
+diff -Naur screen-4.0.3.orig/configure screen-4.0.3/configure
+--- screen-4.0.3.orig/configure	2003-12-05 14:46:53.000000000 +0100
++++ screen-4.0.3/configure	2008-06-01 23:39:31.000000000 +0200
+@@ -3911,7 +3911,7 @@
+ cat confdefs.h >>conftest.$ac_ext
+ cat >>conftest.$ac_ext <<_ACEOF
+ /* end confdefs.h.  */
+-#if defined(SVR4) && defined(sun)
++#if defined(__SVR4) && defined(__sun)
+   yes
+ #endif
+ 
+@@ -4042,7 +4042,7 @@
+ main ()
+ {
+ 
+-#if defined(linux) || defined(NeXT) || defined(_AUX_SOURCE) || defined(AUX) || defined(ultrix) || (defined(sun) && defined(SVR4)) || defined(ISC) || defined(sony_news)
++#if defined(linux) || defined(NeXT) || defined(_AUX_SOURCE) || defined(AUX) || defined(ultrix) || (defined(__sun) && defined(__SVR4)) || defined(ISC) || defined(sony_news)
+ seteuid_is_broken(0);
+ #else
+ seteuid(0);
+@@ -5572,7 +5572,7 @@
+ 
+ #include <time.h> /* to get time_t on SCO */
+ #include <sys/types.h>
+-#if defined(SVR4) && !defined(DGUX)
++#if defined(__SVR4) && !defined(DGUX)
+ #include <utmpx.h>
+ #define utmp utmpx
+ #else
+@@ -5624,7 +5624,7 @@
+ 
+ #include <time.h>
+ #include <sys/types.h>
+-#if defined(SVR4) && !defined(DGUX)
++#if defined(__SVR4) && !defined(DGUX)
+ #include <utmpx.h>
+ #define utmp utmpx
+ #else
+@@ -5680,7 +5680,7 @@
+ 
+ #include <time.h>
+ #include <sys/types.h>
+-#if defined(SVR4) && !defined(DGUX)
++#if defined(__SVR4) && !defined(DGUX)
+ #include <utmpx.h>
+ #define utmp utmpx
+ #else
+@@ -6316,7 +6316,7 @@
+ 
+ _CUT_HERE_
+ 
+-#if !defined(LOADAV_GETLOADAVG) && ((defined(hp300) && !defined(__hpux)) || defined(sun) || (defined(ultrix) && defined(mips)) || defined(_SEQUENT_) || defined(sgi) || (defined(SVR4) && !defined(__hpux)) || defined(sony_news) || (!defined(__osf__) && defined(__alpha)) || defined(_IBMR2) || defined(_AUX_SOURCE) || defined(AUX) || defined(m88k))
++#if !defined(LOADAV_GETLOADAVG) && ((defined(hp300) && !defined(__hpux)) || defined(__sun) || (defined(ultrix) && defined(mips)) || defined(_SEQUENT_) || defined(sgi) || (defined(__SVR4) && !defined(__hpux)) || defined(sony_news) || (!defined(__osf__) && defined(__alpha)) || defined(_IBMR2) || defined(_AUX_SOURCE) || defined(AUX) || defined(m88k))
+ loadtype=long
+ # if defined(apollo) || defined(_IBMR2) || defined(_AUX_SOURCE) || defined(AUX)
+ loadscale=65536
+@@ -6329,7 +6329,7 @@
+ loadtype=int
+ loadscale=1024
+ #   else
+-#    if defined(MIPS) || defined(SVR4) || defined(m88k)
++#    if defined(MIPS) || defined(__SVR4) || defined(m88k)
+ loadscale=256
+ #    else /* not MIPS */
+ loadscale=1000 	/* our default value */
+diff -Naur screen-4.0.3.orig/configure.in screen-4.0.3/configure.in
+--- screen-4.0.3.orig/configure.in	2003-06-03 13:58:24.000000000 +0200
++++ screen-4.0.3/configure.in	2008-06-01 23:39:31.000000000 +0200
+@@ -1,11 +1,11 @@
+ dnl Process this file with autoconf to produce a configure script.
+ dnl
+-dnl $Id: configure.in,v 1.18 1994/09/06 16:59:54 mlschroe Exp $ FAU
++dnl $Id: configure.in,v 1.27 2006/05/02 12:58:25 mls Exp $ FAU
+ dnl
+ dnl Many thanks to David MacKenzie for writing autoconf and
+ dnl providing a sample configure.in file for screen.
+ dnl
+-AC_REVISION($Revision: 1.18 $)dnl
++AC_REVISION($Revision: 1.27 $)dnl
+ AC_INIT(screen.c)
+ AC_CONFIG_HEADER(config.h)
+ 
+@@ -93,7 +93,12 @@
+ 	AC_MSG_RESULT(yes)
+ 	AC_MSG_CHECKING(for the socket dir)
+ 	SOCKDIR="(eff_uid ? \"/tmp/uscreens\" : \"/tmp/screens\")"
+-	AC_ARG_WITH(socket-dir, [  --with-socket-dir=path  where to put the per-user sockets], [ SOCKDIR="\"${withval}\"" ])
++	AC_ARG_WITH(socket-dir, [  --with-socket-dir=path  where to put the per-user sockets], [ 
++	  case "${withval}" in
++	    *\"*) SOCKDIR="${withval}" ;;
++	    *) SOCKDIR="\"${withval}\"" ;;
++	  esac
++        ])
+ 	AC_MSG_RESULT(${SOCKDIR})
+ 	AC_DEFINE_UNQUOTED(SOCKDIR, $SOCKDIR)
+     ]
+@@ -252,15 +257,15 @@
+ ], AC_NOTE(- you have jobcontrol) AC_DEFINE(BSDJOBS), AC_NOTE(- you don't have jobcontrol))
+ 
+ dnl
+-dnl    ****  setreuid(), seteuid()  ****
++dnl    ****  setresuid(), setreuid(), seteuid()  ****
+ dnl
+-AC_CHECKING(setreuid)
++AC_CHECKING(setresuid)
+ AC_TRY_LINK(,[
+-#ifdef __hpux
+ setresuid(0, 0, 0);
+-#else
++], AC_DEFINE(HAVE_SETRESUID))
++AC_CHECKING(setreuid)
++AC_TRY_LINK(,[
+ setreuid(0, 0);
+-#endif
+ ], AC_DEFINE(HAVE_SETREUID))
+ dnl
+ dnl seteuid() check:
+@@ -518,8 +523,7 @@
+     elif test -n "$fifobr"; then
+       AC_NOTE(- as your fifos are broken lets use the sockets.)
+     else
+-      AC_NOTE(- both sockets and fifos usable. let's take fifos.)
+-      AC_DEFINE(NAMEDPIPE)
++      AC_NOTE(- both sockets and fifos usable. let's take sockets.)
+     fi
+   else
+     AC_NOTE(- using named pipes, of course)
+diff -Naur screen-4.0.3.orig/display.c screen-4.0.3/display.c
+--- screen-4.0.3.orig/display.c	2003-12-05 14:45:41.000000000 +0100
++++ screen-4.0.3/display.c	2008-06-01 23:39:31.000000000 +0200
+@@ -60,6 +60,8 @@
+ #ifdef COLOR
+ static void SetBackColor __P((int));
+ #endif
++static void FreePerp __P((struct canvas *));
++static struct canvas *AddPerp __P((struct canvas *));
+ 
+ 
+ extern struct layer *flayer;
+@@ -121,6 +123,8 @@
+ int captionalways;
+ int hardstatusemu = HSTATUS_IGNORE;
+ 
++int focusminwidth, focusminheight;
++
+ /*
+  *  Default layer management
+  */
+@@ -312,7 +316,6 @@
+ FreeDisplay()
+ {
+   struct win *p;
+-  struct canvas *cv, *cvp;
+ #ifdef MULTI
+   struct display *d, **dp;
+ #endif
+@@ -379,15 +382,16 @@
+   if (D_obuf)
+     free(D_obuf);
+   *dp = display->d_next;
+-  cv = display->d_cvlist;
+ #else /* MULTI */
+   ASSERT(display == displays);
+   ASSERT(display == &TheDisplay);
+-  cv = display->d_cvlist;
+-  display->d_cvlist = 0;
+   displays = 0;
+ #endif /* MULTI */
+ 
++  while (D_canvas.c_slperp)
++    FreeCanvas(D_canvas.c_slperp);
++  D_cvlist = 0;
++
+   for (p = windows; p; p = p->w_next)
+     {
+       if (p->w_pdisplay == display)
+@@ -397,11 +401,6 @@
+       if (p->w_readev.condneg == &D_status || p->w_readev.condneg == &D_obuflenmax)
+ 	p->w_readev.condpos = p->w_readev.condneg = 0;
+     }
+-  for (; cv; cv = cvp)
+-    {
+-      cvp = cv->c_next;
+-      FreeCanvas(cv);
+-    }
+ #ifdef ZMODEM
+   for (p = windows; p; p = p->w_next)
+     if (p->w_zdisplay == display)
+@@ -425,11 +424,23 @@
+   cv->c_xe      = D_width - 1;
+   cv->c_ys      = 0;
+   cv->c_ye      = D_height - 1 - (D_has_hstatus == HSTATUS_LASTLINE) - captionalways;
++  debug2("MakeDefaultCanvas 0,0 %d,%d\n", cv->c_xe, cv->c_ye);
+   cv->c_xoff    = 0;
+   cv->c_yoff    = 0;
+   cv->c_next = 0;
+   cv->c_display = display;
+   cv->c_vplist = 0;
++  cv->c_slnext = 0;
++  cv->c_slprev = 0;
++  cv->c_slperp = 0;
++  cv->c_slweight = 1;
++  cv->c_slback = &D_canvas;
++  D_canvas.c_slperp = cv;
++  D_canvas.c_xs = cv->c_xs;
++  D_canvas.c_xe = cv->c_xe;
++  D_canvas.c_ys = cv->c_ys;
++  D_canvas.c_ye = cv->c_ye;
++  cv->c_slorient = SLICE_UNKN;
+   cv->c_captev.type = EV_TIMEOUT;
+   cv->c_captev.data = (char *)cv;
+   cv->c_captev.handler = cv_winid_fn;
+@@ -452,14 +463,68 @@
+   return 0;
+ }
+ 
++static struct canvas **
++CreateCanvasChainRec(cv, cvp)
++struct canvas *cv;
++struct canvas **cvp;
++{
++  for (; cv; cv = cv->c_slnext)
++    {
++      if (cv->c_slperp)
++	cvp = CreateCanvasChainRec(cv->c_slperp, cvp);
++      else
++	{
++	  *cvp = cv;
++	  cvp = &cv->c_next;
++	}
++    }
++  return cvp;
++}
++
++void
++RecreateCanvasChain()
++{
++  struct canvas **cvp;
++  cvp = CreateCanvasChainRec(D_canvas.c_slperp, &D_cvlist);
++  *cvp = 0;
++}
++
+ static void
+ FreeCanvas(cv)
+ struct canvas *cv;
+ {
+   struct viewport *vp, *nvp;
++  struct canvas **cvp;
+   struct win *p;
+ 
+-  p = Layer2Window(cv->c_layer);
++  if (cv->c_slprev)
++    cv->c_slprev->c_slnext = cv->c_slnext;
++  if (cv->c_slnext)
++    cv->c_slnext->c_slprev = cv->c_slprev;
++  if (cv->c_slback && cv->c_slback->c_slperp == cv)
++    cv->c_slback->c_slperp = cv->c_slnext;
++  if (cv->c_slperp)
++    {
++      while (cv->c_slperp)
++	FreeCanvas(cv->c_slperp);
++      free(cv);
++      return;
++    }
++
++  if (display)
++    {
++      if (D_forecv == cv)
++	D_forecv = 0;
++      /* remove from canvas chain as SetCanvasWindow might call
++       * some layer function */
++      for (cvp = &D_cvlist; *cvp ; cvp = &(*cvp)->c_next)
++	if (*cvp == cv)
++	  {
++	    *cvp = cv->c_next;
++	    break;
++	  }
++    }
++  p = cv->c_layer ? Layer2Window(cv->c_layer) : 0;
+   SetCanvasWindow(cv, 0);
+   if (p)
+     WindowChanged(p, 'u');
+@@ -477,31 +542,371 @@
+ }
+ 
+ int
+-AddCanvas()
++CountCanvas(cv)
++struct canvas *cv;
++{
++  int num = 0;
++  for (; cv; cv = cv->c_slnext)
++    {
++      if (cv->c_slperp)
++	{
++	  struct canvas *cvp;
++	  int nump = 1, n;
++          for (cvp = cv->c_slperp; cvp; cvp = cvp->c_slnext)
++	    if (cvp->c_slperp)
++	      {
++		n = CountCanvas(cvp->c_slperp);
++		if (n > nump)
++		  nump = n;
++	      }
++	  num += nump;
++	}
++      else
++	num++;
++    }
++  return num;
++}
++
++int
++CountCanvasPerp(cv)
++struct canvas *cv;
+ {
+-  int hh, h, i, j;
+-  struct canvas *cv, **cvpp;
++  struct canvas *cvp;
++  int num = 1, n;
++  for (cvp = cv->c_slperp; cvp; cvp = cvp->c_slnext)
++    if (cvp->c_slperp)
++      {
++	n = CountCanvas(cvp->c_slperp);
++	if (n > num)
++	  num = n;
++      }
++  return num;
++}
+ 
+-  for (cv = D_cvlist, j = 0; cv; cv = cv->c_next)
+-    j++;
+-  j++;	/* new canvas */
+-  h = D_height - (D_has_hstatus == HSTATUS_LASTLINE);
+-  if (h / j <= 1)
+-    return -1;
++void
++EqualizeCanvas(cv, gflag)
++struct canvas *cv;
++int gflag;
++{
++  struct canvas *cv2;
++  for (; cv; cv = cv->c_slnext)
++    {
++      if (cv->c_slperp && gflag)
++	{
++	  cv->c_slweight = CountCanvasPerp(cv);
++	  for (cv2 = cv->c_slperp; cv2; cv2 = cv2->c_slnext)
++	    if (cv2->c_slperp)
++	      EqualizeCanvas(cv2->c_slperp, gflag);
++	}
++      else
++	cv->c_slweight = 1;
++    }
++}
+ 
+-  for (cv = D_cvlist; cv; cv = cv->c_next)
+-    if (cv == D_forecv)
+-      break;
+-  ASSERT(cv);
+-  cvpp = &cv->c_next;
++void
++ResizeCanvas(cv)
++struct canvas *cv;
++{
++  struct canvas *cv2, *cvn, *fcv;
++  int nh, i, maxi, hh, m, w, wsum;
++  int need, got;
++  int xs, ys, xe, ye;
++  int focusmin = 0;
++
++  xs = cv->c_xs;
++  ys = cv->c_ys;
++  xe = cv->c_xe;
++  ye = cv->c_ye;
++  cv = cv->c_slperp;
++  debug2("ResizeCanvas: %d,%d", xs, ys);
++  debug2(" %d,%d\n", xe, ye);
++  if (cv == 0)
++    return;
++  if (cv->c_slorient == SLICE_UNKN)
++    {
++      ASSERT(!cv->c_slnext && !cv->c_slperp);
++      cv->c_xs = xs;
++      cv->c_xe = xe;
++      cv->c_ys = ys;
++      cv->c_ye = ye;
++      cv->c_xoff = cv->c_xs;
++      cv->c_yoff = cv->c_ys;
++      return;
++    }
++
++  fcv = 0;
++  if (focusminwidth || focusminheight)
++    {
++      debug("searching for focus canvas\n");
++      cv2 = D_forecv;
++      while (cv2->c_slback)
++        {
++	  if (cv2->c_slback == cv->c_slback)
++	    {
++	      fcv = cv2;
++	      focusmin = cv->c_slorient == SLICE_VERT ? focusminheight : focusminwidth;
++	      if (focusmin > 0)
++		focusmin--;
++	      else if (focusmin < 0)
++		focusmin = cv->c_slorient == SLICE_VERT ? ye - ys + 2 : xe - xs + 2;
++	      debug1("found, focusmin=%d\n", focusmin);
++	    }
++          cv2 = cv2->c_slback;
++        }
++    }
++  if (focusmin)
++    {
++      m = CountCanvas(cv) * 2;
++      nh = cv->c_slorient == SLICE_VERT ? ye - ys + 2 : xe - xs + 2;
++      nh -= m;
++      if (nh < 0)
++	nh = 0;
++      if (focusmin > nh)
++	focusmin = nh;
++      debug1("corrected to %d\n", focusmin);
++    }
++
++  /* pass 1: calculate weight sum */
++  for (cv2 = cv, wsum = 0; cv2; cv2 = cv2->c_slnext)
++    {
++      debug1("  weight %d\n", cv2->c_slweight);
++      wsum += cv2->c_slweight;
++    }
++  debug1("wsum = %d\n", wsum);
++  if (wsum == 0)
++    wsum = 1;
++  w = wsum;
++
++  /* pass 2: calculate need/excess space */
++  nh = cv->c_slorient == SLICE_VERT ? ye - ys + 2 : xe - xs + 2;
++  for (cv2 = cv, need = got = 0; cv2; cv2 = cv2->c_slnext)
++    {
++      m = cv2->c_slperp ? CountCanvasPerp(cv2) * 2 - 1 : 1;
++      if (cv2 == fcv)
++	m += focusmin;
++      hh = cv2->c_slweight ? nh * cv2->c_slweight / w : 0;
++      w -= cv2->c_slweight;
++      nh -= hh;
++      debug2("  should %d min %d\n", hh, m);
++      if (hh <= m + 1)
++        need += m + 1 - hh;
++      else
++        got += hh - m - 1;
++    }
++  debug2("need: %d, got %d\n", need, got);
++  if (need > got)
++    need = got;
++
++  /* pass 3: distribute space */
++  nh = cv->c_slorient == SLICE_VERT ? ye - ys + 2 : xe - xs + 2;
++  i = cv->c_slorient == SLICE_VERT ? ys : xs;
++  maxi = cv->c_slorient == SLICE_VERT ? ye : xe;
++  w = wsum;
++  for (; cv; cv = cvn)
++    {
++      cvn = cv->c_slnext;
++      if (i > maxi)
++	{
++	  if (cv->c_slprev && !cv->c_slback->c_slback && !cv->c_slprev->c_slperp && !cv->c_slprev->c_slprev)
++	    {
++	      cv->c_slprev->c_slorient = SLICE_UNKN;
++	      if (!captionalways)
++		{
++	          cv->c_slback->c_ye++;
++		  cv->c_slprev->c_ye++;
++		}
++	    }
++	  SetCanvasWindow(cv, 0);
++	  FreeCanvas(cv);
++	  continue;
++	}
++      m = cv->c_slperp ? CountCanvasPerp(cv) * 2 - 1 : 1;
++      if (cv == fcv)
++	m += focusmin;
++      hh = cv->c_slweight ? nh * cv->c_slweight / w : 0;
++      w -= cv->c_slweight;
++      nh -= hh;
++      debug2("  should %d min %d\n", hh, m);
++      if (hh <= m + 1)
++	{
++	  hh = m + 1;
++	  debug1(" -> %d\n", hh);
++	}
++      else
++	{
++	  int hx = need * (hh - m - 1) / got;
++	  debug3(" -> %d - %d = %d\n", hh, hx, hh - hx);
++	  got -= (hh - m - 1);
++	  hh -= hx;
++	  need -= hx;
++          debug2("   now need=%d got=%d\n", need, got);
++	}
++      ASSERT(hh >= m + 1);
++      /* hh is window size plus pation line */
++      if (i + hh > maxi + 2)
++	{
++	  hh = maxi + 2 - i;
++	  debug1("  not enough space, reducing to %d\n", hh);
++	}
++      if (i + hh == maxi + 1)
++	{
++	  hh++;
++	  debug("  incrementing as no other canvas will fit\n");
++	}
++      if (cv->c_slorient == SLICE_VERT)
++        {
++          cv->c_xs = xs;
++          cv->c_xe = xe;
++          cv->c_ys = i;
++          cv->c_ye = i + hh - 2;
++          cv->c_xoff = xs;
++          cv->c_yoff = i;
++        }
++      else
++        {
++          cv->c_xs = i;
++          cv->c_xe = i + hh - 2;
++          cv->c_ys = ys;
++          cv->c_ye = ye;
++          cv->c_xoff = i;
++          cv->c_yoff = ys;
++        }
++      cv->c_xoff = cv->c_xs;
++      cv->c_yoff = cv->c_ys;
++      if (cv->c_slperp)
++	{
++          ResizeCanvas(cv);
++	  if (!cv->c_slperp->c_slnext)
++	    {
++	      debug("deleting perp node\n");
++	      FreePerp(cv->c_slperp);
++	      FreePerp(cv);
++	    }
++	}
++      i += hh;
++    }
++}
++
++static struct canvas *
++AddPerp(cv)
++struct canvas *cv;
++{
++  struct canvas *pcv;
++  debug("Creating new perp node\n");
++  if ((pcv = (struct canvas *)calloc(1, sizeof *cv)) == 0)
++    return 0;
++  pcv->c_next = 0;
++  pcv->c_display = cv->c_display;
++  pcv->c_slnext = cv->c_slnext;
++  pcv->c_slprev = cv->c_slprev;
++  pcv->c_slperp = cv;
++  pcv->c_slback = cv->c_slback;
++  if (cv->c_slback && cv->c_slback->c_slperp == cv)
++    cv->c_slback->c_slperp = pcv;
++  pcv->c_slorient = cv->c_slorient;
++  pcv->c_xoff = 0;
++  pcv->c_yoff = 0;
++  pcv->c_xs = cv->c_xs;
++  pcv->c_xe = cv->c_xe;
++  pcv->c_ys = cv->c_ys;
++  pcv->c_ye = cv->c_ye;
++  if (pcv->c_slnext)
++    pcv->c_slnext->c_slprev = pcv;
++  if (pcv->c_slprev)
++    pcv->c_slprev->c_slnext = pcv;
++  pcv->c_slweight = cv->c_slweight;
++  cv->c_slweight = 1;
++  cv->c_slnext = 0;
++  cv->c_slprev = 0;
++  cv->c_slperp = 0;
++  cv->c_slback = pcv;
++  cv->c_slorient = SLICE_UNKN;
++  return pcv;
++}
++
++static void
++FreePerp(pcv)
++struct canvas *pcv;
++{
++  struct canvas *cv;
++
++  if (!pcv->c_slperp)
++    return;
++  cv = pcv->c_slperp;
++  cv->c_slprev = pcv->c_slprev;
++  if (cv->c_slprev)
++    cv->c_slprev->c_slnext = cv;
++  cv->c_slback = pcv->c_slback;
++  if (cv->c_slback && cv->c_slback->c_slperp == pcv)
++    cv->c_slback->c_slperp = cv;
++  cv->c_slorient = pcv->c_slorient;
++  cv->c_slweight = pcv->c_slweight;
++  while (cv->c_slnext)
++    {
++      cv = cv->c_slnext;
++      cv->c_slorient = pcv->c_slorient;
++      cv->c_slback = pcv->c_slback;
++      cv->c_slweight = pcv->c_slweight;
++    }
++  cv->c_slnext = pcv->c_slnext;
++  if (cv->c_slnext)
++    cv->c_slnext->c_slprev = cv;
++  free(pcv);
++}
++
++int
++AddCanvas(orient)
++int orient;
++{
++  struct canvas *cv;
++  int xs, xe, ys, ye;
++  int h, num;
++
++  cv = D_forecv;
++  debug2("AddCanvas orient %d, forecv is %d\n", orient, cv->c_slorient);
++
++  if (cv->c_slorient != SLICE_UNKN && cv->c_slorient != orient)
++    if (!AddPerp(cv))
++      return -1;
++
++  cv = D_forecv;
++  xs = cv->c_slback->c_xs;
++  xe = cv->c_slback->c_xe;
++  ys = cv->c_slback->c_ys;
++  ye = cv->c_slback->c_ye;
++  if (!captionalways && cv == D_canvas.c_slperp && !cv->c_slnext)
++    ye--;	/* need space for caption */
++  debug2("Adding Canvas to slice %d,%d ", xs, ys);
++  debug2("%d,%d\n", xe, ye);
++
++  num = CountCanvas(cv->c_slback->c_slperp) + 1;
++  debug1("Num = %d\n", num);
++  if (orient == SLICE_VERT)
++    h = ye - ys + 1;
++  else
++    h = xe - xs + 1;
++
++  h -= 2 * num - 1;
++  if (h < 0)
++    return -1;		/* can't fit in */
+ 
+   if ((cv = (struct canvas *)calloc(1, sizeof *cv)) == 0)
+     return -1;
+ 
+-  cv->c_xs      = 0;
+-  cv->c_xe      = D_width - 1;
+-  cv->c_ys      = 0;
+-  cv->c_ye      = D_height - 1;
++  D_forecv->c_slback->c_ye = ye;	/* in case we modified it above */
++  D_forecv->c_slorient = orient;	/* in case it was UNKN */
++  cv->c_slnext = D_forecv->c_slnext;
++  cv->c_slprev = D_forecv;
++  D_forecv->c_slnext = cv;
++  if (cv->c_slnext)
++    cv->c_slnext->c_slprev = cv;
++  cv->c_slorient = orient;
++  cv->c_slback = D_forecv->c_slback;
++
++  cv->c_xs      = xs;
++  cv->c_xe      = xe;
++  cv->c_ys      = ys;
++  cv->c_ye      = ye;
+   cv->c_xoff    = 0;
+   cv->c_yoff    = 0;
+   cv->c_display = display;
+@@ -522,20 +927,12 @@
+   cv->c_layer = &cv->c_blank;
+   cv->c_lnext = 0;
+ 
+-  cv->c_next    = *cvpp;
+-  *cvpp = cv;
+-
+-  i = 0;
+-  for (cv = D_cvlist; cv; cv = cv->c_next)
+-    {
+-      hh = h / j-- - 1;
+-      cv->c_ys = i;
+-      cv->c_ye = i + hh - 1;
+-      cv->c_yoff = i;
+-      i += hh + 1;
+-      h -= hh + 1;
+-    }
++  cv->c_next    = 0;
+ 
++  cv = cv->c_slback;
++  EqualizeCanvas(cv->c_slperp, 0);
++  ResizeCanvas(cv);
++  RecreateCanvasChain();
+   RethinkDisplayViewports();
+   ResizeLayersToCanvases();
+   return 0;
+@@ -544,40 +941,55 @@
+ void
+ RemCanvas()
+ {
+-  int hh, h, i, j;
+-  struct canvas *cv, **cvpp;
+-  int did = 0;
+-
+-  h = D_height - (D_has_hstatus == HSTATUS_LASTLINE);
+-  for (cv = D_cvlist, j = 0; cv; cv = cv->c_next)
+-    j++;
+-  if (j == 1)
+-    return;
+-  i = 0;
+-  j--;
+-  for (cvpp = &D_cvlist; (cv = *cvpp); cvpp = &cv->c_next)
++  int xs, xe, ys, ye;
++  struct canvas *cv;
++
++  debug("RemCanvas\n");
++  cv = D_forecv;
++  if (cv->c_slorient == SLICE_UNKN)
++    return;
++  while (cv->c_slprev)
++    cv = cv->c_slprev;
++  if (!cv->c_slnext)
++    return;
++  if (!cv->c_slnext->c_slnext && cv->c_slback->c_slback)
+     {
+-      if (cv == D_forecv && !did)
+-	{
+-	  *cvpp = cv->c_next;
+-	  FreeCanvas(cv);
+-	  cv = *cvpp;
+-	  D_forecv = cv ? cv : D_cvlist;
+-	  D_fore = Layer2Window(D_forecv->c_layer);
+-	  flayer = D_forecv->c_layer;
+-	  if (cv == 0)
+-	    break;
+-	  did = 1;
+-	}
+-      hh = h / j-- - 1;
+-      if (!captionalways && i == 0 && j == 0)
+-	hh++;
+-      cv->c_ys = i;
+-      cv->c_ye = i + hh - 1;
+-      cv->c_yoff = i;
+-      i += hh + 1;
+-      h -= hh + 1;
+-    }
++      /* two canvases in slice, kill perp node */
++      cv = D_forecv;
++      debug("deleting perp node\n");
++      FreePerp(cv->c_slprev ? cv->c_slprev : cv->c_slnext);
++      FreePerp(cv->c_slback);
++    }
++  xs = cv->c_slback->c_xs;
++  xe = cv->c_slback->c_xe;
++  ys = cv->c_slback->c_ys;
++  ye = cv->c_slback->c_ye;
++  /* free canvas */
++  cv = D_forecv;
++  D_forecv = cv->c_slprev;
++  if (!D_forecv)
++    D_forecv = cv->c_slnext;
++  FreeCanvas(cv);
++
++  cv = D_forecv;
++  while (D_forecv->c_slperp)
++    D_forecv = D_forecv->c_slperp;
++
++  /* if only one canvas left, set orient back to unknown */
++  if (!cv->c_slnext && !cv->c_slprev && !cv->c_slback->c_slback)
++    {
++      cv->c_slorient = SLICE_UNKN;
++      if (!captionalways)
++	cv->c_slback->c_ye = ++ye;	/* caption line no longer needed */
++    }
++  cv = cv->c_slback;
++  EqualizeCanvas(cv->c_slperp, 0);
++  ResizeCanvas(cv);
++
++  D_fore = Layer2Window(D_forecv->c_layer);
++  flayer = D_forecv->c_layer;
++
++  RecreateCanvasChain();
+   RethinkDisplayViewports();
+   ResizeLayersToCanvases();
+ }
+@@ -585,24 +997,35 @@
+ void
+ OneCanvas()
+ {
+-  struct canvas *mycv = D_forecv;
+-  struct canvas *cv, **cvpp;
++  struct canvas *cv = D_forecv, *ocv = 0;
+ 
+-  for (cvpp = &D_cvlist; (cv = *cvpp);)
++  if (cv->c_slprev)
+     {
+-      if (cv == mycv)
+-        {
+-	  cv->c_ys = 0;
+-	  cv->c_ye = D_height - 1 - (D_has_hstatus == HSTATUS_LASTLINE) - captionalways;
+-	  cv->c_yoff = 0;
+-	  cvpp = &cv->c_next;
+-        }
+-      else
+-        {
+-	  *cvpp = cv->c_next;
+-	  FreeCanvas(cv);
+-        }
++      ocv = cv->c_slprev;
++      cv->c_slprev->c_slnext = cv->c_slnext;
++    }
++  if (cv->c_slnext)
++    {
++      ocv = cv->c_slnext;
++      cv->c_slnext->c_slprev = cv->c_slprev;
+     }
++  if (!ocv)
++    return;
++  if (cv->c_slback && cv->c_slback->c_slperp == cv)
++    cv->c_slback->c_slperp = ocv;
++  cv->c_slorient = SLICE_UNKN;
++  while (D_canvas.c_slperp)
++    FreeCanvas(D_canvas.c_slperp);
++  cv = D_forecv;
++  D_canvas.c_slperp = cv;
++  cv->c_slback = &D_canvas;
++  cv->c_slnext = 0;
++  cv->c_slprev = 0;
++  ASSERT(!cv->c_slperp);
++  if (!captionalways)
++    D_canvas.c_ye++;	/* caption line no longer needed */
++  ResizeCanvas(&D_canvas);
++  RecreateCanvasChain();
+   RethinkDisplayViewports();
+   ResizeLayersToCanvases();
+ }
+@@ -2383,7 +2806,7 @@
+ ShowHStatus(str)
+ char *str;
+ {
+-  int l, i, ox, oy, max;
++  int l, ox, oy, max;
+ 
+   if (D_status == STATUS_ON_WIN && D_has_hstatus == HSTATUS_LASTLINE && STATLINE == D_height-1)
+     return;	/* sorry, in use */
+@@ -2422,9 +2845,7 @@
+ 	l = D_width;
+       GotoPos(0, D_height - 1);
+       SetRendition(captionalways || D_cvlist == 0 || D_cvlist->c_next ? &mchar_null: &mchar_so);
+-      if (!PutWinMsg(str, 0, l))
+-        for (i = 0; i < l; i++)
+-	  PUTCHARLP(str[i]);
++      PutWinMsg(str, 0, l);
+       if (!captionalways && D_cvlist && !D_cvlist->c_next)
+         while (l++ < D_width)
+ 	  PUTCHARLP(' ');
+@@ -2510,7 +2931,7 @@
+   struct viewport *vp, *lvp;
+   struct canvas *cv, *lcv, *cvlist, *cvlnext;
+   struct layer *oldflayer;
+-  int xx, yy;
++  int xx, yy, l;
+   char *buf;
+   struct win *p;
+ 
+@@ -2522,6 +2943,12 @@
+   if (D_status == STATUS_ON_WIN && y == STATLINE)
+     return;	/* can't refresh status */
+ 
++  if (y == D_height - 1 && D_has_hstatus == HSTATUS_LASTLINE)
++    {
++      RefreshHStatus();
++      return;
++    }
++
+   if (isblank == 0 && D_CE && to == D_width - 1 && from < to)
+     {
+       GotoPos(from, y);
+@@ -2536,6 +2963,32 @@
+       lvp = 0;
+       for (cv = display->d_cvlist; cv; cv = cv->c_next)
+ 	{
++	  if (y == cv->c_ye + 1 && from >= cv->c_xs && from <= cv->c_xe)
++	    {
++	      p = Layer2Window(cv->c_layer);
++	      buf = MakeWinMsgEv(captionstring, p, '%', cv->c_xe - cv->c_xs + (cv->c_xe + 1 < D_width || D_CLP), &cv->c_captev, 0);
++	      if (cv->c_captev.timeout.tv_sec)
++		evenq(&cv->c_captev);
++	      xx = to > cv->c_xe ? cv->c_xe : to;
++	      l = strlen(buf);
++	      GotoPos(from, y);
++	      SetRendition(&mchar_so);
++	      if (l > xx - cv->c_xs + 1)
++		l = xx - cv->c_xs + 1;
++	      PutWinMsg(buf, from - cv->c_xs, l);
++	      from = cv->c_xs + l;
++	      for (; from <= xx; from++)
++		PUTCHARLP(' ');
++	      break;
++	    }
++	  if (from == cv->c_xe + 1 && y >= cv->c_ys && y <= cv->c_ye + 1)
++	    {
++	      GotoPos(from, y);
++	      SetRendition(&mchar_so);
++	      PUTCHARLP(' ');
++	      from++;
++	      break;
++	    }
+ 	  if (y < cv->c_ys || y > cv->c_ye || to < cv->c_xs || from > cv->c_xe)
+ 	    continue;
+ 	  debug2("- canvas hit: %d %d", cv->c_xs, cv->c_ys);
+@@ -2552,6 +3005,8 @@
+ 		}
+ 	    }
+ 	}
++      if (cv)
++	continue;	/* we advanced from */
+       if (lvp == 0)
+ 	break;
+       if (from < lvp->v_xs)
+@@ -2600,44 +3055,8 @@
+ 
+       from = xx + 1;
+     }
+-  if (from > to)
+-    return;		/* all done */
+-
+-  if (y == D_height - 1 && D_has_hstatus == HSTATUS_LASTLINE)
+-    {
+-      RefreshHStatus();
+-      return;
+-    }
+-
+-  for (cv = display->d_cvlist; cv; cv = cv->c_next)
+-    if (y == cv->c_ye + 1)
+-      break;
+-  if (cv == 0)
+-    {
+-      if (!isblank)
+-	DisplayLine(&mline_null, &mline_blank, y, from, to);
+-      return;
+-    }
+-
+-  p = Layer2Window(cv->c_layer);
+-  buf = MakeWinMsgEv(captionstring, p, '%', D_width - !D_CLP, &cv->c_captev, 0);
+-  if (cv->c_captev.timeout.tv_sec)
+-    evenq(&cv->c_captev);
+-  xx = strlen(buf);
+-  GotoPos(from, y);
+-  SetRendition(&mchar_so);
+-  if (PutWinMsg(buf, from, to + 1))
+-    from = xx > to + 1 ? to + 1 : xx;
+-  else
+-    {
+-      while (from <= to && from < xx)
+-	{
+-	  PUTCHARLP(buf[from]);
+-	  from++;
+-	}
+-    }
+-  while (from++ <= to)
+-    PUTCHARLP(' ');
++  if (!isblank && from <= to)
++    DisplayLine(&mline_null, &mline_blank, y, from, to);
+ }
+ 
+ /*********************************************************************/
+@@ -3920,3 +4339,296 @@
+ }
+ 
+ #endif
++
++struct layout *layouts;
++struct layout *laytab[MAXLAY];
++struct layout *layout_last, layout_last_marker;
++struct layout *layout_attach = &layout_last_marker;
++
++void
++FreeLayoutCv(cv)
++struct canvas *cv;
++{
++  for (; cv; cv = cv->c_slnext)
++    if (cv->c_slperp)
++      {
++	FreeLayoutCv(cv->c_slperp);
++	free(cv->c_slperp);
++	cv->c_slperp = 0;
++      }
++}
++
++void
++DupLayoutCv(cvf, cvt, save)
++struct canvas *cvf, *cvt;
++int save;
++{
++  while(cvf)
++    {
++      cvt->c_slorient = cvf->c_slorient;
++      cvt->c_slweight = cvf->c_slweight;
++      if (cvf == D_forecv)
++        D_forecv = cvt;
++      if (!save)
++	{
++	  cvt->c_display = display;
++	  if (!cvf->c_slperp)
++	    {
++	      cvt->c_captev.type = EV_TIMEOUT;
++	      cvt->c_captev.data = (char *)cvt;
++	      cvt->c_captev.handler = cv_winid_fn;
++	      cvt->c_blank.l_cvlist = 0;
++	      cvt->c_blank.l_layfn = &BlankLf;
++	      cvt->c_blank.l_bottom = &cvt->c_blank;
++	    }
++          cvt->c_layer = cvf->c_layer;
++	}
++      else
++	{
++	  struct win *p = cvf->c_layer ? Layer2Window(cvf->c_layer) : 0;
++          cvt->c_layer = p ? &p->w_layer : 0;
++	}
++      if (cvf->c_slperp)
++	{
++	  cvt->c_slperp = (struct canvas *)calloc(1, sizeof(struct canvas));
++	  cvt->c_slperp->c_slback = cvt;
++	  DupLayoutCv(cvf->c_slperp, cvt->c_slperp, save);
++	}
++      if (cvf->c_slnext)
++	{
++	  cvt->c_slnext = (struct canvas *)calloc(1, sizeof(struct canvas));
++	  cvt->c_slnext->c_slprev = cvt;
++	  cvt->c_slnext->c_slback = cvt->c_slback;
++	}
++      cvf = cvf->c_slnext;
++      cvt = cvt->c_slnext;
++    }
++}
++
++void
++PutWindowCv(cv)
++struct canvas *cv;
++{
++  struct win *p;
++  for (; cv; cv = cv->c_slnext)
++    {
++      if (cv->c_slperp)
++	{
++	  PutWindowCv(cv->c_slperp);
++	  continue;
++	}
++      p = cv->c_layer ? (struct win *)cv->c_layer->l_data : 0;
++      cv->c_layer = 0;
++      SetCanvasWindow(cv, p);
++    }
++}
++
++struct lay *
++CreateLayout(title, startat)
++char *title;
++int startat;
++{
++  struct layout *lay;
++  int i;
++
++  if (startat >= MAXLAY || startat < 0)
++    startat = 0;
++  for (i = startat; ;)
++    {
++      if (!laytab[i])
++        break;
++      if (++i == MAXLAY)
++	i = 0;
++      if (i == startat)
++	{
++	  Msg(0, "No more layouts\n");
++	  return 0;
++	}
++    }
++  lay = (struct layout *)calloc(1, sizeof(*lay));
++  lay->lay_title = SaveStr(title);
++  lay->lay_autosave = 1;
++  lay->lay_number = i;
++  laytab[i] = lay;
++  lay->lay_next = layouts;
++  layouts = lay;
++  return lay;
++}
++
++void
++SaveLayout(name, cv)
++char *name;
++struct canvas *cv;
++{
++  struct layout *lay;
++  struct canvas *fcv;
++  for (lay = layouts; lay; lay = lay->lay_next)
++    if (!strcmp(lay->lay_title, name))
++      break;
++  if (lay)
++    FreeLayoutCv(&lay->lay_canvas);
++  else
++    lay = CreateLayout(name, 0);
++  if (!lay)
++    return;
++  fcv = D_forecv;
++  DupLayoutCv(cv, &lay->lay_canvas, 1);
++  lay->lay_forecv = D_forecv;
++  D_forecv = fcv;
++  D_layout = lay;
++}
++
++void
++AutosaveLayout(lay)
++struct layout *lay;
++{
++  struct canvas *fcv;
++  if (!lay || !lay->lay_autosave)
++    return;
++  FreeLayoutCv(&lay->lay_canvas);
++  fcv = D_forecv;
++  DupLayoutCv(&D_canvas, &lay->lay_canvas, 1);
++  lay->lay_forecv = D_forecv;
++  D_forecv = fcv;
++}
++
++struct layout *
++FindLayout(name)
++char *name;
++{
++  struct layout *lay;
++  char *s;
++  int i;
++  for (i = 0, s = name; *s >= '0' && *s <= '9'; s++)
++    i = i * 10 + (*s - '0');
++  if (!*s && s != name && i >= 0 && i < MAXLAY)
++    return laytab[i];
++  for (lay = layouts; lay; lay = lay->lay_next)
++    if (!strcmp(lay->lay_title, name))
++      break;
++  return lay;
++}
++
++void
++LoadLayout(lay, cv)
++struct layout *lay;
++struct canvas *cv;
++{
++  AutosaveLayout(D_layout);
++  if (!lay)
++    {
++      while (D_canvas.c_slperp)
++	FreeCanvas(D_canvas.c_slperp);
++      MakeDefaultCanvas();
++      SetCanvasWindow(D_forecv, 0);
++      D_layout = 0;
++      return;
++    }
++  while (D_canvas.c_slperp)
++    FreeCanvas(D_canvas.c_slperp);
++  D_cvlist = 0;
++  D_forecv = lay->lay_forecv;
++  DupLayoutCv(&lay->lay_canvas, &D_canvas, 0);
++  D_canvas.c_ye = D_height - 1 - ((D_canvas.c_slperp && D_canvas.c_slperp->c_slnext) || captionalways) - (D_has_hstatus == HSTATUS_LASTLINE);
++  ResizeCanvas(&D_canvas);
++  RecreateCanvasChain();
++  RethinkDisplayViewports();
++  PutWindowCv(&D_canvas);
++  ResizeLayersToCanvases();
++  D_layout = lay;
++}
++
++void
++NewLayout(title, startat)
++char *title;
++int startat;
++{
++  struct layout *lay;
++  struct canvas *fcv;
++
++  lay = CreateLayout(title, startat);
++  if (!lay)
++    return;
++  LoadLayout(0, &D_canvas);
++  fcv = D_forecv;
++  DupLayoutCv(&D_canvas, &lay->lay_canvas, 1);
++  lay->lay_forecv = D_forecv;
++  D_forecv = fcv;
++  D_layout = lay;
++  lay->lay_autosave = 1;
++}
++
++static char *
++AddLayoutsInfo(buf, len, where)
++char *buf;
++int len;
++int where;
++{
++  char *s, *ss, *t;
++  struct layout *p, **pp;
++  int l;
++
++  s = ss = buf;
++  for (pp = laytab; pp < laytab + MAXLAY; pp++)
++    {
++      if (pp - laytab == where && ss == buf)
++	ss = s;
++      if ((p = *pp) == 0)
++        continue;
++      t = p->lay_title;
++      l = strlen(t);
++      if (l > 20)
++        l = 20;
++      if (s - buf + l > len - 24)
++        break;
++      if (s > buf)
++	{
++	  *s++ = ' ';
++	  *s++ = ' ';
++	}
++      sprintf(s, "%d", p->lay_number);
++      if (p->lay_number == where)
++	ss = s;
++      s += strlen(s);
++      if (display && p == D_layout)
++	*s++ = '*';
++      *s++ = ' ';
++      strncpy(s, t, l);
++      s += l;
++    }
++  *s = 0;
++  return ss;
++}
++
++void
++ShowLayouts(where)
++int where;
++{
++  char buf[1024];
++  char *s, *ss; 
++
++  if (!display)
++    return;
++  if (!layouts)
++    {
++      Msg(0, "No layouts defined\n");
++      return;
++    }
++  if (where == -1 && D_layout)
++    where = D_layout->lay_number;
++  ss = AddLayoutsInfo(buf, sizeof(buf), where);
++  s = buf + strlen(buf);
++  if (ss - buf > D_width / 2) 
++    {    
++      ss -= D_width / 2; 
++      if (s - ss < D_width)
++        {
++          ss = s - D_width;
++          if (ss < buf) 
++            ss = buf; 
++        }
++    }    
++  else 
++    ss = buf; 
++  Msg(0, "%s", ss); 
++}
+diff -Naur screen-4.0.3.orig/display.h screen-4.0.3/display.h
+--- screen-4.0.3.orig/display.h	2003-07-01 16:01:42.000000000 +0200
++++ screen-4.0.3/display.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,17 +19,18 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: display.h,v 1.9 1994/05/31 12:31:54 mlschroe Exp $ FAU
++ * $Id: display.h,v 1.26 2007/02/07 22:53:59 mls Exp $ FAU
+  */
+ 
+ #ifdef MAPKEYS
+ 
+ #define KMAP_KEYS (T_OCAPS-T_CAPS)
+ #define KMAP_AKEYS (T_OCAPS-T_CURSOR)
+-#define KMAP_EXT 50
+ 
+ #define KMAP_NOTIMEOUT 0x4000
+ 
++#define MAXLAY 10
++
+ struct kmap_ext
+ {
+   char *str;
+@@ -39,14 +40,33 @@
+   struct action mm;
+ };
+ 
++#else
++
++#define KMAP_KEYS 0
++
+ #endif
+ 
+ struct win;			/* forward declaration */
+ 
++#define SLICE_UNKN 0
++#define SLICE_VERT (1 << 0)
++#define SLICE_HORI (1 << 1)
++
++#define SLICE_THIS (1 << 2)	/* used in equal test */
++#define SLICE_GLOBAL (1 << 3)
++
+ struct canvas
+ {
+   struct canvas   *c_next;	/* next canvas on display */
+   struct display  *c_display;	/* back pointer to display */
++
++  struct canvas   *c_slnext;	/* next canvas in display slice */
++  struct canvas   *c_slprev;	/* prev canvas in display slice */
++  struct canvas   *c_slperp;	/* perpendicular slice */
++  struct canvas   *c_slback;	/* perpendicular slice back pointer */
++  int              c_slorient;  /* our slice orientation */
++  int              c_slweight;	/* size ratio */
++
+   struct viewport *c_vplist;
+   struct layer    *c_layer;	/* layer on this canvas */
+   struct canvas   *c_lnext;	/* next canvas that displays layer */
+@@ -60,6 +80,17 @@
+   struct event     c_captev;	/* caption changed event */
+ };
+ 
++struct layout
++{
++  struct layout   *lay_next;
++  char            *lay_title;
++  int              lay_number;
++  struct canvas    lay_canvas;
++  struct canvas   *lay_forecv;
++  struct canvas   *lay_cvlist;
++  int              lay_autosave;
++};
++
+ struct viewport
+ {
+   struct viewport *v_next;	/* next vp on canvas */
+@@ -75,9 +106,11 @@
+ struct display
+ {
+   struct display *d_next;	/* linked list */
+-  struct acluser *d_user;		/* user who owns that display */
++  struct acluser *d_user;	/* user who owns that display */
++  struct canvas d_canvas;	/* our canvas slice */
+   struct canvas *d_cvlist;	/* the canvases of this display */
+   struct canvas *d_forecv;	/* current input focus */
++  struct layout *d_layout;	/* layout we're using */
+   void (*d_processinput) __P((char *, int));
+   char *d_processinputdata;	/* data for processinput */
+   int d_vpxmin, d_vpxmax;	/* min/max used position on display */
+@@ -198,7 +231,9 @@
+ 
+ #define D_user		DISPLAY(d_user)
+ #define D_username	(DISPLAY(d_user) ? DISPLAY(d_user)->u_name : 0)
++#define D_canvas	DISPLAY(d_canvas)
+ #define D_cvlist	DISPLAY(d_cvlist)
++#define D_layout	DISPLAY(d_layout)
+ #define D_forecv	DISPLAY(d_forecv)
+ #define D_processinput	DISPLAY(d_processinput)
+ #define D_processinputdata	DISPLAY(d_processinputdata)
+diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
+--- screen-4.0.3.orig/doc/screen.1	2003-12-05 14:51:57.000000000 +0100
++++ screen-4.0.3/doc/screen.1	2008-06-01 23:39:31.000000000 +0200
+@@ -283,9 +283,9 @@
+ command.
+ .TP 5
+ .BI "\-p " number_or_name
+-Preselect a window. This is usefull when you want to reattach to a
+-specific windor or you want to send a command via the \*Q-X\*U
+-option to a specific window. As with screen's select commant, \*Q-\*U
++Preselect a window. This is useful when you want to reattach to a
++specific window or you want to send a command via the \*Q-X\*U
++option to a specific window. As with screen's select command, \*Q-\*U
+ selects the blank window. As a special case for reattach, \*Q=\*U
+ brings up the windowlist on the blank window.
+ .TP 5
+@@ -360,6 +360,9 @@
+ Attach to a not detached
+ .I screen
+ session. (Multi display mode).
++.I Screen
++refuses to attach from within itself. 
++But when cascading multiple screens, loops are not detected; take care.
+ .TP 5
+ .B \-X
+ Send the specified command to a running screen session. You can use
+@@ -396,6 +399,7 @@
+ .IP "\fBC-a tab\fP	(focus)"
+ .PD
+ Switch the input focus to the next region.
++See also \fIsplit, remove, only\fP.
+ .IP "\fBC-a C-a\fP	(other)"
+ Toggle to the window displayed previously.
+ Note that this binding defaults to the command character typed twice,
+@@ -492,6 +496,7 @@
+ Send a control-q to the current window.
+ .IP "\fBC-a Q\fP	(only)"
+ Delete all regions but the current one.
++See also \fIsplit, remove, focus\fP.
+ .IP "\fBC-a r\fP"
+ .PD 0
+ .IP "\fBC-a C-r\fP	(wrap)"
+@@ -505,6 +510,7 @@
+ Send a control-s to the current window.
+ .IP "\fBC-a S\fP	(split)"
+ Split the current region into two new ones.
++See also \fIonly, remove, focus\fP.
+ .IP "\fBC-a t\fP"
+ .PD 0
+ .IP "\fBC-a C-t\fP	(time)"
+@@ -530,6 +536,7 @@
+ Lock this terminal.
+ .IP "\fBC-a X\fP 	(remove)"
+ Kill the current region.
++See also \fIsplit, only, focus\fP.
+ .IP "\fBC-a z\fP"
+ .PD 0
+ .IP "\fBC-a C-z\fP	(suspend)"
+@@ -1044,7 +1051,7 @@
+ This key-binding makes \*Q^T\*U an escape character for key-bindings. If
+ you did the above \*Qstuff barfoo\*U binding, you can enter the word
+ \*Qfoo\*U by typing \*Q^Tfoo\*U. If you want to insert a \*Q^T\*U
+-you have to press the key twice (i.e. escape the escape binding).
++you have to press the key twice (i.e., escape the escape binding).
+ .sp
+ .nf
+         bindkey -k F1 command
+@@ -1448,7 +1455,7 @@
+ of the break, but it may be the only way to generate long breaks. 
+ .IR Tcsendbreak " and " TIOCSBRK
+ may or may not produce long breaks with spikes (e.g. 4 per
+-second). This is not only system dependant, this also differs between
++second). This is not only system-dependent, this also differs between
+ serial board drivers.
+ Calling \*Qdefbreaktype\*U with no parameter displays the current setting.
+ .sp
+@@ -1724,7 +1731,7 @@
+ optional arguments) in the current window. The flow of data between 
+ newcommands stdin/stdout/stderr, the process originally started in the window 
+ (let us call it "application-process") and screen itself (window) is 
+-controlled by the filedescriptor pattern fdpat.
++controlled by the file descriptor pattern fdpat.
+ This pattern is basically a three character sequence representing stdin, stdout
+ and stderr of newcommand. A dot (.) connects the file descriptor
+ to
+@@ -1837,6 +1844,7 @@
+     bind t focus top
+     bind b focus bottom
+ .fi
++Note that \fBk\fP is traditionally bound to the \fIkill\fP command.
+ .sp
+ .ne 3
+ .BR "gr " [ on | off ]
+@@ -1914,7 +1922,7 @@
+ will use the type even if the terminal supports a hardstatus.
+ .P
+ The third form specifies the contents of the hardstatus line.  '%h' is
+-used as default string, i.e. the stored hardstatus of the current
++used as default string, i.e., the stored hardstatus of the current
+ window (settable via \*QESC]0;<string>^G\*U or \*QESC_<string>ESC\e\*U)
+ is displayed.  You can customize this to any string you like including
+ the escapes from the \*QSTRING ESCAPES\*U chapter. If you leave out
+@@ -2111,7 +2119,7 @@
+ .br
+ .BI "logfile flush " secs
+ .PP
+-Defines the name the logfiles will get. The default is
++Defines the name the log files will get. The default is
+ \*Qscreenlog.%n\*U. The second form changes the number of seconds
+ .I screen
+ will wait before flushing the logfile buffer to the file-system. The
+@@ -2702,6 +2710,7 @@
+ display are resized to make room for the new region. The blank
+ window is displayed on the new region. Use the \*Qremove\*U or the
+ \*Qonly\*U command to delete regions.
++Use \*Qfocus\*U to toggle between regions.
+ .sp
+ .ne 3
+ .B "startup_message on\fP|\fBoff"
+@@ -3091,7 +3100,7 @@
+ Note also that this is an experimental feature.
+ .sp
+ .ne 3
+-.BR "zombie " [\fIkeys\fP]
++.BR "zombie " [\fIkeys\fP [ onerror ] ]
+ .br
+ .BR "defzombie " [\fIkeys\fP]
+ .PP
+@@ -3113,6 +3122,10 @@
+ should only be called \fBdefzombie\fP. Until we need this as a per window 
+ setting, the commands \fBzombie\fP and \fBdefzombie\fP are synonymous.
+ 
++Optionally you can put the word \*Qonerror\*U after the keys. This will cause screen
++to monitor exit status of the process running in the window. If it exits normally ('0'), 
++the window disappears. Any other exit value causes the window to become a zombie.
++
+ .SH "THE MESSAGE LINE"
+ .I Screen
+ displays informational messages and other diagnostics in a \fImessage line\fP.
+@@ -3179,7 +3192,7 @@
+ .PP
+ You may want to specify as many of these options as applicable. Unspecified
+ options cause the terminal driver to make up the parameter values of the
+-connection.  These values are system dependant and may be in defaults or values
++connection.  These values are system dependent and may be in defaults or values
+ saved from a previous connection.
+ .PP
+ For tty windows, the 
+@@ -3293,7 +3306,7 @@
+ .IP u
+ all other users on this window
+ .IP w
+-all window numbers and names. With '-' quailifier: up to the current
++all window numbers and names. With '-' qualifier: up to the current
+ window; with '+' qualifier: starting with the window after the current
+ one.
+ .IP W
+@@ -3345,7 +3358,7 @@
+ color settings. Its format
+ is \*Q[attribute modifier] [color description]\*U. The attribute modifier
+ must be prefixed by a change type indicator if it can be confused with
+-a color desciption. The following change types are known:
++a color description. The following change types are known:
+ .IP +
+ add the specified set to the current attributes
+ .IP -
+@@ -3403,14 +3416,14 @@
+ unchanged.
+ .br
+ A one digit/letter color description is treated as foreground or
+-background color dependant on the current attributes: if reverse mode is
++background color dependent on the current attributes: if reverse mode is
+ set, the background color is changed instead of the foreground color.
+ If you don't like this, prefix the color with a \*Q.\*U. If you want
+-the same behaviour for two-letter color descriptions, also prefix them
++the same behavior for two-letter color descriptions, also prefix them
+ with a \*Q.\*U.
+ .br
+ As a special case, \*Q%{-}\*U restores the attributes and colors that
+-were set before the last change was made (i.e. pops one level of the
++were set before the last change was made (i.e., pops one level of the
+ color-change stack).
+ .PP
+ Examples:
+@@ -4329,7 +4342,7 @@
+ A \fI<charset-mapping>\fP tells 
+ .I screen
+ how to map characters
+-in font \fI<designator>\fP ('B': Ascii, 'A': UK, 'K': german, etc.)
++in font \fI<designator>\fP ('B': Ascii, 'A': UK, 'K': German, etc.)
+ to strings. Every \fI<mapping>\fP describes to what string a single
+ character will be translated. A template mechanism is used, as 
+ most of the time the codes have a lot in common (for example
+@@ -4349,7 +4362,7 @@
+ .I screen
+ how to translate ISOlatin1 (charset 'B')
+ upper case umlaut characters on a hp700 terminal that has a
+-german charset. '\e304' gets translated to '\eE(K[\eE(B' and so on.
++German charset. '\e304' gets translated to '\eE(K[\eE(B' and so on.
+ Note that this line gets parsed *three* times before the internal
+ lookup table is built, therefore a lot of quoting is needed to
+ create a single '\e'.
+@@ -4367,7 +4380,7 @@
+ 
+     termcap xterm 'XC=K%,%\eE(B,[\e304,\e\e\e\e\e326,]\e334'
+ 
+-Here, a part of the german ('K') charset is emulated on an xterm.
++Here, a part of the German ('K') charset is emulated on an xterm.
+ If 
+ .I screen
+ has to change to the 'K' charset, '\eE(B' will be sent
+diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
+--- screen-4.0.3.orig/doc/screen.texinfo	2003-12-05 14:51:46.000000000 +0100
++++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:39:31.000000000 +0200
+@@ -345,9 +345,9 @@
+ @end table
+ 
+ @item -p @var{name_or_number}
+-Preselect a window. This is usefull when you want to reattach to a
+-specific windor or you want to send a command via the @samp{-X}
+-option to a specific window. As with screen's select commant, @samp{-}
++Preselect a window. This is useful when you want to reattach to a
++specific window or you want to send a command via the @samp{-X}
++option to a specific window. As with screen's select command, @samp{-}
+ selects the blank window. As a special case for reattach, @samp{=}
+ brings up the windowlist on the blank window.
+ 
+@@ -417,7 +417,10 @@
+ 
+ @item -x
+ Attach to a session which is already attached elsewhere (multi-display
+-mode).
++mode). 
++@code{Screen} refuses to attach from within itself. 
++But when cascading multiple screens, loops are not detected; take care.
++
+ 
+ @item -X
+ Send the specified command to a running screen session. You can use
+@@ -1156,7 +1159,7 @@
+ Send an XON character.  @xref{XON/XOFF}.
+ @item zmodem [off|auto|catch|pass]
+ Define how screen treats zmodem requests.  @xref{Zmodem}.
+-@item zombie [@var{keys}]
++@item zombie [@var{keys} [onerror] ]
+ Keep dead windows.  @xref{Zombie}.
+ @end table
+ 
+@@ -1332,7 +1335,7 @@
+ 
+ You may want to specify as many of these options as applicable.
+ Unspecified options cause the terminal driver to make up the parameter
+-values of the connection. These values are system dependant and may be
++values of the connection. These values are system-dependent and may be
+ in defaults or values saved from a previous connection.
+ 
+ For tty windows, the @code{info} command shows some of the modem
+@@ -2888,7 +2891,7 @@
+ users.
+ If your terminal sends characters, that cause you to abort copy mode,
+ then this command may help by binding these characters to do nothing.
+-The no-op character is `@' and is used like this: @code{markkeys @@=L=H}
++The no-op character is `@@' and is used like this: @code{markkeys @@=L=H}
+ if you do not want to use the `H' or `L' commands any longer. 
+ As shown in this example, multiple keys can be assigned to one function
+ in a single statement.
+@@ -2928,7 +2931,7 @@
+ @noindent
+ @kbd{C-u} and @kbd{C-d} scroll the display up/down by the specified
+ amount of lines while preserving the cursor position. (Default: half
+-screenfull).
++screenful).
+ 
+ @noindent
+ @kbd{C-b} and @kbd{C-f} move the cursor up/down a full screen.
+@@ -3224,7 +3227,7 @@
+ its optional arguments) in the current window. The flow of data between
+ newcommands stdin/stdout/stderr, the process originally started (let us call it 
+ "application-process") and 
+-screen itself (window) is controlled by the filedescriptor pattern @var{fdpat}.
++screen itself (window) is controlled by the file descriptor pattern @var{fdpat}.
+ This pattern is basically a three character sequence representing stdin, stdout
+ and stderr of newcommand. A dot (@code{.}) connects the file descriptor
+ to screen. An exclamation mark (@code{!}) causes the file descriptor to be
+@@ -3466,7 +3469,7 @@
+ changes the copy mode table and with neither option the user
+ table is selected. The argument @samp{string} is the sequence of
+ characters to which an action is bound. This can either be a fixed
+-tring or a termcap keyboard capability name (selectable with the
++string or a termcap keyboard capability name (selectable with the
+ @samp{-k} option).
+ 
+ Some keys on a VT100 terminal can send a different
+@@ -3516,7 +3519,7 @@
+ This key-binding makes @samp{C-t} an escape character for key-bindings. If
+ you did the above @samp{stuff barfoo} binding, you can enter the word
+ @samp{foo} by typing @samp{C-t foo}. If you want to insert a
+-@samp{C-t} you have to press the key twice (i.e. escape the escape
++@samp{C-t} you have to press the key twice (i.e., escape the escape
+ binding).
+ 
+ @example
+@@ -3539,7 +3542,7 @@
+ @end deffn
+ @deffn Command maptimeout timo
+ (none)@*
+-Set the intercharacter timer for input sequence detection to a timeout
++Set the inter-character timer for input sequence detection to a timeout
+ of @var{timo} ms. The default timeout is 300ms. Maptimeout with no
+ arguments shows the current setting.
+ @end deffn
+@@ -4061,7 +4064,7 @@
+ 
+ This tells @code{screen}, how to translate ISOlatin1 (charset @samp{B})
+ upper case umlaut characters on a @code{hp700} terminal that has a
+-german charset. @samp{\304} gets translated to
++German charset. @samp{\304} gets translated to
+ @samp{\E(K[\E(B} and so on.
+ Note that this line gets parsed *three* times before the internal
+ lookup table is built, therefore a lot of quoting is needed to
+@@ -4080,7 +4083,7 @@
+     termcap xterm 'XC=K%,%\E(B,[\304,\\\\\326,]\334'
+ @end example
+ 
+-Here, a part of the german (@samp{K}) charset is emulated on an xterm.
++Here, a part of the German (@samp{K}) charset is emulated on an xterm.
+ If screen has to change to the @samp{K} charset, @samp{\E(B} will be
+ sent
+ to the terminal, i.e. the ASCII charset is used instead. The
+@@ -4145,7 +4148,7 @@
+ the type even if the terminal supports a hardstatus line.
+ 
+ The third form specifies the contents of the hardstatus line.
+-@code{%h} is used as default string, i.e. the stored hardstatus of the
++@code{%h} is used as default string, i.e., the stored hardstatus of the
+ current window (settable via @samp{ESC]0;^G} or @samp{ESC_\\}) is
+ displayed.
+ You can customize this to any string you like including
+@@ -4217,7 +4220,7 @@
+ @deffn Command hardcopydir directory
+ (none)@*
+ Defines a directory where hardcopy files will be placed.
+-If unset hardcopys are dumped in screen's current working
++If unset, hardcopys are dumped in screen's current working
+ directory.
+ @end deffn
+ 
+@@ -4247,7 +4250,7 @@
+ @deffn Command logfile filename
+ @deffnx Command logfile flush secs
+ (none)@*
+-Defines the name the logfiles will get. The default is @samp{screenlog.%n}.
++Defines the name the log files will get. The default is @samp{screenlog.%n}.
+ The second form changes the number of seconds @code{screen}
+ will wait before flushing the logfile buffer to the file-system. The
+ default value is 10 seconds.
+@@ -4407,7 +4410,7 @@
+ session for the duration of the break, but it may be the only way to
+ generate long breaks. @code{tcsendbreak} and @code{TIOCSBRK} may or may not
+ produce long breaks with spikes (e.g. 4 per second). This is not only system
+-dependant, this also differs between serial board drivers.
++dependent, this also differs between serial board drivers.
+ Calling @code{defbreaktype} with no parameter displays the current setting.
+ @end deffn
+ 
+@@ -4530,7 +4533,7 @@
+ 
+ @node Zombie, Printcmd, Version, Miscellaneous
+ @section Zombie
+-@deffn Command zombie [@var{keys}]
++@deffn Command zombie [@var{keys} [onerror] ]
+ @deffnx Command defzombie [@var{keys}]
+ (none)@*
+ Per default windows are removed from the window list as soon as the
+@@ -4546,6 +4549,11 @@
+ As the zombie setting is affected globally for all windows, this command 
+ should only be called @code{defzombie}. Until we need this as a per window 
+ setting, the commands @code{zombie} and @code{defzombie} are synonymous.
++
++Optionally you can put the word @code{onerror} after the keys. This will
++cause screen to monitor exit status of the process running in the window.
++If it exits normally ('0'), the window disappears. Any other exit value
++causes the window to become a zombie.
+ @end deffn
+ 
+ @node Printcmd, Sorendition, Zombie, Miscellaneous
+@@ -4759,7 +4767,7 @@
+ @item u
+ all other users on this window
+ @item w
+-all window numbers and names. With @code{-} quailifier: up to the current
++all window numbers and names. With @code{-} qualifier: up to the current
+ window; with @code{+} qualifier: starting with the window after the current
+ one.
+ @item W
+@@ -4811,7 +4819,7 @@
+ color settings. Its format
+ is @samp{[attribute modifier] [color description]}. The attribute modifier
+ must be prefixed by a change type indicator if it can be confused with
+-a color desciption. The following change types are known: 
++a color description. The following change types are known: 
+ @table @code
+ @item +
+ add the specified set to the current attributes
+@@ -4868,10 +4876,10 @@
+ unchanged.
+ 
+ A one digit/letter color description is treated as foreground or
+-background color dependant on the current attributes: if reverse mode is
++background color dependent on the current attributes: if reverse mode is
+ set, the background color is changed instead of the foreground color.
+ If you don't like this, prefix the color with a @samp{.}. If you want
+-the same behaviour for two-letter color descriptions, also prefix them
++the same behavior for two-letter color descriptions, also prefix them
+ with a @samp{.}.
+ 
+ As a special case, @samp{%@{-@}} restores the attributes and colors that
+@@ -5069,7 +5077,7 @@
+ @menu
+ * Known Bugs::                  Problems we know about.
+ * Reporting Bugs::              How to contact the maintainers.
+-* Availability::                Where to find the lastest screen version.
++* Availability::                Where to find the latest screen version.
+ @end menu
+ 
+ @node Known Bugs, Reporting Bugs,  , Bugs
+diff -Naur screen-4.0.3.orig/encoding.c screen-4.0.3/encoding.c
+--- screen-4.0.3.orig/encoding.c	2006-10-23 14:58:14.000000000 +0200
++++ screen-4.0.3/encoding.c	2008-06-01 23:39:31.000000000 +0200
+@@ -997,7 +997,7 @@
+       if (c1 >= 0xd800 && c1 < 0xe000)
+         comb_tofront(root, c1 - 0xd800);
+       i = combchars[root]->prev;
+-      if (c1 == i + 0xd800) 
++      if (c1 == i + 0xd800)
+ 	{
+ 	  /* completely full, can't recycle */
+ 	  debug("utf8_handle_comp: completely full!\n");
+@@ -1159,6 +1159,8 @@
+ 	      *statep = c;
+ 	      return -1;
+ 	    }
++	  if (c < 0x80)
++	    return c;
+ 	  return c | (KANA << 16);
+ 	}
+       t = c;
+@@ -1166,11 +1168,16 @@
+       *statep = 0;
+       if (0x40 <= t && t <= 0xfc && t != 0x7f)
+ 	{
+-	  if (c <= 0x9f) c = (c - 0x81) * 2 + 0x21; 
+-	  else c = (c - 0xc1) * 2 + 0x21; 
+-	  if (t <= 0x7e) t -= 0x1f;
+-	  else if (t <= 0x9e) t -= 0x20;
+-	  else t -= 0x7e, c++;
++	  if (c <= 0x9f)
++	    c = (c - 0x81) * 2 + 0x21; 
++	  else
++	    c = (c - 0xc1) * 2 + 0x21; 
++	  if (t <= 0x7e)
++	    t -= 0x1f;
++	  else if (t <= 0x9e)
++	    t -= 0x20;
++	  else
++	     t -= 0x7e, c++;
+ 	  return (c << 8) | t | (KANJI << 16);
+ 	}
+       return t;
+diff -Naur screen-4.0.3.orig/extern.h screen-4.0.3/extern.h
+--- screen-4.0.3.orig/extern.h	2003-08-22 14:27:57.000000000 +0200
++++ screen-4.0.3/extern.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: extern.h,v 1.18 1994/05/31 12:31:57 mlschroe Exp $ FAU
++ * $Id: extern.h,v 1.33 2007/02/06 20:44:37 mls Exp $ FAU
+  */
+ 
+ #if !defined(__GNUC__) || __GNUC__ < 2
+@@ -45,8 +45,8 @@
+ extern void  MakeNewEnv __P((void));
+ extern char *MakeWinMsg __P((char *, struct win *, int));
+ extern char *MakeWinMsgEv __P((char *, struct win *, int, int, struct event *, int));
+-extern int   PutWinMsg __P((char *, int, int));
+-extern void  WindowDied __P((struct win *));
++extern void  PutWinMsg __P((char *, int, int));
++extern void  WindowDied __P((struct win *, int, int));
+ extern void  setbacktick __P((int, int, int, char **));
+ 
+ /* ansi.c */
+@@ -65,7 +65,7 @@
+ extern int   MFindUsedLine __P((struct win *, int, int));
+ 
+ /* fileio.c */
+-extern void  StartRc __P((char *));
++extern int   StartRc __P((char *, int));
+ extern void  FinishRc __P((char *));
+ extern void  RcLine __P((char *, int));
+ extern FILE *secfopen __P((char *, char *));
+@@ -113,7 +113,7 @@
+ 
+ /* input.c */
+ extern void  inp_setprompt __P((char *, char *));
+-extern void  Input __P((char *, int, int, void (*)(char *, int, char *), char *));
++extern void  Input __P((char *, int, int, void (*)(char *, int, char *), char *, int));
+ extern int   InInput __P((void));
+ 
+ /* help.c */
+@@ -122,7 +122,7 @@
+ extern void  display_copyright __P((void));
+ extern void  display_displays __P((void));
+ extern void  display_bindkey __P((char *, struct action *));
+-extern void  display_wlist __P((int, int));
++extern void  display_wlist __P((int, int, struct win *));
+ extern int   InWList __P((void));
+ extern void  WListUpdatecv __P((struct canvas *, struct win *));
+ extern void  WListLinkChanged __P((void));
+@@ -289,7 +289,7 @@
+ #endif
+ extern void  SetCanvasWindow __P((struct canvas *, struct win *));
+ extern int   MakeDefaultCanvas __P((void));
+-extern int   AddCanvas __P((void));
++extern int   AddCanvas __P((int));
+ extern void  RemCanvas __P((void));
+ extern void  OneCanvas __P((void));
+ extern int   RethinkDisplayViewports __P((void));
+@@ -335,6 +335,7 @@
+ extern void  ReceiveMsg __P((void));
+ extern void  SendCreateMsg __P((char *, struct NewWindow *));
+ extern int   SendErrorMsg __P((char *, char *));
++extern int   SendAttachMsg __P((int, struct msg *, int));
+ 
+ /* misc.c */
+ extern char *SaveStr __P((const char *));
+diff -Naur screen-4.0.3.orig/fileio.c screen-4.0.3/fileio.c
+--- screen-4.0.3.orig/fileio.c	2003-09-08 16:25:28.000000000 +0200
++++ screen-4.0.3/fileio.c	2008-06-01 23:39:31.000000000 +0200
+@@ -128,9 +128,10 @@
+  * 1) rcfilename = "/etc/screenrc"
+  * 2) rcfilename = RcFileName
+  */
+-void
+-StartRc(rcfilename)
++int
++StartRc(rcfilename, nopanic)
+ char *rcfilename;
++int nopanic;
+ {
+   register int argc, len;
+   register char *p, *cp;
+@@ -159,13 +160,13 @@
+            * the file.
+            */
+ 	  debug3("StartRc: '%s','%s', '%s'\n", RcFileName, rc_name, rcfilename);
+-          Panic(0, "Unable to open \"%s\".", rc_name);
+-	  /* NOTREACHED */
++          if (!nopanic) Panic(0, "Unable to open \"%s\".", rc_name);
++	  /* possibly NOTREACHED */
+ 	}
+       debug1("StartRc: '%s' no good. ignored\n", rc_name);
+       Free(rc_name);
+       rc_name = oldrc_name;
+-      return;
++      return 1;
+     }
+   while (fgets(buf, sizeof buf, fp) != NULL)
+     {
+@@ -238,7 +239,7 @@
+ 	  if (rc_recursion <= 10)
+ 	    {
+ 	      rc_recursion++;
+-	      StartRc(args[1]);
++	      (void)StartRc(args[1], 0);
+ 	      rc_recursion--;
+ 	    }
+ 	}
+@@ -246,6 +247,7 @@
+   fclose(fp);
+   Free(rc_name);
+   rc_name = oldrc_name;
++  return 0;
+ }
+ 
+ void
+@@ -779,7 +781,7 @@
+ #ifdef SIGPIPE
+       signal(SIGPIPE, SIG_DFL);
+ #endif
+-      execl("/bin/sh", "sh", "-c", cmd, 0);
++      execl("/bin/sh", "sh", "-c", cmd, (char *)0);
+       Panic(errno, "/bin/sh");
+     default:
+       break;
+diff -Naur screen-4.0.3.orig/help.c screen-4.0.3/help.c
+--- screen-4.0.3.orig/help.c	2003-09-08 16:25:33.000000000 +0200
++++ screen-4.0.3/help.c	2008-06-01 23:39:31.000000000 +0200
+@@ -37,6 +37,9 @@
+ extern struct mchar mchar_blank, mchar_so;
+ extern unsigned char *blank;
+ extern struct win *wtab[];
++#ifdef MAPKEYS
++extern struct term term[];
++#endif
+ 
+ static void PadStr __P((char *, int, int, int));
+ 
+@@ -161,7 +164,7 @@
+     used[n] = 0;
+   mcom = 0;
+   mkey = 0;
+-  for (key = 0; key < 256; key++)
++  for (key = 0; key < 256 + KMAP_KEYS; key++)
+     {
+       n = ktabp[key].nr;
+       if (n == RC_ILLEGAL)
+@@ -314,7 +317,7 @@
+ 	      x += helpdata->inter - !col;
+ 	      n = helpdata->nact[n];
+ 	      buf[0] = '\0';
+-	      for (key = 0; key < 256; key++)
++	      for (key = 0; key < 256 + KMAP_KEYS; key++)
+ 		if (ktabp[key].nr == n && ktabp[key].args == noargs && strlen(buf) < sizeof(buf) - 7)
+ 		  {
+ 		    strcat(buf, " ");
+@@ -333,13 +336,13 @@
+ 	  while ((n = ktabp[helpdata->command_search].nr) == RC_ILLEGAL
+ 		 || ktabp[helpdata->command_search].args == noargs)
+ 	    {
+-	      if (++helpdata->command_search >= 256)
++	      if (++helpdata->command_search >= 256 + KMAP_KEYS)
+ 		return -1;
+ 	    }
+ 	  buf[0] = '\0';
+ 	  add_key_to_buf(buf, helpdata->command_search);
+-	  PadStr(buf, 4, 0, crow);
+-	  AddAction(&ktabp[helpdata->command_search++], 4, crow);
++	  PadStr(buf, 5, 0, crow);
++	  AddAction(&ktabp[helpdata->command_search++], 5, crow);
+ 	  helpdata->grow++;
+ 	}
+       else
+@@ -425,6 +428,17 @@
+     strcpy(buf, "unset");
+   else if (key == ' ')
+     strcpy(buf, "sp");
++#ifdef MAPKEYS
++  else if (key >= 256)
++    {
++      key = key - 256 + T_CAPS;
++      buf[0] = ':';
++      buf[1] = term[key].tcname[0];
++      buf[2] = term[key].tcname[1];
++      buf[3] = ':';
++      buf[4] = 0;
++    }
++#endif
+   else
+     buf[AddXChar(buf, key)] = 0;
+ }
+@@ -865,6 +879,7 @@
+   int last;
+   int start;
+   int order;
++  struct win *group;
+ };
+ 
+ static struct LayFuncs WListLf =
+@@ -878,6 +893,8 @@
+   DefRestore
+ };
+ 
++#define WTAB_GROUP_MATCHES(i) (group == wtab[i]->w_group)
++
+ static int
+ WListResize(wi, he)
+ int wi, he;
+@@ -904,9 +921,11 @@
+   struct wlistdata *wlistdata;
+   struct display *olddisplay = display;
+   int h;
++  struct win *group;
+ 
+   ASSERT(flayer);
+   wlistdata = (struct wlistdata *)flayer->l_data;
++  group = wlistdata->group;
+   h = wlistdata->numwin;
+   while (!done && *plen > 0)
+     {
+@@ -914,7 +933,7 @@
+ 	{
+ 	  int n = (unsigned char)**ppbuf - '0';
+ 	  int d = 0;
+-	  if (n < MAXWIN && wtab[n])
++	  if (n < MAXWIN && wtab[n] && WTAB_GROUP_MATCHES(n))
+ 	    {
+ 	      int i;
+ 	      for (d = -wlistdata->npos, i = WListNext(wlistdata, -1, 0); i != n; i = WListNext(wlistdata, i, 1), d++)
+@@ -960,7 +979,7 @@
+ 	case ' ':
+ 	  done = 1;
+ 	  h = wlistdata->pos;
+-	  if (!display || !wtab[h] || wtab[h] == D_fore || (flayer->l_cvlist && flayer->l_cvlist->c_lnext))
++	  if (!display || h == MAXWIN || !wtab[h] || wtab[h] == D_fore || (flayer->l_cvlist && flayer->l_cvlist->c_lnext))
+ 	    HelpAbort();
+ #ifdef MULTIUSER
+ 	  else if (AclCheckPermWin(D_user, ACL_READ, wtab[h]))
+@@ -970,7 +989,8 @@
+ 	    ExitOverlayPage();	/* no need to redisplay */
+ 	  /* restore display, don't switch wrong user */
+ 	  display = olddisplay;
+-	  SwitchWindow(h);
++	  if (h != MAXWIN)
++	    SwitchWindow(h);
+ 	  break;
+ 	case 0033:
+ 	case 0007:
+@@ -1003,29 +1023,37 @@
+ {
+   char *str;
+   int n;
++  int yoff;
++  struct wlistdata *wlistdata;
+ 
+-  display = 0;
++  if (i == MAXWIN)
++    return;
++  wlistdata = (struct wlistdata *)flayer->l_data;
++  yoff = wlistdata->group ? 3 : 2;
++  display = Layer2Window(flayer) ? 0 : flayer->l_cvlist ? flayer->l_cvlist->c_display : 0;
+   str = MakeWinMsgEv(wliststr, wtab[i], '%', flayer->l_width, (struct event *)0, 0);
+   n = strlen(str);
+   if (i != pos && isblank)
+     while (n && str[n - 1] == ' ')
+       n--;
+-  LPutWinMsg(flayer, str, (i == pos || !isblank) ? flayer->l_width : n, i == pos ? &mchar_so : &mchar_blank, 0, y + 2);
++  LPutWinMsg(flayer, str, (i == pos || !isblank) ? flayer->l_width : n, i == pos ? &mchar_so : &mchar_blank, 0, y + yoff);
+ #if 0
+-  LPutStr(flayer, str, n, i == pos ? &mchar_so : &mchar_blank, 0, y + 2);
++  LPutStr(flayer, str, n, i == pos ? &mchar_so : &mchar_blank, 0, y + yoff);
+   if (i == pos || !isblank)
+     while(n < flayer->l_width)
+-      LPutChar(flayer, i == pos ? &mchar_so : &mchar_blank, n++, y + 2);
++      LPutChar(flayer, i == pos ? &mchar_so : &mchar_blank, n++, y + yoff);
+ #endif
+   return;
+ }
+ 
++
+ static int
+ WListNext(wlistdata, old, delta)
+ struct wlistdata *wlistdata;
+ int old, delta;
+ {
+   int i, j;
++  struct win *group = wlistdata->group;
+ 
+   if (old == MAXWIN)
+     return MAXWIN;
+@@ -1034,22 +1062,22 @@
+       if (old == -1)
+ 	{
+ 	  for (old = 0; old < MAXWIN; old++)
+-	    if (wtab[old])
++	    if (wtab[old] && WTAB_GROUP_MATCHES(old))
+ 	      break;
+ 	  if (old == MAXWIN)
+ 	    return old;
+ 	}
+-      if (!wtab[old])
++      if (!wtab[old] || !WTAB_GROUP_MATCHES(old))
+ 	return MAXWIN;
+       i = old;
+       while (delta > 0 && i < MAXWIN - 1)
+-	if (wtab[++i])
++	if (wtab[++i] && WTAB_GROUP_MATCHES(i))
+ 	  {
+ 	    old = i;
+ 	    delta--;
+ 	  }
+       while (delta < 0 && i > 0)
+-	if (wtab[--i])
++	if (wtab[--i] && WTAB_GROUP_MATCHES(i))
+ 	  {
+ 	    old = i;
+ 	    delta++;
+@@ -1186,14 +1214,15 @@
+ }
+ 
+ void
+-display_wlist(onblank, order)
++display_wlist(onblank, order, group)
+ int onblank;
+ int order;
++struct win *group;
+ {
+   struct win *p;
+   struct wlistdata *wlistdata;
+ 
+-  if (flayer->l_width < 10 || flayer->l_height < 5)
++  if (flayer->l_width < 10 || flayer->l_height < 6)
+     {
+       LMsg(0, "Window size too small for window list page");
+       return;
+@@ -1207,17 +1236,26 @@
+ 	  return;
+ 	}
+       p = D_fore;
+-      SetForeWindow((struct win *)0);
+-      Activate(0);
+-      if (flayer->l_width < 10 || flayer->l_height < 5)
++      if (p)
++	{
++	  SetForeWindow((struct win *)0);
++          if (p->w_group)
++	    {
++	      D_fore = p->w_group;
++	      flayer->l_data = (char *)p->w_group;
++	    }
++	  Activate(0);
++	}
++      if (flayer->l_width < 10 || flayer->l_height < 6)
+ 	{
+ 	  LMsg(0, "Window size too small for window list page");
+ 	  return;
+ 	}
+-      debug3("flayer %x %d %x\n", flayer, flayer->l_width, flayer->l_height);
+     }
+   else
+     p = Layer2Window(flayer);
++  if (!group && p)
++    group = p->w_group;
+   if (InitOverlayPage(sizeof(*wlistdata), &WListLf, 0))
+     return;
+   wlistdata = (struct wlistdata *)flayer->l_data;
+@@ -1225,9 +1263,10 @@
+   flayer->l_y = flayer->l_height - 1;
+   wlistdata->start = onblank && p ? p->w_number : -1;
+   wlistdata->order = order;
++  wlistdata->group = group;
+   wlistdata->pos = p ? p->w_number : WListNext(wlistdata, -1, 0);
+   wlistdata->ypos = wlistdata->npos = 0;
+-  wlistdata->numwin= flayer->l_height - 3;
++  wlistdata->numwin= flayer->l_height - (group ? 4 : 3);
+   wlistpage();
+ }
+ 
+@@ -1237,35 +1276,49 @@
+   struct wlistdata *wlistdata;
+   char *str;
+   int pos;
++  struct win *group;
+ 
+   wlistdata = (struct wlistdata *)flayer->l_data;
++  group = wlistdata->group;
+ 
+   LClearAll(flayer, 0);
+   if (wlistdata->start >= 0 && wtab[wlistdata->start] == 0)
+     wlistdata->start = -2;
+ 
+   pos = wlistdata->pos;
+-  if (wtab[pos] == 0)
++  if (pos == MAXWIN || !wtab[pos] || !WTAB_GROUP_MATCHES(pos))
+     {
+       if (wlistdata->order == WLIST_MRU)
+         pos = WListNext(wlistdata, -1, wlistdata->npos);
+       else
+ 	{
+           /* find new position */
+-	  while(++pos < MAXWIN)
+-	    if (wtab[pos])
+-	      break;
++	  if (pos < MAXWIN)
++	    while(++pos < MAXWIN)
++	      if (wtab[pos] && WTAB_GROUP_MATCHES(pos))
++	        break;
+ 	  if (pos == MAXWIN)
+-	    while (--pos > 0)
+-	      if (wtab[pos])
++	    while (--pos >= 0)
++	      if (wtab[pos] && WTAB_GROUP_MATCHES(pos))
+ 		break;
++	  if (pos == -1)
++	    pos == MAXWIN;
+ 	}
+     }
+   wlistdata->pos = pos;
+ 
+   display = 0;
+   str = MakeWinMsgEv(wlisttit, (struct win *)0, '%', flayer->l_width, (struct event *)0, 0);
+-  LPutWinMsg(flayer, str, strlen(str), &mchar_blank, 0, 0);
++  if (wlistdata->group)
++    {
++      LPutWinMsg(flayer, "Group: ", 7, &mchar_blank, 0, 0);
++      LPutWinMsg(flayer, wlistdata->group->w_title, strlen(wlistdata->group->w_title), &mchar_blank, 7, 0);
++      LPutWinMsg(flayer, str, strlen(str), &mchar_blank, 0, 1);
++    }
++  else
++    {
++      LPutWinMsg(flayer, str, strlen(str), &mchar_blank, 0, 0);
++    }
+   WListNormalize();
+   WListLines(wlistdata->numwin, -1);
+   LaySetCursor();
+@@ -1320,7 +1373,7 @@
+   for (display = displays; display; display = display->d_next)
+     for (cv = D_cvlist; cv; cv = cv->c_next)
+       {
+-        if (cv->c_layer->l_layfn != &WListLf)
++        if (!cv->c_layer || cv->c_layer->l_layfn != &WListLf)
+ 	  continue;
+         wlistdata = (struct wlistdata *)cv->c_layer->l_data;
+ 	if (wlistdata->order != WLIST_MRU)
+@@ -1347,8 +1400,6 @@
+ */
+ 
+ #ifdef MAPKEYS
+-
+-extern struct term term[];
+ extern struct kmap_ext *kmap_exts;
+ extern int kmap_extn;
+ extern struct action dmtab[];
+diff -Naur screen-4.0.3.orig/image.h screen-4.0.3/image.h
+--- screen-4.0.3.orig/image.h	2003-12-05 14:45:41.000000000 +0100
++++ screen-4.0.3/image.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: image.h,v 1.9 1994/05/31 12:31:54 mlschroe Exp $ FAU
++ * $Id: image.h,v 1.17 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ 
+diff -Naur screen-4.0.3.orig/input.c screen-4.0.3/input.c
+--- screen-4.0.3.orig/input.c	2003-09-08 16:25:37.000000000 +0200
++++ screen-4.0.3/input.c	2008-06-01 23:39:31.000000000 +0200
+@@ -55,6 +55,7 @@
+   int  inpmode;		/* INP_NOECHO, INP_RAW, INP_EVERY */
+   void (*inpfinfunc) __P((char *buf, int len, char *priv));
+   char  *priv;		/* private data for finfunc */
++  int  privdata;	/* private data space */
+ };
+ 
+ static struct LayFuncs InpLf =
+@@ -93,6 +94,8 @@
+       inpdata->inp.pos = inpdata->inp.len = strlen(inpdata->inp.buf);
+     }
+   InpRedisplayLine(INPUTLINE, 0, flayer->l_width - 1, 0);
++  flayer->l_x = inpdata->inpstringlen + (inpdata->inpmode & INP_NOECHO ? 0 : inpdata->inp.pos);
++  flayer->l_y = INPUTLINE;
+ }
+ 
+ /*
+@@ -106,12 +109,13 @@
+  * INP_EVERY  == digraph mode.
+  */
+ void
+-Input(istr, len, mode, finfunc, data)
++Input(istr, len, mode, finfunc, priv, data)
+ char *istr;
+ int len;
+ int mode;
+-void (*finfunc) __P((char *buf, int len, char *data));
+-char *data;
++void (*finfunc) __P((char *buf, int len, char *priv));
++char *priv;
++int data;
+ {
+   int maxlen;
+   struct inpdata *inpdata;
+@@ -136,10 +140,14 @@
+   inpdata->inpfinfunc = finfunc;
+   inpdata->inp.pos = inpdata->inp.len = 0;
+   inpdata->inpmode = mode;
+-  inpdata->priv = data;
+-  inp_setprompt(istr, (char *)NULL);
+-  flayer->l_x = inpdata->inpstringlen;
+-  flayer->l_y = INPUTLINE;
++  inpdata->privdata = data;
++  if (!priv)
++    priv = &inpdata->privdata;
++  inpdata->priv = priv;
++  inpdata->inpstringlen = 0;
++  inpdata->inpstring = NULL;
++  if (istr)
++    inp_setprompt(istr, (char *)NULL);
+ }
+ 
+ static void
+@@ -174,10 +182,12 @@
+       if (inpdata->inpmode & INP_EVERY)
+ 	{
+ 	  inpdata->inp.buf[inpdata->inp.len] = ch;
+-	  inpdata->inp.buf[inpdata->inp.len + 1] = ch;	/* gross */
+-	  display = inpdisplay;
+-	  (*inpdata->inpfinfunc)(inpdata->inp.buf, inpdata->inp.len, inpdata->priv);
+-	  ch = inpdata->inp.buf[inpdata->inp.len];
++	  if (ch)
++	    {
++	      display = inpdisplay;
++	      (*inpdata->inpfinfunc)(inpdata->inp.buf, inpdata->inp.len, inpdata->priv);
++	      ch = inpdata->inp.buf[inpdata->inp.len];
++	    }
+ 	}
+       else if (inpdata->inpmode & INP_RAW)
+ 	{
+@@ -313,7 +323,7 @@
+ 	  if (inpdata->inp.len && inpdata->inpmode == 0)
+ 	    inphist = inpdata->inp;	/* structure copy */
+ 	  
+-  	  flayer->l_data = 0;
++  	  flayer->l_data = 0;	/* so inpdata does not get freed */
+           InpAbort();		/* redisplays... */
+ 	  *ppbuf = pbuf;
+ 	  *plen = len;
+diff -Naur screen-4.0.3.orig/layer.c screen-4.0.3/layer.c
+--- screen-4.0.3.orig/layer.c	2003-09-08 16:25:46.000000000 +0200
++++ screen-4.0.3/layer.c	2008-06-01 23:39:31.000000000 +0200
+@@ -436,17 +436,8 @@
+ 	len2 = xe2 - (x + vp->v_xoff) + 1;
+ 	if (len2 > len)
+ 	  len2 = len;
+-	if (!PutWinMsg(s, xs2 - x - vp->v_xoff, len2))
+-	  {
+-	    s2 = s + xs2 - x - vp->v_xoff;
+-	    while (len2-- > 0)
+-	      {
+-	        PUTCHARLP(*s2++);
+-		xs2++;
+-	      }
+-	  }
+-        else
+-	  xs2 = x + vp->v_xoff + len2;
++	PutWinMsg(s, xs2 - x - vp->v_xoff, len2);
++	xs2 = x + vp->v_xoff + len2;
+ 	if (xs2 < vp->v_xs)
+ 	  xs2 = vp->v_xs;
+ 	or = D_rend;
+@@ -849,9 +840,6 @@
+     }
+ }
+ 
+-
+-/*******************************************************************/
+-
+ void
+ LClearAll(l, uself)
+ struct layer *l;
+@@ -880,6 +868,53 @@
+   flayer = oldflayer;
+ }
+ 
++void
++/*VARARGS2*/
++#if defined(USEVARARGS) && defined(__STDC__)
++LMsg(int err, char *fmt, VA_DOTS)
++#else
++LMsg(err, fmt, VA_DOTS)
++int err;
++char *fmt;
++VA_DECL
++#endif
++{
++  VA_LIST(ap)
++  char buf[MAXPATHLEN*2];
++  char *p = buf;
++  struct canvas *cv;
++
++  VA_START(ap, fmt);
++  fmt = DoNLS(fmt);
++  (void)vsnprintf(p, sizeof(buf) - 100, fmt, VA_ARGS(ap));
++  VA_END(ap);
++  if (err)
++    {
++      p += strlen(p);
++      *p++ = ':';
++      *p++ = ' ';
++      strncpy(p, strerror(err), buf + sizeof(buf) - p - 1);
++      buf[sizeof(buf) - 1] = 0;
++    }
++  debug2("LMsg('%s') (%#x);\n", buf, (unsigned int)flayer);
++  for (display = displays; display; display = display->d_next)
++    {
++      for (cv = D_cvlist; cv; cv = cv->c_next)
++	if (cv->c_layer == flayer)
++	  break;
++      if (cv == 0)
++	continue;
++      MakeStatus(buf);
++    }
++}
++
++
++/*******************************************************************/
++/*******************************************************************/
++
++/*
++ *  Layer creation / removal
++ */
+ 
+ void
+ KillLayerChain(lay)
+@@ -911,12 +946,6 @@
+ }
+ 
+ 
+-/*******************************************************************/
+-/*******************************************************************/
+-
+-/*
+- *  Layer creation / removal
+- */
+ 
+ int
+ InitOverlayPage(datasize, lf, block)
+@@ -1009,6 +1038,8 @@
+   return 0;
+ }
+ 
++extern struct layout *layouts;
++
+ void
+ ExitOverlayPage()
+ {
+@@ -1016,6 +1047,7 @@
+   struct win *p;
+   int doredisplay = 0;
+   struct canvas *cv, *ocv;
++  struct layout *lay;
+ 
+   ASSERT(flayer);
+   debug1("Exiting layer %#x\n", (unsigned int)flayer);
+@@ -1050,6 +1082,11 @@
+     p->w_paster.pa_pastelayer = 0;
+ #endif
+ 
++  for (lay = layouts; lay; lay = lay->lay_next)
++    for (cv = lay->lay_cvlist; cv; cv = cv->c_next)
++      if (cv->c_layer == oldlay)
++	cv->c_layer = flayer;
++
+   /* add all canvases back into next layer's canvas list */
+   for (ocv = 0, cv = oldlay->l_cvlist; cv; cv = cv->c_lnext)
+     {
+@@ -1071,44 +1108,3 @@
+   LayRestore();
+   LaySetCursor();
+ }
+-
+-void
+-/*VARARGS2*/
+-#if defined(USEVARARGS) && defined(__STDC__)
+-LMsg(int err, char *fmt, VA_DOTS)
+-#else
+-LMsg(err, fmt, VA_DOTS)
+-int err;
+-char *fmt;
+-VA_DECL
+-#endif
+-{
+-  VA_LIST(ap)
+-  char buf[MAXPATHLEN*2];
+-  char *p = buf;
+-  struct canvas *cv;
+-
+-  VA_START(ap, fmt);
+-  fmt = DoNLS(fmt);
+-  (void)vsnprintf(p, sizeof(buf) - 100, fmt, VA_ARGS(ap));
+-  VA_END(ap);
+-  if (err)
+-    {
+-      p += strlen(p);
+-      *p++ = ':';
+-      *p++ = ' ';
+-      strncpy(p, strerror(err), buf + sizeof(buf) - p - 1);
+-      buf[sizeof(buf) - 1] = 0;
+-    }
+-  debug2("LMsg('%s') (%#x);\n", buf, (unsigned int)flayer);
+-  for (display = displays; display; display = display->d_next)
+-    {
+-      for (cv = D_cvlist; cv; cv = cv->c_next)
+-	if (cv->c_layer == flayer)
+-	  break;
+-      if (cv == 0)
+-	continue;
+-      MakeStatus(buf);
+-    }
+-}
+-
+diff -Naur screen-4.0.3.orig/layer.h screen-4.0.3/layer.h
+--- screen-4.0.3.orig/layer.h	2002-01-08 16:42:25.000000000 +0100
++++ screen-4.0.3/layer.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: overlay.h,v 1.3 1994/05/31 12:32:31 mlschroe Exp $ FAU
++ * $Id: layer.h,v 1.12 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ /*
+diff -Naur screen-4.0.3.orig/logfile.h screen-4.0.3/logfile.h
+--- screen-4.0.3.orig/logfile.h	2002-01-08 16:42:27.000000000 +0100
++++ screen-4.0.3/logfile.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: logfile.h,v 1.11 1994/05/31 12:33:27 jnweiger Exp $ FAU
++ * $Id: logfile.h,v 1.12 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ struct logfile
+diff -Naur screen-4.0.3.orig/mark.h screen-4.0.3/mark.h
+--- screen-4.0.3.orig/mark.h	2002-01-08 16:42:30.000000000 +0100
++++ screen-4.0.3/mark.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: mark.h,v 1.1.1.1 1993/06/16 23:51:13 jnweiger Exp $ FAU
++ * $Id: mark.h,v 1.21 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ struct markdata
+diff -Naur screen-4.0.3.orig/misc.c screen-4.0.3/misc.c
+--- screen-4.0.3.orig/misc.c	2003-12-05 14:45:41.000000000 +0100
++++ screen-4.0.3/misc.c	2008-06-01 23:39:31.000000000 +0200
+@@ -613,7 +613,7 @@
+    */
+ # endif /* NEEDSETENV */
+ #else /* USESETENV */
+-# if defined(linux) || defined(__convex__) || (BSD >= 199103)
++# if defined(linux) || defined(__convex__) || (BSD >= 199103) || defined(_AIX) || defined(__GLIBC__)
+   setenv(var, value, 1);
+ # else
+   setenv(var, value);
+diff -Naur screen-4.0.3.orig/os.h screen-4.0.3/os.h
+--- screen-4.0.3.orig/os.h	2002-01-08 16:42:33.000000000 +0100
++++ screen-4.0.3/os.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: os.h,v 1.10 1994/05/31 12:32:22 mlschroe Exp $ FAU
++ * $Id: os.h,v 1.22 2005/12/19 16:13:08 jnweiger Exp $ FAU
+  */
+ 
+ #include <stdio.h>
+@@ -156,12 +156,12 @@
+ # endif
+ #endif
+ 
+-#ifdef hpux
++#if defined(HAVE_SETRESUID) && !defined(HAVE_SETREUID)
+ # define setreuid(ruid, euid) setresuid(ruid, euid, -1)
+ # define setregid(rgid, egid) setresgid(rgid, egid, -1)
+ #endif
+ 
+-#if defined(HAVE_SETEUID) || defined(HAVE_SETREUID)
++#if defined(HAVE_SETEUID) || defined(HAVE_SETREUID) || defined(HAVE_SETRESUID)
+ # define USE_SETEUID
+ #endif
+ 
+diff -Naur screen-4.0.3.orig/osdef.h.in screen-4.0.3/osdef.h.in
+--- screen-4.0.3.orig/osdef.h.in	2001-04-28 15:26:43.000000000 +0200
++++ screen-4.0.3/osdef.h.in	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: osdef.h.in,v 1.2 1994/05/31 12:32:25 mlschroe Exp $ FAU
++ * $Id: osdef.h.in,v 1.20 2005/12/19 16:13:08 jnweiger Exp $ FAU
+  */
+ 
+ /****************************************************************
+@@ -82,14 +82,13 @@
+ 
+ extern int   getdtablesize __P((void));
+ 
+-#ifdef HAVE_SETREUID
+-# ifdef hpux
++#ifdef HAVE_SETRESUID
+ extern int   setresuid __P((int, int, int));
+ extern int   setresgid __P((int, int, int));
+-# else
++#endif
++#ifdef HAVE_SETREUID
+ extern int   setreuid __P((int, int));
+ extern int   setregid __P((int, int));
+-# endif
+ #endif
+ #ifdef HAVE_SETEUID
+ extern int   seteuid __P((int));
+diff -Naur screen-4.0.3.orig/patchlevel.h screen-4.0.3/patchlevel.h
+--- screen-4.0.3.orig/patchlevel.h	2006-10-23 15:04:11.000000000 +0200
++++ screen-4.0.3/patchlevel.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: patchlevel.h,v 1.17 1994/05/31 12:32:35 mlschroe Exp $ FAU
++ * $Id: patchlevel.h,v 1.34 2006/05/02 12:58:25 mls Exp $ FAU
+  */
+ 
+ /****************************************************************
+@@ -519,14 +519,15 @@
+  * 05.12.2003  4.00.02 fixed a bug in the ansi parser. fixed execs
+  *                     on ttys. fixed hardstatus line on blanked screen.
+  *                     -- DISTRIBUTED
+- * 23.10.2006  4.00.03 fixed two bug in combining characters handling
+- *                     (cstone & Rich Felker).
+- *                     -- DISTRIBUTED
++ * 11.10.2004, 4.00.03jw handle StartRc errors nonfatal if due to a msg.
++ * 12.10.2004, 4.00.03jw1 let docu of 'split' 'focus' 'remove' and 'only' refer to each other.
++ * 01.11.2004, 4.00.03jw2 zombie command has new option 'onerror'
++ * 2005-12-19, 4.00.03jw3 syntax error.
+  */
+ 
+ #define ORIGIN "FAU"
+ #define REV 4
+ #define VERS 0
+ #define PATCHLEVEL 3
+-#define DATE "23-Oct-06"
+-#define STATE ""
++#define DATE "2-May-06"
++#define STATE "jw4"
+diff -Naur screen-4.0.3.orig/process.c screen-4.0.3/process.c
+--- screen-4.0.3.orig/process.c	2003-09-18 14:53:54.000000000 +0200
++++ screen-4.0.3/process.c	2008-06-01 23:39:31.000000000 +0200
+@@ -59,6 +59,7 @@
+ extern char SockPath[], *SockName;
+ extern int TtyMode, auto_detach, use_altscreen;
+ extern int iflag, maxwin;
++extern int focusminwidth, focusminheight;
+ extern int use_hardstatus, visual_bell;
+ #ifdef COLOR
+ extern int attr2color[][4];
+@@ -71,6 +72,7 @@
+ extern int defnonblock;
+ extern int ZombieKey_destroy;
+ extern int ZombieKey_resurrect;
++extern int ZombieKey_onerror;
+ #ifdef AUTO_NUKE
+ extern int defautonuke;
+ #endif
+@@ -145,15 +147,19 @@
+ static void digraph_fn __P((char *, int, char *));
+ static void confirm_fn __P((char *, int, char *));
+ static int  IsOnDisplay __P((struct win *));
+-static void ResizeRegions __P((char*));
++static void ResizeRegions __P((char *, int));
+ static void ResizeFin __P((char *, int, char *));
+ static struct action *FindKtab __P((char *, int));
++static void SelectFin __P((char *, int, char *));
++static void SelectLayoutFin __P((char *, int, char *));
+ 
+ 
+ extern struct layer *flayer;
+ extern struct display *display, *displays;
+ extern struct win *fore, *console_window, *windows;
+ extern struct acluser *users;
++extern struct layout *layouts, *layout_attach, layout_last_marker;
++extern struct layout *laytab[];
+ 
+ extern char screenterm[], HostName[], version[];
+ extern struct NewWindow nwin_undef, nwin_default;
+@@ -197,11 +203,11 @@
+ char **blankerprg;
+ #endif
+ 
+-struct action ktab[256];	/* command key translation table */
++struct action ktab[256 + KMAP_KEYS];	/* command key translation table */
+ struct kclass {
+   struct kclass *next;
+   char *name;
+-  struct action ktab[256];
++  struct action ktab[256 + KMAP_KEYS];
+ };
+ struct kclass *kclasses;
+ 
+@@ -390,6 +396,20 @@
+     {'"', '~', 223}	/* ß */
+ };
+ 
++#define RESIZE_FLAG_H 1
++#define RESIZE_FLAG_V 2
++#define RESIZE_FLAG_L 4
++
++static char *resizeprompts[] = {
++  "resize # lines: ",
++  "resize -h # lines: ",
++  "resize -v # lines: ",
++  "resize -b # lines: ",
++  "resize -l # lines: ",
++  "resize -l -h # lines: ",
++  "resize -l -v # lines: ",
++  "resize -l -b # lines: ",
++};
+ 
+ char *noargs[1];
+ 
+@@ -552,6 +572,18 @@
+   ktab['X'].nr = RC_REMOVE;
+   ktab['F'].nr = RC_FIT;
+   ktab['\t'].nr = RC_FOCUS;
++  {
++    char *args[2];
++    args[0] = "up";
++    args[1] = 0;
++    SaveAction(ktab + T_BACKTAB - T_CAPS + 256, RC_FOCUS, args, 0);
++  }
++  {
++    char *args[2];
++    args[0] = "-v";
++    args[1] = 0;
++    SaveAction(ktab + '|', RC_SPLIT, args, 0);
++  }
+   /* These come last; they may want overwrite others: */
+   if (DefaultEsc >= 0)
+     {
+@@ -1174,9 +1206,9 @@
+ 	if (key >= 0)
+ 	  {
+ #ifdef PSEUDOS
+-	    Input(fore->w_pwin ? "Really kill this filter [y/n]" : "Really kill this window [y/n]", 1, INP_RAW, confirm_fn, (char *)RC_KILL);
++	    Input(fore->w_pwin ? "Really kill this filter [y/n]" : "Really kill this window [y/n]", 1, INP_RAW, confirm_fn, NULL, RC_KILL);
+ #else
+-	    Input("Really kill this window [y/n]", 1, INP_RAW, confirm_fn, (char *)RC_KILL);
++	    Input("Really kill this window [y/n]", 1, INP_RAW, confirm_fn, NULL, RC_KILL);
+ #endif
+ 	    break;
+ 	  }
+@@ -1199,7 +1231,7 @@
+     case RC_QUIT:
+       if (key >= 0)
+ 	{
+-	  Input("Really quit and kill all your windows [y/n]", 1, INP_RAW, confirm_fn, (char *)RC_QUIT);
++	  Input("Really quit and kill all your windows [y/n]", 1, INP_RAW, confirm_fn, NULL, RC_QUIT);
+ 	  break;
+ 	}
+       Finit(0);
+@@ -1218,7 +1250,7 @@
+ 	  static char buf[2];
+ 
+ 	  buf[0] = key;
+-	  Input(buf, 1, INP_RAW, pow_detach_fn, NULL);
++	  Input(buf, 1, INP_RAW, pow_detach_fn, NULL, 0);
+ 	}
+       else
+         Detach(D_POWER); /* detach and kill Attacher's parent */
+@@ -1307,6 +1339,17 @@
+ 	    Msg(0, "%s:zombie: one or two characters expected.", rc_name);
+ 	    break;
+ 	  }
++	if (args[1])
++	  {
++	    if (!strcmp(args[1], "onerror"))
++	      {
++		ZombieKey_onerror = 1;
++	      } else {
++		Msg(0, "usage: zombie [keys [onerror]]");
++	    	break;
++	      }
++	  } else
++	    ZombieKey_onerror = 0;
+         ZombieKey_destroy = args[0][0];
+         ZombieKey_resurrect = *argl == 2 ? args[0][1] : 0;
+       }
+@@ -1504,7 +1547,7 @@
+        */
+       if ((s = *args) == NULL)
+ 	{
+-	  Input("Copy to register:", 1, INP_RAW, copy_reg_fn, NULL);
++	  Input("Copy to register:", 1, INP_RAW, copy_reg_fn, NULL, 0);
+ 	  break;
+ 	}
+       if (*argl != 1)
+@@ -1602,7 +1645,7 @@
+     case RC_PROCESS:
+       if ((s = *args) == NULL)
+ 	{
+-	  Input("Process register:", 1, INP_RAW, process_fn, NULL);
++	  Input("Process register:", 1, INP_RAW, process_fn, NULL, 0);
+ 	  break;
+ 	}
+       if (*argl != 1)
+@@ -1891,7 +1934,7 @@
+ 	ChangeAKA(fore, *args, strlen(*args));
+       break;
+     case RC_COLON:
+-      Input(":", 100, INP_COOKED, Colonfin, NULL);
++      Input(":", 100, INP_COOKED, Colonfin, NULL, 0);
+       if (*args && **args)
+ 	{
+ 	  s = *args;
+@@ -2027,15 +2070,15 @@
+ #endif
+     case RC_WINDOWLIST:
+       if (!*args)
+-        display_wlist(0, WLIST_NUM);
++        display_wlist(0, WLIST_NUM, (char *)0);
+       else if (!strcmp(*args, "-m") && !args[1])
+-        display_wlist(0, WLIST_MRU);
++        display_wlist(0, WLIST_MRU, (char *)0);
+       else if (!strcmp(*args, "-b") && !args[1])
+-        display_wlist(1, WLIST_NUM);
++        display_wlist(1, WLIST_NUM, (char *)0);
+       else if (!strcmp(*args, "-b") && !strcmp(args[1], "-m") && !args[2])
+-        display_wlist(1, WLIST_MRU);
++        display_wlist(1, WLIST_MRU, (char *)0);
+       else if (!strcmp(*args, "-m") && !strcmp(args[1], "-b") && !args[2])
+-        display_wlist(1, WLIST_MRU);
++        display_wlist(1, WLIST_MRU, (char *)0);
+       else if (!strcmp(*args, "string"))
+ 	{
+ 	  if (args[1])
+@@ -2118,7 +2161,7 @@
+ 	 */
+ 	if ((s = *args) == NULL)
+ 	  {
+-	    Input("Paste from register:", 1, INP_RAW, ins_reg_fn, NULL);
++	    Input("Paste from register:", 1, INP_RAW, ins_reg_fn, NULL, 0);
+ 	    break;
+ 	  }
+ 	if (args[1] == 0 && !fore)	/* no window? */
+@@ -3004,28 +3047,59 @@
+ 	      Msg(0, "%s: password: window required", rc_name);
+ 	      break;
+ 	    }
+-	  Input("New screen password:", 100, INP_NOECHO, pass1, display ? (char *)D_user : (char *)users);
++	  Input("New screen password:", 100, INP_NOECHO, pass1, display ? (char *)D_user : (char *)users, 0);
+ 	}
+       break;
+ #endif				/* PASSWORD */
+     case RC_BIND:
+ 	{
+ 	  struct action *ktabp = ktab;
++	  int kflag = 0;
+ 
+-	  if (argc > 2 && !strcmp(*args, "-c"))
++	  for (;;)
+ 	    {
+-	      ktabp = FindKtab(args[1], 1);
+-	      if (ktabp == 0)
+-		break;
+-	      args += 2;
+-	      argl += 2;
++	      if (argc > 2 && !strcmp(*args, "-c"))
++		{
++		  ktabp = FindKtab(args[1], 1);
++		  if (ktabp == 0)
++		    break;
++		  args += 2;
++		  argl += 2;
++		  argc -= 2;
++		}
++	      else if (argc > 1 && !strcmp(*args, "-k"))
++	        {
++		  kflag = 1;
++		  args++;
++		  argl++;
++		  argc--;
++		}
++	      else
++	        break;
++	    }
++#ifdef MAPKEYS
++          if (kflag)
++	    {
++	      for (n = 0; n < KMAP_KEYS; n++)
++		if (strcmp(term[n + T_CAPS].tcname, *args) == 0)
++		  break;
++	      if (n == KMAP_KEYS)
++		{
++		  Msg(0, "%s: bind: unknown key '%s'", rc_name, *args);
++		  break;
++		}
++	      n += 256;
+ 	    }
++	  else
++#endif
+ 	  if (*argl != 1)
+ 	    {
+ 	      Msg(0, "%s: bind: character, ^x, or (octal) \\032 expected.", rc_name);
+ 	      break;
+ 	    }
+-	  n = (unsigned char)args[0][0];
++	  else
++	    n = (unsigned char)args[0][0];
++
+ 	  if (args[1])
+ 	    {
+ 	      if ((i = FindCommnr(args[1])) == RC_ILLEGAL)
+@@ -3496,7 +3570,7 @@
+       break;
+ 
+     case RC_DIGRAPH:
+-      Input("Enter digraph: ", 10, INP_EVERY, digraph_fn, NULL);
++      Input("Enter digraph: ", 10, INP_EVERY, digraph_fn, NULL, 0);
+       if (*args && **args)
+ 	{
+ 	  s = *args;
+@@ -3649,7 +3723,11 @@
+       break;
+ #endif /* MULTIUSER */
+     case RC_SPLIT:
+-      AddCanvas();
++      s = args[0];
++      if (s && !strcmp(s, "-v"))
++        AddCanvas(SLICE_HORI);
++      else
++        AddCanvas(SLICE_VERT);
+       Activate(-1);
+       break;
+     case RC_REMOVE:
+@@ -3692,6 +3770,14 @@
+ 	  Msg(0, "%s: usage: focus [up|down|top|bottom]", rc_name);
+ 	  break;
+ 	}
++      if ((focusminwidth && (focusminwidth < 0 || D_forecv->c_xe - D_forecv->c_xs + 1 < focusminwidth)) ||
++          (focusminheight && (focusminheight < 0 || D_forecv->c_ye - D_forecv->c_ys + 1 < focusminheight)))
++	{
++	  ResizeCanvas(&D_canvas);
++	  RecreateCanvasChain();
++	  RethinkDisplayViewports();
++	  ResizeLayersToCanvases();	/* redisplays */
++	}
+       fore = D_fore = Layer2Window(D_forecv->c_layer);
+       flayer = D_forecv->c_layer;
+ #ifdef RXVT_OSC
+@@ -3710,22 +3796,49 @@
+       WindowChanged(0, 'F');
+       break;
+     case RC_RESIZE:
++      i = 0;
++      if (D_forecv->c_slorient == SLICE_UNKN)
++	{
++	  Msg(0, "resize: need more than one region");
++	  break;
++	}
++      for (; *args; args++)
++	{
++	  if (!strcmp(*args, "-h"))
++	    i |= RESIZE_FLAG_H;
++	  else if (!strcmp(*args, "-v"))
++	    i |= RESIZE_FLAG_V;
++	  else if (!strcmp(*args, "-b"))
++	    i |= RESIZE_FLAG_H | RESIZE_FLAG_V;
++	  else if (!strcmp(*args, "-p"))
++	    i |= D_forecv->c_slorient == SLICE_VERT ? RESIZE_FLAG_H : RESIZE_FLAG_V;
++	  else if (!strcmp(*args, "-l"))
++	    i |= RESIZE_FLAG_L;
++	  else
++	    break;
++	}
++      if (*args && args[1])
++	{
++	  Msg(0, "%s: usage: resize [-h] [-v] [-l] [num]\n", rc_name);
++	  break;
++	}
+       if (*args)
+-	ResizeRegions(*args);
++	ResizeRegions(*args, 0);
+       else
+-	Input("resize # lines: ", 20, INP_COOKED, ResizeFin, (char*)0);
++	Input(resizeprompts[i], 20, INP_EVERY, ResizeFin, (char*)0, i);
+       break;
+     case RC_SETSID:
+       (void)ParseSwitch(act, &separate_sids);
+       break;
+     case RC_EVAL:
+-      for (; *args; args++)
++      args = SaveArgs(args);
++      for (i = 0; args[i]; i++)
+ 	{
+-	  char *ss = SaveStr(*args);
+-	  if (*ss)
+-	    Colonfin(ss, strlen(ss), (char *)0);
+-	  free(ss);
++	  if (args[i][0])
++	    Colonfin(args[i], strlen(args[i]), (char *)0);
++	  free(args[i]);
+ 	}
++      free(args);
+       break;
+     case RC_ALTSCREEN:
+       (void)ParseSwitch(act, &use_altscreen);
+@@ -3821,6 +3934,223 @@
+ 	    Msg(0, "idle off");
+ 	}
+       break;
++    case RC_FOCUSMINSIZE:
++      for (i = 0; i < 2 && args[i]; i++)
++	{
++	  if (!strcmp(args[i], "max") || !strcmp(args[i], "_"))
++	    n = -1;
++	  else
++	    n = atoi(args[i]);
++	  if (i == 0)
++	    focusminwidth = n;
++	  else
++            focusminheight = n;
++	}
++      if (msgok)
++	{
++	  char b[2][20];
++	  for (i = 0; i < 2; i++)
++	    {
++	      n = i == 0 ? focusminwidth : focusminheight;
++	      if (n == -1)
++		strcpy(b[i], "max");
++	      else
++		sprintf(b[i], "%d", n);
++	    }
++          Msg(0, "focus min size is %s %s\n", b[0], b[1]);
++	}
++      break;
++    case RC_GROUP:
++      if (*args)
++	{
++	  fore->w_group = 0;
++	  if (args[0][0])
++	    {
++	      fore->w_group = WindowByName(*args);
++	      if (fore->w_group && fore->w_group != W_TYPE_GROUP)
++		fore->w_group = 0;
++	    }
++	}
++      if (msgok)
++	{
++	  if (fore->w_group)
++	    Msg(0, "window group is %d (%s)\n", fore->w_group->w_number, fore->w_group->w_title);
++	  else
++	    Msg(0, "window belongs to no group");
++	}
++      break;
++    case RC_LAYOUT:
++      if (!strcmp(args[0], "title"))
++	{
++	  if (!D_layout)
++	    {
++	      Msg(0, "not on a layout");
++	      break;
++	    }
++	  if (!args[1])
++	    {
++	      Msg(0, "current layout is %d (%s)", D_layout->lay_number, D_layout->lay_title);
++	      break;
++	    }
++	  free(D_layout->lay_title);
++	  D_layout->lay_title= SaveStr(args[1]);
++	}
++      else if (!strcmp(args[0], "number"))
++	{
++	  int old;
++	  struct layout *lay;
++	  if (!args[1])
++	    {
++	      Msg(0, "This is layout %d (%s).\n", D_layout->lay_number, D_layout->lay_title);
++	      break;
++	    }
++	   old = D_layout->lay_number;
++	   n = atoi(args[1]);
++	   if (n < 0 || n >= MAXLAY)
++	     break;
++	   lay = laytab[n];
++	   laytab[n] = D_layout;
++	   D_layout->lay_number = n;
++	   laytab[old] = lay;
++	   if (lay)
++	     lay->lay_number = old;
++	   break;
++	}
++      else if (!strcmp(args[0], "autosave"))
++	{
++	  if (!D_layout)
++	    {
++	      Msg(0, "not on a layout");
++	      break;
++	    }
++	  if (args[1])
++	    {
++	      if (!strcmp(args[1], "on"))
++		D_layout->lay_autosave = 1;
++	      else if (!strcmp(args[1], "off"))
++		D_layout->lay_autosave = 0;
++	      else
++		{
++		  Msg(0, "invalid argument. Give 'on' or 'off");
++		  break;
++		}
++	    }
++	  if (msgok)
++	    Msg(0, "autosave is %s", D_layout->lay_autosave ? "on" : "off");
++	}
++      else if (!strcmp(args[0], "new"))
++	{
++	  char *t = args[1];
++	  n = 0;
++	  if (t)
++	    {
++	      while (*t >= '0' && *t <= '9')
++		t++;
++	      if (t != args[1] && (!*t || *t == ':'))
++		{
++		  n = atoi(args[1]);
++		  if (*t)
++		    t++;
++		}
++	      else
++		t = args[1];
++	    }
++	  if (!t || !*t)
++	    t = "layout";
++          NewLayout(t, n);
++	  Activate(-1);
++	}
++      else if (!strcmp(args[0], "save"))
++	{
++	  if (!args[1])
++	    {
++	      Msg(0, "usage: layout save <name>");
++	      break;
++	    }
++	  SaveLayout(args[1], &D_canvas);
++	}
++      else if (!strcmp(args[0], "select"))
++	{
++          struct layout *lay;
++          if (!args[1])
++	    {
++	      Input("Switch to layout: ", 20, INP_COOKED, SelectLayoutFin, NULL, 0);
++	      break;
++	    }
++	  SelectLayoutFin(args[1], strlen(args[1]), (char *)0);
++	}
++      else if (!strcmp(args[0], "next"))
++	{
++	  struct layout *lay = D_layout;
++	  if (lay)
++	    lay = lay->lay_next ? lay->lay_next : layouts;
++	  else
++	    lay = layouts;
++	  if (!lay)
++	    {
++	      Msg(0, "no layout defined");
++	      break;
++	    }
++	  if (lay == D_layout)
++	    break;
++	  LoadLayout(lay, &D_canvas);
++	  Activate(-1);
++	}
++      else if (!strcmp(args[0], "prev"))
++	{
++	  struct layout *lay = D_layout;
++	  if (lay)
++	    {
++	      for (lay = layouts; lay->lay_next && lay->lay_next != D_layout; lay = lay->lay_next)
++		;
++	    }
++	  else
++	    lay = layouts;
++	  if (!lay)
++	    {
++	      Msg(0, "no layout defined");
++	      break;
++	    }
++	  if (lay == D_layout)
++	    break;
++	  LoadLayout(lay, &D_canvas);
++	  Activate(-1);
++	}
++      else if (!strcmp(args[0], "attach"))
++	{
++	  if (!args[1])
++	    {
++	      if (!layout_attach)
++	        Msg(0, "no attach layout set");
++	      else if (layout_attach == &layout_last_marker)
++	        Msg(0, "will attach to last layout");
++	      else
++	        Msg(0, "will attach to layout %d (%s)", layout_attach->lay_number, layout_attach->lay_title);
++	      break;
++	    }
++	  if (!strcmp(args[1], ":last"))
++	    layout_attach = &layout_last_marker;
++	  else if (!args[1][0])
++	    layout_attach = 0;
++	  else
++	    {
++	      struct layout *lay;
++	      lay = FindLayout(args[1]);
++	      if (!lay)
++		{
++		  Msg(0, "unknown layout '%s'", args[1]);
++		  break;
++		}
++	      layout_attach = lay;
++	    }
++	}
++      else if (!strcmp(args[0], "show"))
++	{
++	  ShowLayouts(-1);
++	}
++      else
++	Msg(0, "unknown layout subcommand");
++      break;
+     default:
+ #ifdef HAVE_BRAILLE
+       /* key == -2: input from braille keybord, msgok always 0 */
+@@ -4480,16 +4810,23 @@
+     }
+ 
+   /* find right layer to display on canvas */
+-  if (wi)
++  if (wi && wi->w_type != W_TYPE_GROUP)
+     {
+       l = &wi->w_layer;
+       if (wi->w_savelayer && (wi->w_blocked || wi->w_savelayer->l_cvlist == 0))
+ 	l = wi->w_savelayer;
+     }
+   else
+-    l = &cv->c_blank;
++    {
++      l = &cv->c_blank;
++      if (wi)
++	l->l_data = (char *)wi;
++      else
++	l->l_data = 0;
++    }
+ 
+   /* add our canvas to the layer's canvaslist */
++  ASSERT(l->l_cvlist != cv);
+   cv->c_lnext = l->l_cvlist;
+   l->l_cvlist = cv;
+   cv->c_layer = l;
+@@ -4500,6 +4837,17 @@
+   if (flayer == 0)
+     flayer = l;
+ 
++  if (wi && wi->w_type == W_TYPE_GROUP)
++    {
++      /* auto-start windowlist on groups */
++      struct display *d = display;
++      struct layer *oldflayer = flayer;
++      flayer = l;
++      display_wlist(0, 0, wi);
++      flayer = oldflayer;
++      display = d;
++    }
++
+   if (wi && D_other == wi)
+     D_other = wi->w_next;	/* Might be 0, but that's OK. */
+   if (cv == D_forecv)
+@@ -4603,15 +4951,21 @@
+ NextWindow()
+ {
+   register struct win **pp;
+-  int n = fore ? fore->w_number : -1;
++  int n = fore ? fore->w_number : MAXWIN;
++  char *group = fore ? fore->w_group : 0;
+ 
+-  for (pp = wtab + n + 1; pp != wtab + n; pp++)
++  for (pp = fore ? wtab + n + 1 : wtab; pp != wtab + n; pp++)
+     {
+       if (pp == wtab + MAXWIN)
+ 	pp = wtab;
+       if (*pp)
+-	break;
++	{
++	  if (!fore || group == (*pp)->w_group)
++	    break;
++	}
+     }
++  if (pp == wtab + n)
++    return -1;
+   return pp - wtab;
+ }
+ 
+@@ -4619,15 +4973,21 @@
+ PreviousWindow()
+ {
+   register struct win **pp;
+-  int n = fore ? fore->w_number : MAXWIN - 1;
++  int n = fore ? fore->w_number : -1;
++  char *group = fore ? fore->w_group : 0;
+ 
+   for (pp = wtab + n - 1; pp != wtab + n; pp--)
+     {
+-      if (pp < wtab)
++      if (pp == wtab - 1)
+ 	pp = wtab + MAXWIN - 1;
+       if (*pp)
+-	break;
++	{
++	  if (!fore || group == (*pp)->w_group)
++	    break;
++	}
+     }
++  if (pp == wtab + n)
++    return -1;
+   return pp - wtab;
+ }
+ 
+@@ -4756,6 +5116,8 @@
+ 	continue;
+       if ((flags & 1) && display && p == D_fore)
+ 	continue;
++      if (D_fore && D_fore->w_group != p->w_group)
++	continue;
+ 
+       cmd = p->w_title;
+       l = strlen(cmd);
+@@ -4821,7 +5183,7 @@
+       strcpy(s, "(L)");
+       s += 3;
+     }
+-  if (p->w_ptyfd < 0)
++  if (p->w_ptyfd < 0 && p->w_type != W_TYPE_GROUP)
+     *s++ = 'Z';
+   *s = 0;
+   return s;
+@@ -4841,7 +5203,7 @@
+   s = buf;
+   for (display = displays; display; display = display->d_next)
+     {
+-      if (D_user == olddisplay->d_user)
++      if (olddisplay && D_user == olddisplay->d_user)
+ 	continue;
+       for (cv = D_cvlist; cv; cv = cv->c_next)
+ 	if (Layer2Window(cv->c_layer) == p)
+@@ -5062,7 +5424,7 @@
+ {
+   char *s, *ss;
+   int n;
+-  Input("Set window's title to: ", sizeof(fore->w_akabuf) - 1, INP_COOKED, AKAfin, NULL);
++  Input("Set window's title to: ", sizeof(fore->w_akabuf) - 1, INP_COOKED, AKAfin, NULL, 0);
+   s = fore->w_title;
+   if (!s)
+     return;
+@@ -5116,11 +5478,41 @@
+     return;
+   SwitchWindow(n);
+ }
++
++static void
++SelectLayoutFin(buf, len, data)
++char *buf;
++int len;
++char *data;	/* dummy */
++{
++  int n;
++  struct layout *lay;
++
++  if (!len || !display)
++    return;
++  if (len == 1 && *buf == '-')
++    {
++      LoadLayout((struct layout *)0);
++      Activate(0);
++      return;
++    }
++  lay = FindLayout(buf);
++  if (!lay)
++    Msg(0, "No such layout\n");
++  else if (lay == D_layout)
++    Msg(0, "This IS layout %d (%s).\n", lay->lay_number, lay->lay_title);
++  else
++    {
++      LoadLayout(lay, &D_canvas);
++      Activate(0);
++    }
++}
++
+     
+ static void
+ InputSelect()
+ {
+-  Input("Switch to window: ", 20, INP_COOKED, SelectFin, NULL);
++  Input("Switch to window: ", 20, INP_COOKED, SelectFin, NULL, 0);
+ }
+ 
+ static char setenv_var[31];
+@@ -5160,10 +5552,10 @@
+     {
+       strncpy(setenv_var, arg, sizeof(setenv_var) - 1);
+       sprintf(setenv_buf, "Enter value for %s: ", setenv_var);
+-      Input(setenv_buf, 30, INP_COOKED, SetenvFin2, NULL);
++      Input(setenv_buf, 30, INP_COOKED, SetenvFin2, NULL, 0);
+     }
+   else
+-    Input("Setenv: Enter variable name: ", 30, INP_COOKED, SetenvFin1, NULL);
++    Input("Setenv: Enter variable name: ", 30, INP_COOKED, SetenvFin1, NULL, 0);
+ }
+ 
+ /*
+@@ -5413,16 +5805,15 @@
+ {
+   struct plop *pp = plop_tab + (int)(unsigned char)*buf;
+ 
+-
+-  if (!fore)
+-    return;	/* Input() should not call us w/o fore, but you never know... */
+-  if (*buf == '.')
+-    Msg(0, "ins_reg_fn: Warning: pasting real register '.'!");
+   if (len)
+     {
+       *buf = 0;
+       return;
+     }
++  if (!fore)
++    return;	/* Input() should not call us w/o fore, but you never know... */
++  if (*buf == '.')
++    Msg(0, "ins_reg_fn: Warning: pasting real register '.'!");
+   if (pp->buf)
+     {
+       MakePaster(&fore->w_paster, pp->buf, pp->len, 0);
+@@ -5457,7 +5848,7 @@
+ confirm_fn(buf, len, data)
+ char *buf;
+ int len;
+-char *data;	/* dummy */
++char *data;
+ {
+   struct action act;
+ 
+@@ -5466,7 +5857,7 @@
+       *buf = 0;
+       return;
+     }
+-  act.nr = (int)data;
++  act.nr = *(int *)data;
+   act.args = noargs;
+   act.argl = 0;
+   DoAction(&act, -1);
+@@ -5500,11 +5891,11 @@
+   if (buf && len)
+     strncpy(p, buf, 1 + (l < len) ? l : len);
+   if (!*i->name)
+-    Input("Screen User: ", sizeof(i->name) - 1, INP_COOKED, su_fin, (char *)i);
++    Input("Screen User: ", sizeof(i->name) - 1, INP_COOKED, su_fin, (char *)i, 0);
+   else if (!*i->pw1)
+-    Input("User's UNIX Password: ", sizeof(i->pw1)-1, INP_COOKED|INP_NOECHO, su_fin, (char *)i);
++    Input("User's UNIX Password: ", sizeof(i->pw1)-1, INP_COOKED|INP_NOECHO, su_fin, (char *)i, 0);
+   else if (!*i->pw2)
+-    Input("User's Screen Password: ", sizeof(i->pw2)-1, INP_COOKED|INP_NOECHO, su_fin, (char *)i);
++    Input("User's Screen Password: ", sizeof(i->pw2)-1, INP_COOKED|INP_NOECHO, su_fin, (char *)i, 0);
+   else
+     {
+       if ((p = DoSu(i->up, i->name, i->pw2, i->pw1)))
+@@ -5550,7 +5941,7 @@
+     free((char *)u->u_password);
+   u->u_password = SaveStr(buf);
+   bzero(buf, strlen(buf));
+-  Input("Retype new password:", 100, INP_NOECHO, pass2, data);
++  Input("Retype new password:", 100, INP_NOECHO, pass2, data, 0);
+ }
+ 
+ static void
+@@ -5623,6 +6014,7 @@
+   ch = buf[len];
+   if (ch)
+     {
++      buf[len + 1] = ch;		/* so we can restore it later */
+       if (ch < ' ' || ch == '\177')
+ 	return;
+       if (len >= 1 && ((*buf == 'U' && buf[1] == '+') || (*buf == '0' && (buf[1] == 'x' || buf[1] == 'X'))))
+@@ -5653,8 +6045,13 @@
+         buf[len] = '\n';
+       return;
+     }
+-  buf[len] = buf[len + 1];	/* gross */
+-  len++;
++  if (len < 1)
++    return;
++  if (buf[len + 1])
++    {
++      buf[len] = buf[len + 1];	/* stored above */
++      len++;
++    }
+   if (len < 2)
+     return;
+   if (len >= 1 && ((*buf == 'U' && buf[1] == '+') || (*buf == '0' && (buf[1] == 'x' || buf[1] == 'X'))))
+@@ -5711,12 +6108,26 @@
+ int i;
+ {
+   struct action *act;
++  int discard = 0;
+ 
+   debug1("StuffKey #%d", i);
+ #ifdef DEBUG
+   if (i < KMAP_KEYS)
+     debug1(" - %s", term[i + T_CAPS].tcname);
+ #endif
++
++  if (i < KMAP_KEYS && D_ESCseen)
++    {
++      struct action *act = &D_ESCseen[i + 256];
++      if (act->nr != RC_ILLEGAL)
++	{
++	  D_ESCseen = 0;
++          DoAction(act, i + 256);
++	  return 0;
++	}
++      discard = 1;
++    }
++
+   if (i >= T_CURSOR - T_CAPS && i < T_KEYPAD - T_CAPS && D_cursorkeys)
+     i += T_OCAPS - T_CURSOR;
+   else if (i >= T_KEYPAD - T_CAPS && i < T_OCAPS - T_CAPS && D_keypad)
+@@ -5731,9 +6142,16 @@
+ #endif
+   if ((!act || act->nr == RC_ILLEGAL) && !D_mapdefault)
+     act = i < KMAP_KEYS+KMAP_AKEYS ? &umtab[i] : &kmap_exts[i - (KMAP_KEYS+KMAP_AKEYS)].um;
+-  D_mapdefault = 0;
+   if (!act || act->nr == RC_ILLEGAL)
+     act = i < KMAP_KEYS+KMAP_AKEYS ? &dmtab[i] : &kmap_exts[i - (KMAP_KEYS+KMAP_AKEYS)].dm;
++
++  if (discard && (!act || act->nr != RC_COMMAND))
++    {
++      D_ESCseen = 0;
++      return 0;
++    }
++  D_mapdefault = 0;
++
+   if (act == 0 || act->nr == RC_ILLEGAL)
+     return -1;
+   DoAction(act, 0);
+@@ -5873,53 +6291,243 @@
+ 
+ #endif
+ 
++static int
++CalcSlicePercent(cv, percent)
++struct canvas *cv;
++int percent;
++{
++  int w, wsum, up;
++  if (!cv || !cv->c_slback)
++    return percent;
++  up = CalcSlicePercent(cv->c_slback->c_slback, percent);
++  w = cv->c_slweight;
++  for (cv = cv->c_slback->c_slperp, wsum = 0; cv; cv = cv->c_slnext)
++    wsum += cv->c_slweight;
++  if (wsum == 0)
++    return 0;
++  return (up * w) / wsum;
++}
++
++static int
++ChangeCanvasSize(fcv, abs, diff, gflag, percent)
++struct canvas *fcv;	/* make this canvas bigger */
++int abs;		/* mode: 0:rel 1:abs 2:max */
++int diff;		/* change this much */
++int gflag;		/* go up if neccessary */
++int percent;
++{
++  struct canvas *cv;
++  int done, have, m, dir;
++
++  debug3("ChangeCanvasSize abs %d diff %d percent=%d\n", abs, diff, percent);
++  if (abs == 0 && diff == 0)
++    return 0;
++  if (abs == 2)
++    {
++      if (diff == 0)
++	  fcv->c_slweight = 0;
++      else
++	{
++          for (cv = fcv->c_slback->c_slperp; cv; cv = cv->c_slnext)
++	    cv->c_slweight = 0;
++	  fcv->c_slweight = 1;
++	  cv = fcv->c_slback->c_slback;
++	  if (gflag && cv && cv->c_slback)
++	    ChangeCanvasSize(cv, abs, diff, gflag, percent);
++	}
++      return diff;
++    }
++  if (abs)
++    {
++      if (diff < 0)
++	diff = 0;
++      if (percent && diff > percent)
++	diff = percent;
++    }
++  if (percent)
++    {
++      int wsum, up;
++      for (cv = fcv->c_slback->c_slperp, wsum = 0; cv; cv = cv->c_slnext)
++	wsum += cv->c_slweight;
++      if (wsum)
++	{
++	  up = gflag ? CalcSlicePercent(fcv->c_slback->c_slback, percent) : percent;
++          debug3("up=%d, wsum=%d percent=%d\n", up, wsum, percent);
++	  if (wsum < 1000)
++	    {
++	      int scale = wsum < 10 ? 1000 : 100;
++	      for (cv = fcv->c_slback->c_slperp; cv; cv = cv->c_slnext)
++		cv->c_slweight *= scale;
++	      wsum *= scale;
++	      debug1("scaled wsum to %d\n", wsum);
++	    }
++	  for (cv = fcv->c_slback->c_slperp; cv; cv = cv->c_slnext)
++	    {
++	      if (cv->c_slweight)
++		{
++	          cv->c_slweight = (cv->c_slweight * up) / percent;
++		  if (cv->c_slweight == 0)
++		    cv->c_slweight = 1;
++		}
++	      debug1("  - weight %d\n", cv->c_slweight);
++	    }
++	  diff = (diff * wsum) / percent;
++	  percent = wsum;
++	}
++    }
++  else
++    {
++      if (abs && diff == (fcv->c_slorient == SLICE_VERT ? fcv->c_ye - fcv->c_ys + 2 : fcv->c_xe - fcv->c_xs + 2))
++	return 0;
++      /* fix weights to real size (can't be helped, sorry) */
++      for (cv = fcv->c_slback->c_slperp; cv; cv = cv->c_slnext)
++	{
++	  cv->c_slweight = cv->c_slorient == SLICE_VERT ? cv->c_ye - cv->c_ys + 2 : cv->c_xe - cv->c_xs + 2;
++	  debug1("  - weight %d\n", cv->c_slweight);
++	}
++    }
++  if (abs)
++    diff = diff - fcv->c_slweight;
++  debug1("diff = %d\n", diff);
++  if (diff == 0)
++    return 0;
++  if (diff < 0)
++    {
++      cv = fcv->c_slnext ? fcv->c_slnext : fcv->c_slprev;
++      fcv->c_slweight += diff;
++      cv->c_slweight -= diff;
++      return diff;
++    }
++  done = 0;
++  dir = 1;
++  for (cv = fcv->c_slnext; diff > 0; cv = dir > 0 ? cv->c_slnext : cv->c_slprev)
++    {
++      if (!cv)
++	{
++	  debug1("reached end, dir is %d\n", dir);
++	  if (dir == -1)
++	    break;
++	  dir = -1;
++	  cv = fcv;
++	  continue;
++	}
++      if (percent)
++	m = 1;
++      else
++        m = cv->c_slperp ? CountCanvasPerp(cv) * 2 : 2;
++      debug2("min is %d, have %d\n", m, cv->c_slweight);
++      if (cv->c_slweight > m)
++	{
++	  have = cv->c_slweight - m;
++	  if (have > diff)
++	    have = diff;
++	  debug1("subtract %d\n", have);
++	  cv->c_slweight -= have;
++	  done += have;
++	  diff -= have;
++	}
++    }
++  if (diff && gflag)
++    {
++      /* need more room! */
++      cv = fcv->c_slback->c_slback;
++      if (cv && cv->c_slback)
++        done += ChangeCanvasSize(fcv->c_slback->c_slback, 0, diff, gflag, percent);
++    }
++  fcv->c_slweight += done;
++  debug1("ChangeCanvasSize returns %d\n", done);
++  return done;
++}
++
+ static void
+-ResizeRegions(arg)
++ResizeRegions(arg, flags)
+ char *arg;
++int flags;
+ {
+   struct canvas *cv;
+-  int nreg, dsize, diff, siz;
++  int nreg, dsize, diff, siz, nsiz, l, done;
++  int gflag = 0, abs = 0, percent = 0;
++  int orient = 0;
+ 
+   ASSERT(display);
+-  for (nreg = 0, cv = D_cvlist; cv; cv = cv->c_next)
+-    nreg++;
+-  if (nreg < 2)
++  if (D_forecv->c_slorient == SLICE_UNKN)
+     {
+       Msg(0, "resize: need more than one region");
+       return;
+     }
+-  dsize = D_height - (D_has_hstatus == HSTATUS_LASTLINE);
++  gflag = flags & RESIZE_FLAG_L ? 0 : 1;
++  orient |= flags & RESIZE_FLAG_H ? SLICE_HORI : 0;
++  orient |= flags & RESIZE_FLAG_V ? SLICE_VERT : 0;
++  if (orient == 0)
++    orient = D_forecv->c_slorient;
++  l = strlen(arg);
+   if (*arg == '=')
+     {
+       /* make all regions the same height */
+-      int h = dsize;
+-      int hh, i = 0;
+-      for (cv = D_cvlist; cv; cv = cv->c_next)
+-	{
+-	  hh = h / nreg-- - 1;
+-	  cv->c_ys = i;
+-	  cv->c_ye = i + hh - 1;
+-	  cv->c_yoff = i;
+-	  i += hh + 1;
+-	  h -= hh + 1;
++      struct canvas *cv = gflag ? &D_canvas : D_forecv->c_slback;
++      if (cv->c_slperp->c_slorient & orient)
++	EqualizeCanvas(cv->c_slperp, gflag);
++      /* can't use cv->c_slorient directly as it can be D_canvas */
++      if ((cv->c_slperp->c_slorient ^ (SLICE_HORI ^ SLICE_VERT)) & orient)
++        {
++	  if (cv->c_slback)
++	    {
++	      cv = cv->c_slback;
++	      EqualizeCanvas(cv->c_slperp, gflag);
++	    }
++	  else
++	   EqualizeCanvas(cv, gflag);
+         }
++      ResizeCanvas(cv);
++      RecreateCanvasChain();
+       RethinkDisplayViewports();
+       ResizeLayersToCanvases();
+       return;
+     }
+-  siz = D_forecv->c_ye - D_forecv->c_ys + 1;
+-  if (*arg == '+')
+-    diff = atoi(arg + 1);
+-  else if (*arg == '-')
+-    diff = -atoi(arg + 1);
+-  else if (!strcmp(arg, "min"))
+-    diff = 1 - siz;
+-  else if (!strcmp(arg, "max"))
+-    diff = dsize - (nreg - 1) * 2 - 1 - siz;
++  if (!strcmp(arg, "min") || !strcmp(arg, "0"))
++    {
++      abs = 2;
++      diff = 0;
++    }
++  else if (!strcmp(arg, "max") || !strcmp(arg, "_"))
++    {
++      abs = 2;
++      diff = 1;
++    }
+   else
+-    diff = atoi(arg) - siz;
+-  if (diff == 0)
++    {
++      if (l > 0 && arg[l - 1] == '%')
++	percent = 1000;
++      if (*arg == '+')
++	diff = atoi(arg + 1);
++      else if (*arg == '-')
++	diff = -atoi(arg + 1);
++      else
++	{
++	  diff = atoi(arg);		/* +1 because of caption line */
++	  if (diff < 0)
++	    diff = 0;
++	  abs = diff == 0 ? 2 : 1;
++	}
++    }
++  if (!abs && !diff)
+     return;
++  if (percent)
++    diff = diff * percent / 100;
++  cv = D_forecv;
++  if (cv->c_slorient & orient)
++    ChangeCanvasSize(cv, abs, diff, gflag, percent);
++  if (cv->c_slback->c_slorient & orient)
++    ChangeCanvasSize(cv->c_slback, abs, diff, gflag, percent);
++
++  ResizeCanvas(&D_canvas);
++  RecreateCanvasChain();
++  RethinkDisplayViewports();
++  ResizeLayersToCanvases();
++  return;
++
++#if 0
++
+   if (siz + diff < 1)
+     diff = 1 - siz;
+   if (siz + diff > dsize - (nreg - 1) * 2 - 1)
+@@ -5977,6 +6585,7 @@
+     }
+   RethinkDisplayViewports();
+   ResizeLayersToCanvases();
++#endif
+ }
+ 
+ static void
+@@ -5985,7 +6594,29 @@
+ int len;
+ char *data;
+ {
+-  ResizeRegions(buf);
++  int ch;
++  int flags = *(int *)data;
++  ch = ((unsigned char *)buf)[len];
++  if (ch == 0)
++    {
++      ResizeRegions(buf, flags);
++      return;
++    }
++  if (ch == 'h')
++    flags ^= RESIZE_FLAG_H;
++  else if (ch == 'v')
++    flags ^= RESIZE_FLAG_V;
++  else if (ch == 'b')
++    flags |= RESIZE_FLAG_H|RESIZE_FLAG_V;
++  else if (ch == 'p')
++    flags ^= D_forecv->c_slorient == SLICE_VERT ? RESIZE_FLAG_H : RESIZE_FLAG_V;
++  else if (ch == 'l')
++    flags ^= RESIZE_FLAG_L;
++  else
++    return;
++  inp_setprompt(resizeprompts[flags], NULL);
++  *(int *)data = flags;
++  buf[len] = '\034';
+ }
+ 
+ #ifdef RXVT_OSC
+diff -Naur screen-4.0.3.orig/resize.c screen-4.0.3/resize.c
+--- screen-4.0.3.orig/resize.c	2003-09-08 16:26:31.000000000 +0200
++++ screen-4.0.3/resize.c	2008-06-01 23:39:31.000000000 +0200
+@@ -148,58 +148,20 @@
+   struct win *p;
+   struct canvas *cv, **cvpp;
+   int wwi;
+-  int y, h, hn;
++  int y, h, hn, xe, ye;
+ 
+   debug2("ChangeScreenSize from (%d,%d) ", D_width, D_height);
+   debug3("to (%d,%d) (change_fore: %d)\n",wi, he, change_fore);
+ 
+-  /*
+-   *  STRATEGY: keep the ratios.
+-   *  if canvas doesn't fit anymore, throw it off.
+-   *  (ATTENTION: cvlist must be sorted!)
+-   */
+-  y = 0;
+-  h = he;
+-  if (D_has_hstatus == HSTATUS_LASTLINE)
+-    {
+-      if (h > 1)
+-        h--;
+-      else
+-        D_has_hstatus = 0;	/* sorry */
+-    }
+-  for (cvpp = &D_cvlist; (cv = *cvpp); )
+-    {
+-      if (h < 2 && cvpp != &D_cvlist)
+-        {
+-          /* kill canvas */
+-	  SetCanvasWindow(cv, 0);
+-          *cvpp = cv->c_next;
+-	  free(cv);
+-	  if (D_forecv == cv)
+-	    D_forecv = 0;
+-          continue;
+-        }
+-      hn = (cv->c_ye - cv->c_ys + 1) * he / D_height;
+-      if (hn == 0)
+-        hn = 1;
+-      if (hn + 2 >= h || cv->c_next == 0)
+-        hn = h - 1;
+-      if ((!captionalways && cv == D_cvlist && h - hn < 2) || hn == 0)
+-        hn = h;
+-      ASSERT(hn > 0);
+-      cv->c_xs = 0;
+-      cv->c_xe = wi - 1;
+-      cv->c_ys = y;
+-      cv->c_ye = y + hn - 1;
+-
+-      cv->c_xoff = cv->c_xs;
+-      cv->c_yoff = cv->c_ys;
+-
+-      y += hn + 1;
+-      h -= hn + 1;
+-      cvpp = &cv->c_next;
++  cv = &D_canvas;
++  cv->c_xe = wi - 1;
++  cv->c_ye = he - 1 - ((cv->c_slperp && cv->c_slperp->c_slnext) || captionalways) - (D_has_hstatus == HSTATUS_LASTLINE);
++  if (cv->c_slperp)
++    {
++      ResizeCanvas(cv);
++      RecreateCanvasChain();
++      RethinkDisplayViewports();
+     }
+-  RethinkDisplayViewports();
+   if (D_forecv == 0)
+     D_forecv = D_cvlist;
+   if (D_forecv)
+@@ -682,6 +644,8 @@
+   if (wi == 0)
+     he = hi = 0;
+ 
++  if (p->w_type == W_TYPE_GROUP)
++    return 0;
+   if (p->w_width == wi && p->w_height == he && p->w_histheight == hi)
+     {
+       debug("ChangeWindowSize: No change.\n");
+@@ -1044,8 +1008,11 @@
+   int i;
+ 
+   if (p->w_alt_mlines)
+-    for (i = 0; i < p->w_alt_height; i++)
+-      FreeMline(p->w_alt_mlines + i);
++    {
++      for (i = 0; i < p->w_alt_height; i++)
++        FreeMline(p->w_alt_mlines + i);
++      free(p->w_alt_mlines);
++    }
+   p->w_alt_mlines = 0;
+   p->w_alt_width = 0;
+   p->w_alt_height = 0;
+@@ -1053,8 +1020,11 @@
+   p->w_alt_y = 0;
+ #ifdef COPY_PASTE
+   if (p->w_alt_hlines)
+-    for (i = 0; i < p->w_alt_histheight; i++)
+-      FreeMline(p->w_alt_hlines + i);
++    {
++      for (i = 0; i < p->w_alt_histheight; i++)
++        FreeMline(p->w_alt_hlines + i);
++      free(p->w_alt_hlines);
++    }
+   p->w_alt_hlines = 0;
+   p->w_alt_histidx = 0;
+ #endif
+diff -Naur screen-4.0.3.orig/sched.h screen-4.0.3/sched.h
+--- screen-4.0.3.orig/sched.h	2002-01-08 16:42:43.000000000 +0100
++++ screen-4.0.3/sched.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: sched.h,v 1.1.1.1 1993/06/16 23:51:13 jnweiger Exp $ FAU
++ * $Id: sched.h,v 1.11 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ struct event
+diff -Naur screen-4.0.3.orig/screen.c screen-4.0.3/screen.c
+--- screen-4.0.3.orig/screen.c	2003-09-08 16:26:41.000000000 +0200
++++ screen-4.0.3/screen.c	2008-06-01 23:39:31.000000000 +0200
+@@ -124,6 +124,7 @@
+ extern char *zmodem_sendcmd;
+ extern char *zmodem_recvcmd;
+ #endif
++extern struct layout *layout_last;
+ 
+ 
+ char *ShellProg;
+@@ -158,6 +159,7 @@
+ /* the attacher */
+ struct passwd *ppp;
+ char *attach_tty;
++int attach_fd = -1;
+ char *attach_term;
+ char *LoginName;
+ struct mode attach_Mode;
+@@ -211,10 +213,10 @@
+ #endif
+ 
+ char HostName[MAXSTR];
+-int MasterPid;
++int MasterPid, PanicPid;
+ int real_uid, real_gid, eff_uid, eff_gid;
+ int default_startup;
+-int ZombieKey_destroy, ZombieKey_resurrect;
++int ZombieKey_destroy, ZombieKey_resurrect, ZombieKey_onerror;
+ char *preselect = NULL;		/* only used in Attach() */
+ 
+ #ifdef UTF8
+@@ -889,6 +891,10 @@
+   attach_tty = "";
+   if (!detached && !lsflag && !cmdflag && !(dflag && !mflag && !rflag && !xflag))
+     {
++#ifndef NAMEDPIPE
++      int fl;
++#endif
++
+       /* ttyname implies isatty */
+       if (!(attach_tty = ttyname(0)))
+         Panic(0, "Must be connected to a terminal.");
+@@ -899,10 +905,20 @@
+ #ifdef MULTIUSER
+       tty_mode = (int)st.st_mode & 0777;
+ #endif
+-      if ((n = secopen(attach_tty, O_RDWR | O_NONBLOCK, 0)) < 0)
+-	Panic(0, "Cannot open your terminal '%s' - please check.", attach_tty);
+-      close(n);
+-      debug1("attach_tty is %s\n", attach_tty);
++
++#ifndef NAMEDPIPE
++      fl = fcntl(0, F_GETFL, 0);
++      if (fl != -1 && (fl & (O_RDWR|O_RDONLY|O_WRONLY)) == O_RDWR)
++	attach_fd = 0;
++#endif
++      if (attach_fd == -1)
++	{
++	  if ((n = secopen(attach_tty, O_RDWR | O_NONBLOCK, 0)) < 0)
++	    Panic(0, "Cannot open your terminal '%s' - please check.", attach_tty);
++	  close(n);
++	}
++      debug2("attach_tty is %s, attach_fd is %d\n", attach_tty, attach_fd);
++
+       if ((attach_term = getenv("TERM")) == 0 || *attach_term == 0)
+ 	Panic(0, "Please set a terminal type.");
+       if (strlen(attach_term) > sizeof(D_termname) - 1)
+@@ -1163,6 +1179,9 @@
+       /* NOTREACHED */
+     }
+ 
++  if (!detached)
++    PanicPid = getppid();
++
+   if (DefaultEsc == -1)
+     DefaultEsc = Ctrl('a');
+   if (DefaultMetaEsc == -1)
+@@ -1196,9 +1215,13 @@
+ #endif
+   if (!detached)
+     {
+-      /* reopen tty. must do this, because fd 0 may be RDONLY */
+-      if ((n = secopen(attach_tty, O_RDWR, 0)) < 0)
+-	Panic(0, "Cannot reopen '%s' - please check.", attach_tty);
++      if (attach_fd == -1)
++	{
++	  if ((n = secopen(attach_tty, O_RDWR, 0)) < 0)
++	    Panic(0, "Cannot reopen '%s' - please check.", attach_tty);
++	}
++      else
++	n = dup(attach_fd);
+     }
+   else
+     n = -1;
+@@ -1222,6 +1245,7 @@
+     {
+       if (MakeDisplay(LoginName, attach_tty, attach_term, n, getppid(), &attach_Mode) == 0)
+ 	Panic(0, "Could not alloc display");
++      PanicPid = 0;
+ #ifdef ENCODINGS
+       D_encoding = nwin_options.encoding > 0 ? nwin_options.encoding : 0;
+       debug1("D_encoding = %d\n", D_encoding);
+@@ -1255,12 +1279,12 @@
+ #ifdef ETCSCREENRC
+ # ifdef ALLOW_SYSSCREENRC
+   if ((ap = getenv("SYSSCREENRC")))
+-    StartRc(ap);
++    (void)StartRc(ap, 0);
+   else
+ # endif
+-    StartRc(ETCSCREENRC);
++    (void)StartRc(ETCSCREENRC, 0);
+ #endif
+-  StartRc(RcFileName);
++  (void)StartRc(RcFileName, 0);
+ # ifdef UTMPOK
+ #  ifndef UTNOKEEP
+   InitUtmp(); 
+@@ -1340,7 +1364,7 @@
+   if (display && default_startup)
+     display_copyright();
+   signal(SIGINT, SigInt);
+-  if (rflag && (rflag & 1) == 0)
++  if (rflag && (rflag & 1) == 0 && !quietflag)
+     {
+       Msg(0, "New screen...");
+       rflag = 0;
+@@ -1365,14 +1389,38 @@
+ }
+ 
+ void
+-WindowDied(p)
++WindowDied(p, wstat, wstat_valid)
+ struct win *p;
++int wstat;
++int wstat_valid;
+ {
+-  if (ZombieKey_destroy)
++  int killit = 0;
++
++  if (ZombieKey_destroy && ZombieKey_onerror && wstat_valid &&
++      WIFEXITED(wstat) && WEXITSTATUS(wstat) == 0)
++	killit = 1;
++
++  if (ZombieKey_destroy && !killit)
+     {
+-      char buf[100], *s;
++      char buf[100], *s, reason[100];
+       time_t now;
+ 
++      if (wstat_valid) {
++	if (WIFEXITED(wstat))
++	  if (WEXITSTATUS(wstat))
++            sprintf(reason, "terminated with exit status %d", WEXITSTATUS(wstat));
++	  else
++            sprintf(reason, "terminated normally");
++	else if (WIFSIGNALED(wstat))
++          sprintf(reason, "terminated with signal %d%s", WTERMSIG(wstat),
++#ifdef WCOREDUMP
++			  WCOREDUMP(wstat) ? " (core file generated)" : "");
++#else
++			  "");
++#endif
++      } else
++	sprintf(reason, "detached from window");
++
+       (void) time(&now);
+       s = ctime(&now);
+       if (s && *s)
+@@ -1388,11 +1436,12 @@
+ #endif
+       CloseDevice(p);
+ 
++      p->w_deadpid = p->w_pid;
+       p->w_pid = 0;
+       ResetWindow(p);
+       /* p->w_y = p->w_bot; */
+       p->w_y = MFindUsedLine(p, p->w_bot, 1);
+-      sprintf(buf, "\n\r=== Window terminated (%s) ===", s ? s : "?");
++      sprintf(buf, "\n\r=== Command %s (%s) ===", reason, s ? s : "?");
+       WriteString(p, buf, strlen(buf));
+       WindowChanged(p, 'f');
+     }
+@@ -1555,12 +1604,16 @@
+       for (p = windows; p; p = next)
+ 	{
+ 	  next = p->w_next;
+-	  if (pid == p->w_pid)
++	  if (  (p->w_pid     && pid == p->w_pid) ||
++		(p->w_deadpid && pid == p->w_deadpid) )
+ 	    {
++	      /* child has ceased to exist */
++	      p->w_pid = 0;
++		
+ #ifdef BSDJOBS
+ 	      if (WIFSTOPPED(wstat))
+ 		{
+-		  debug3("Window %d pid %d: WIFSTOPPED (sig %d)\n", p->w_number, p->w_pid, WSTOPSIG(wstat));
++		  debug3("Window %d pid %d: WIFSTOPPED (sig %d)\n", p->w_number, pid, WSTOPSIG(wstat));
+ #ifdef SIGTTIN
+ 		  if (WSTOPSIG(wstat) == SIGTTIN)
+ 		    {
+@@ -1577,13 +1630,13 @@
+ #endif
+ 		  /* Try to restart process */
+ 		  Msg(0, "Child has been stopped, restarting.");
+-		  if (killpg(p->w_pid, SIGCONT))
+-		    kill(p->w_pid, SIGCONT);
++		  if (killpg(pid, SIGCONT))
++		    kill(pid, SIGCONT);
+ 		}
+ 	      else
+ #endif
+ 		{
+-		  WindowDied(p);
++		  WindowDied(p, wstat, 1);
+ 		}
+ 	      break;
+ 	    }
+@@ -1812,6 +1865,8 @@
+       D_user->u_detachwin = D_fore->w_number;
+       D_user->u_detachotherwin = D_other ? D_other->w_number : -1;
+     }
++  AutosaveLayout(D_layout);
++  layout_last = D_layout;
+   for (cv = D_cvlist; cv; cv = cv->c_next)
+     {
+       p = Layer2Window(cv->c_layer);
+@@ -1965,7 +2020,11 @@
+     }
+   debug3("Panic('%s'); display=%x displays=%x\n", buf, display, displays);
+   if (displays == 0 && display == 0)
+-    printf("%s\r\n", buf);
++    {
++      printf("%s\r\n", buf);
++      if (PanicPid)
++        Kill(PanicPid, SIG_BYE);
++    }
+   else if (displays == 0)
+     {
+       /* no displays but a display - must have forked.
+@@ -2605,6 +2664,8 @@
+ 	  p--;
+ 	  /* small hack */
+ 	  if (display && ((ev && ev == &D_forecv->c_captev) || (!ev && win && win == D_fore)))
++	    minusflg = !minusflg;
++	  if (minusflg)
+ 	    qmflag = 1;
+ 	  break;
+ 	case '>':
+@@ -2785,7 +2846,7 @@
+   return MakeWinMsgEv(s, win, esc, 0, (struct event *)0, 0);
+ }
+ 
+-int
++void
+ PutWinMsg(s, start, max)
+ char *s;
+ int start, max;
+@@ -2796,7 +2857,18 @@
+   int rendstackn = 0;
+ 
+   if (s != winmsg_buf)
+-    return 0;
++    {
++      /* sorry, no fancy coloring available */
++      debug1("PutWinMsg %s plain\n", s);
++      l = strlen(s);
++      if (l > max)
++	l = max;
++      l -= start;
++      s += start;
++      while (l-- > 0)
++	PUTCHARLP(*s++);
++      return;
++    }
+   rend = D_rend;
+   p = 0;
+   l = strlen(s);
+@@ -2846,7 +2918,6 @@
+ 	    PUTCHARLP(*s++);
+ 	}
+     }
+-  return 1;
+ }
+ 
+ 
+diff -Naur screen-4.0.3.orig/screen.h screen-4.0.3/screen.h
+--- screen-4.0.3.orig/screen.h	2003-08-22 14:28:43.000000000 +0200
++++ screen-4.0.3/screen.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: screen.h,v 1.12 1994/05/31 12:32:54 mlschroe Exp $ FAU
++ * $Id: screen.h,v 1.35 2005/12/16 18:51:07 jnweiger Exp $ FAU
+  */
+ 
+ #include "os.h"
+diff -Naur screen-4.0.3.orig/search.c screen-4.0.3/search.c
+--- screen-4.0.3.orig/search.c	2003-09-08 16:26:45.000000000 +0200
++++ screen-4.0.3/search.c	2008-06-01 23:39:31.000000000 +0200
+@@ -62,7 +62,7 @@
+     }
+   else
+     Input((dir > 0 ? "/" : "?"), sizeof(markdata->isstr)-1, INP_COOKED,
+-          (dir > 0 ? searchend : backsearchend), NULL);
++          (dir > 0 ? searchend : backsearchend), NULL, 0);
+ }
+ 
+ static void
+@@ -364,7 +364,7 @@
+   if (W2D(markdata->cy) == INPUTLINE)
+     revto_line(markdata->cx, markdata->cy, INPUTLINE > 0 ? INPUTLINE - 1 : 1);
+   Input(isprompts[dir + 1], sizeof(markdata->isstr) - 1, INP_RAW,
+-        is_process, NULL);
++        is_process, NULL, 0);
+   LGotoPos(flayer, markdata->cx, W2D(markdata->cy));
+   flayer->l_x = markdata->cx;
+   flayer->l_y = W2D(markdata->cy);
+diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
+--- screen-4.0.3.orig/socket.c	2003-09-08 16:26:50.000000000 +0200
++++ screen-4.0.3/socket.c	2008-06-01 23:39:31.000000000 +0200
+@@ -63,6 +63,7 @@
+ extern struct display *display, *displays;
+ extern struct win *fore, *wtab[], *console_window, *windows;
+ extern struct layer *flayer;
++extern struct layout *layout_attach, *layout_last, layout_last_marker;
+ extern struct NewWindow nwin_undef;
+ #ifdef MULTIUSER
+ extern char *multi;
+@@ -789,25 +790,77 @@
+   struct display *next;
+ #endif
+   struct display *olddisplays = displays;
++  int recvfd = -1;
+ 
+ #ifdef NAMEDPIPE
+   debug("Ha, there was someone knocking on my fifo??\n");
+   if (fcntl(ServerSocket, F_SETFL, 0) == -1)
+     Panic(errno, "BLOCK fcntl");
++  p = (char *) &m;
++  left = sizeof(m);
+ #else
+   struct sockaddr_un a;
++  struct msghdr msg;
++  struct iovec iov;
++  char control[1024];
+ 
+   len = sizeof(a);
+   debug("Ha, there was someone knocking on my socket??\n");
+-  if ((ns = accept(ns, (struct sockaddr *) &a, &len)) < 0)
++  if ((ns = accept(ns, (struct sockaddr *) &a, (void *)&len)) < 0)
+     {
+       Msg(errno, "accept");
+       return;
+     }
+-#endif				/* NAMEDPIPE */
+ 
+   p = (char *) &m;
+   left = sizeof(m);
++  bzero(&msg, sizeof(msg));
++  iov.iov_base = &m;
++  iov.iov_len = left;
++  msg.msg_iov = &iov;
++  msg.msg_iovlen  = 1;
++  msg.msg_controllen = sizeof(control);
++  msg.msg_control = &control;
++  while (left > 0)
++    {
++      len = recvmsg(ns, &msg, 0);
++      if (len < 0 && errno == EINTR)
++	continue;
++      if (len < 0)
++	{
++	  close(ns);
++	  Msg(errno, "read");
++	  return;
++	}
++      if (msg.msg_controllen)
++	{
++	  struct cmsghdr  *cmsg;
++	  for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg))
++	    {
++	      int cl;
++	      char *cp;
++	      if (cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_RIGHTS)
++		continue;
++	      cp = (char *)CMSG_DATA(cmsg);
++	      cl = cmsg->cmsg_len;
++	      while(cl >= CMSG_LEN(sizeof(int)))
++		{
++		  int passedfd;
++		  bcopy(cp, &passedfd, sizeof(int));
++		  if (recvfd >= 0 && passedfd != recv)
++		    close(recvfd);
++		  recvfd = passedfd;
++		  cl -= CMSG_LEN(sizeof(int));
++		}
++	    }
++	}
++      p += len;
++      left -= len;
++      break;
++    }
++
++#endif
++
+   while (left > 0)
+     {
+       len = read(ns, p, left);
+@@ -836,6 +889,8 @@
+   if (len < 0)
+     {
+       Msg(errno, "read");
++      if (recvfd != -1)
++	close(recvfd);
+       return;
+     }
+   if (left > 0)
+@@ -848,11 +903,19 @@
+     }
+   if (m.protocol_revision != MSG_REVISION)
+     {
++      if (recvfd != -1)
++	close(recvfd);
+       Msg(0, "Invalid message (magic 0x%08x).", m.protocol_revision);
+       return;
+     }
+ 
+   debug2("*** RecMsg: type %d tty %s\n", m.type, m.m_tty);
++  if (m.type != MSG_ATTACH && recvfd != -1)
++    {
++      close(recvfd);
++      recvfd = -1;
++    }
++
+   for (display = displays; display; display = display->d_next)
+     if (TTYCMP(D_usertty, m.m_tty) == 0)
+       break;
+@@ -876,7 +939,11 @@
+     RemoveStatus();
+ 
+   if (display && !D_tcinited && m.type != MSG_HANGUP)
+-    return;		/* ignore messages for bad displays */
++    {
++      if (recvfd != -1)
++	close(recvfd);
++      return;		/* ignore messages for bad displays */
++    }
+ 
+   switch (m.type)
+     {
+@@ -908,7 +975,21 @@
+ 	  Msg(0, "Attach attempt with bad pid(%d)!", m.m.attach.apid);
+           break;
+ 	}
+-      if ((i = secopen(m.m_tty, O_RDWR | O_NONBLOCK, 0)) < 0)
++      if (recvfd != -1)
++	{
++	  char *myttyname;
++	  i = recvfd;
++	  recvfd = -1;
++	  myttyname = ttyname(i);
++	  if (myttyname == 0 || strcmp(myttyname, m.m_tty))
++	    {
++	      Msg(errno, "Attach: passed fd does not match tty: %s - %s!", m.m_tty, myttyname ? myttyname : "NULL");
++	      close(i);
++	      Kill(m.m.attach.apid, SIG_BYE);
++	      break;
++	    }
++	}
++      else if ((i = secopen(m.m_tty, O_RDWR | O_NONBLOCK, 0)) < 0)
+ 	{
+ 	  Msg(errno, "Attach: Could not open %s!", m.m_tty);
+ 	  Kill(m.m.attach.apid, SIG_BYE);
+@@ -1112,6 +1193,7 @@
+   char *p;
+   int pid;
+   int noshowwin;
++  int r = 0;
+   struct win *wi;
+ 
+   ASSERT(display);
+@@ -1143,12 +1225,12 @@
+ #ifdef ETCSCREENRC
+ # ifdef ALLOW_SYSSCREENRC
+   if ((p = getenv("SYSSCREENRC")))
+-    StartRc(p);
++    StartRc(p, 1);
+   else
+ # endif
+-    StartRc(ETCSCREENRC);
++    StartRc(ETCSCREENRC, 1);
+ #endif
+-  StartRc(RcFileName);
++  StartRc(RcFileName, 1);
+   if (InitTermcap(m->m.attach.columns, m->m.attach.lines))
+     {
+       FreeDisplay();
+@@ -1180,6 +1262,17 @@
+ #endif
+ 
+   D_fore = NULL;
++  if (layout_attach)
++    {
++      struct layout *lay = layout_attach;
++      if (lay == &layout_last_marker)
++	lay = layout_last;
++      if (lay)
++	{
++	  LoadLayout(lay, &D_canvas);
++	  SetCanvasWindow(D_forecv, 0);
++	}
++    }
+   /*
+    * there may be a window that we remember from last detach:
+    */
+@@ -1203,6 +1296,14 @@
+           fore = 0;
+ 	  noshowwin = 1;
+ 	}
++      else if (!strcmp(m->m.attach.preselect, "+"))
++	{
++	  struct action newscreen;
++	  char *na = 0;
++	  newscreen.nr = RC_SCREEN;
++	  newscreen.args = &na;
++	  DoAction(&newscreen, -1);
++	}
+       else
+         fore = FindNiceWindow(fore, m->m.attach.preselect);
+     }
+@@ -1217,7 +1318,7 @@
+ #endif
+ 	{
+ 	  flayer = D_forecv->c_layer;
+-	  display_wlist(1, WLIST_NUM);
++	  display_wlist(1, WLIST_NUM, (char *)0);
+ 	  noshowwin = 1;
+ 	}
+     }
+@@ -1424,3 +1525,45 @@
+   EffectiveAclUser = 0;
+ #endif
+ }
++
++#ifndef NAMEDPIPE
++
++int
++SendAttachMsg(s, m, fd)
++int s;
++struct msg *m;
++int fd;
++{
++  int r;
++  struct msghdr msg;
++  struct iovec iov;
++  char buf[CMSG_SPACE(sizeof(int))];
++  struct cmsghdr *cmsg;
++
++  iov.iov_base = (char *)m;
++  iov.iov_len = sizeof(*m);
++  bzero(&msg, sizeof(msg));
++  msg.msg_name = 0;
++  msg.msg_namelen = 0;
++  msg.msg_iov = &iov; 
++  msg.msg_iovlen = 1;
++  msg.msg_control = buf;
++  msg.msg_controllen = sizeof(buf);
++  cmsg = CMSG_FIRSTHDR(&msg);
++  cmsg->cmsg_level = SOL_SOCKET;
++  cmsg->cmsg_type = SCM_RIGHTS; 
++  cmsg->cmsg_len = CMSG_LEN(sizeof(int));
++  bcopy(&fd, CMSG_DATA(cmsg), sizeof(int));
++  msg.msg_controllen = cmsg->cmsg_len;
++  while(1)
++    {
++      r = sendmsg(s, &msg, 0);
++      if (r == -1 && errno == EINTR)
++	continue;
++      if (r == -1)
++	return -1;
++      return 0;
++    }
++}
++
++#endif
+diff -Naur screen-4.0.3.orig/teln.c screen-4.0.3/teln.c
+--- screen-4.0.3.orig/teln.c	2003-09-08 16:26:56.000000000 +0200
++++ screen-4.0.3/teln.c	2008-06-01 23:39:31.000000000 +0200
+@@ -64,6 +64,7 @@
+ #define TO_NAWS         31
+ #define TO_TSPEED       32
+ #define TO_LFLOW        33
++#define TO_LINEMODE     34
+ #define TO_XDISPLOC     35
+ #define TO_NEWENV       39
+ 
+@@ -90,7 +91,7 @@
+       strncpy(buf + 1, strerror(errno), sizeof(buf) - 2);
+       buf[sizeof(buf) - 1] = 0;
+       WriteString(p, buf, strlen(buf));
+-      WindowDied(p);
++      WindowDied(p, 0, 0);
+       return;
+     }
+   WriteString(p, "connected.\r\n", 12);
+@@ -406,13 +407,13 @@
+   int repl = 0;
+ 
+   if (cmd == TC_WONT)
+-    debug2("[WONT %c %d]\n", TO_S[opt], opt);
++    debug2("[<-WONT %c %d]\n", TO_S[opt], opt);
+   if (cmd == TC_WILL)
+-    debug2("[WILL %c %d]\n", TO_S[opt], opt);
++    debug2("[<-WILL %c %d]\n", TO_S[opt], opt);
+   if (cmd == TC_DONT)
+-    debug2("[DONT %c %d]\n", TO_S[opt], opt);
++    debug2("[<-DONT %c %d]\n", TO_S[opt], opt);
+   if (cmd == TC_DO)
+-    debug2("[DO  %c %d]\n", TO_S[opt], opt);
++    debug2("[<-DO  %c %d]\n", TO_S[opt], opt);
+ 
+   switch(cmd)
+     {
+@@ -458,6 +459,16 @@
+   b[0] = TC_IAC;
+   b[1] = repl;
+   b[2] = opt;
++
++  if (repl == TC_WONT)
++    debug2("[->WONT %c %d]\n", TO_S[opt], opt);
++  if (repl == TC_WILL)
++    debug2("[->WILL %c %d]\n", TO_S[opt], opt);
++  if (repl == TC_DONT)
++    debug2("[->DONT %c %d]\n", TO_S[opt], opt);
++  if (repl == TC_DO)
++    debug2("[->DO  %c %d]\n", TO_S[opt], opt);
++
+   TelReply(p, (char *)b, 3);
+   if (cmd == TC_DO && opt == TO_NAWS)
+     TelWindowSize(p);
+diff -Naur screen-4.0.3.orig/termcap.c screen-4.0.3/termcap.c
+--- screen-4.0.3.orig/termcap.c	2003-09-08 16:45:36.000000000 +0200
++++ screen-4.0.3/termcap.c	2008-06-01 23:39:31.000000000 +0200
+@@ -39,6 +39,7 @@
+ extern struct action umtab[];
+ extern struct action mmtab[];
+ extern struct action dmtab[];
++extern struct action ktab[];
+ extern struct kmap_ext *kmap_exts;
+ extern int kmap_extn;
+ extern int DefaultEsc;
+@@ -547,7 +548,8 @@
+       else
+ 	break;
+     }
+-
++  if (n < KMAP_KEYS)
++    domap = 1;
+   if (map == 0 && domap)
+     return 0;
+   if (map && !domap)
+diff -Naur screen-4.0.3.orig/tty.sh screen-4.0.3/tty.sh
+--- screen-4.0.3.orig/tty.sh	2003-09-08 16:24:25.000000000 +0200
++++ screen-4.0.3/tty.sh	2008-06-01 23:39:31.000000000 +0200
+@@ -622,6 +622,10 @@
+       D_NewMode.tio.c_iflag &= ~IXON;
+     }
+ # ifdef POSIX
++#  ifdef TCOON
++  if (!on)
++    tcflow(D_userfd, TCOON);
++#  endif
+   if (tcsetattr(D_userfd, TCSANOW, &D_NewMode.tio))
+ # else
+   if (ioctl(D_userfd, TCSETAW, (char *)&D_NewMode.tio) != 0)
+diff -Naur screen-4.0.3.orig/utmp.c screen-4.0.3/utmp.c
+--- screen-4.0.3.orig/utmp.c	2003-09-08 16:27:17.000000000 +0200
++++ screen-4.0.3/utmp.c	2008-06-01 23:39:31.000000000 +0200
+@@ -604,6 +604,7 @@
+ char *line, *user;
+ int pid;
+ {
++  time_t now;
+   u->ut_type = USER_PROCESS;
+   strncpy(u->ut_user, user, sizeof(u->ut_user));
+   /* Now the tricky part... guess ut_id */
+@@ -618,7 +619,10 @@
+ #endif /* sgi */
+   strncpy(u->ut_line, line, sizeof(u->ut_line));
+   u->ut_pid = pid;
+-  (void)time((time_t *)&u->ut_time);
++  /* must use temp variable because of NetBSD/sparc64, where
++   * ut_xtime is long(64) but time_t is int(32) */
++  (void)time(&now);
++  u->ut_time = now;
+ }
+ 
+ static slot_t
+@@ -726,9 +730,11 @@
+ char *line, *user;
+ int pid;
+ {
++  time_t now;
+   strncpy(u->ut_line, line, sizeof(u->ut_line));
+   strncpy(u->ut_name, user, sizeof(u->ut_name));
+-  (void)time((time_t *)&u->ut_time);
++  (void)time(&now);
++  u->ut_time = now;
+ }
+ 
+ static slot_t
+diff -Naur screen-4.0.3.orig/window.c screen-4.0.3/window.c
+--- screen-4.0.3.orig/window.c	2003-12-05 14:45:41.000000000 +0100
++++ screen-4.0.3/window.c	2008-06-01 23:39:31.000000000 +0200
+@@ -50,7 +50,7 @@
+ extern int visual_bell, maxwin;
+ extern struct event logflushev;
+ extern int log_flush, logtstamp_after;
+-extern int ZombieKey_destroy, ZombieKey_resurrect;
++extern int ZombieKey_destroy, ZombieKey_resurrect, ZombieKey_onerror;
+ extern struct layer *flayer;
+ extern int maxusercount;
+ extern int pty_preopen;
+@@ -244,6 +244,12 @@
+   debug1("WinProcess: %d bytes\n", *lenp);
+   fore = (struct win *)flayer->l_data;
+ 
++  if (fore->w_type == W_TYPE_GROUP)
++    {
++      *bufpp += *lenp;
++      *lenp = 0;
++      return;
++    }
+   if (fore->w_ptyfd < 0)	/* zombie? */
+     {
+       ZombieProcess(bufpp, lenp);
+@@ -466,7 +472,7 @@
+ {
+   struct canvas *cv;
+   fore = (struct win *)flayer->l_data;
+-  debug1("WinRestore: win %x\n", fore);
++  debug1("WinRestore: win %p\n", fore);
+   for (cv = flayer->l_cvlist; cv; cv = cv->c_next)
+     {
+       display = cv->c_display;
+@@ -584,6 +590,8 @@
+ 
+   if ((f = OpenDevice(nwin.args, nwin.lflag, &type, &TtyName)) < 0)
+     return -1;
++  if (type == W_TYPE_GROUP)
++    f = -1;
+ 
+   if ((p = (struct win *)malloc(sizeof(struct win))) == 0)
+     {
+@@ -610,6 +618,11 @@
+     p->w_term = SaveStr(nwin.term);
+ 
+   p->w_number = n;
++  p->w_group = 0;
++  if (p->w_type != W_TYPE_GROUP && fore && fore->w_type == W_TYPE_GROUP)
++    p->w_group = fore;
++  else if (p->w_type != W_TYPE_GROUP && fore && fore->w_group)
++    p->w_group = fore->w_group;
+ #ifdef MULTIUSER
+   /*
+    * This is dangerous: without a display we use creators umask
+@@ -712,7 +725,7 @@
+     SetCharsets(p, nwin.charset);
+ #endif
+ 
+-  if (VerboseCreate)
++  if (VerboseCreate && type != W_TYPE_GROUP)
+     {
+       struct display *d = display; /* WriteString zaps display */
+ 
+@@ -728,6 +741,7 @@
+       display = d;
+     }
+ 
++  p->w_deadpid = 0;
+   p->w_pid = 0;
+ #ifdef PSEUDOS
+   p->w_pwin = 0;
+@@ -762,6 +776,17 @@
+   *pp = p;
+   p->w_next = windows;
+   windows = p;
++
++  if (type == W_TYPE_GROUP)
++    {
++      SetForeWindow(p);
++      Activate(p->w_norefresh);
++      WindowChanged((struct win*)0, 'w');
++      WindowChanged((struct win*)0, 'W');
++      WindowChanged((struct win*)0, 0);
++      return n;
++    }
++
+   p->w_lflag = nwin.lflag;
+ #ifdef UTMPOK
+   p->w_slot = (slot_t)-1;
+@@ -860,6 +885,7 @@
+       display = d;
+     }
+ 
++  p->w_deadpid = 0;
+   p->w_pid = 0;
+ #ifdef BUILTIN_TELNET
+   if (p->w_type == W_TYPE_TELNET)
+@@ -1007,6 +1033,12 @@
+ 
+   if (!arg)
+     return -1;
++  if (strcmp(arg, "//group") == 0)
++    {
++      *typep = W_TYPE_GROUP;
++      *namep = "telnet";
++      return 0;
++    }
+ #ifdef BUILTIN_TELNET
+   if (strcmp(arg, "//telnet") == 0)
+     {
+@@ -1117,7 +1149,7 @@
+ {
+   int pid;
+   char tebuf[25];
+-  char ebuf[10];
++  char ebuf[20];
+   char shellbuf[7 + MAXPATHLEN];
+   char *proc;
+ #ifndef TIOCSWINSZ
+@@ -1807,13 +1839,13 @@
+ 	return;
+ #endif
+       debug2("Window %d: read error (errno %d) - killing window\n", p->w_number, errno);
+-      WindowDied(p);
++      WindowDied(p, 0, 0);
+       return;
+     }
+   if (len == 0)
+     {
+       debug1("Window %d: EOF - killing window\n", p->w_number);
+-      WindowDied(p);
++      WindowDied(p, 0, 0);
+       return;
+     }
+   debug1(" -> %d bytes\n", len);
+@@ -2139,7 +2171,7 @@
+       return;
+     }
+   flayer = &p->w_layer;
+-  Input(":", 100, INP_COOKED, zmodem_fin, NULL);
++  Input(":", 100, INP_COOKED, zmodem_fin, NULL, 0);
+   s = send ? zmodem_sendcmd : zmodem_recvcmd;
+   n = strlen(s);
+   LayProcess(&s, &n);
+diff -Naur screen-4.0.3.orig/window.h screen-4.0.3/window.h
+--- screen-4.0.3.orig/window.h	2003-08-21 16:57:30.000000000 +0200
++++ screen-4.0.3/window.h	2008-06-01 23:39:31.000000000 +0200
+@@ -19,7 +19,7 @@
+  * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+  *
+  ****************************************************************
+- * $Id: window.h,v 1.11 1994/05/31 12:33:27 mlschroe Exp $ FAU
++ * $Id: window.h,v 1.23 2007/02/06 20:44:37 mls Exp $ FAU
+  */
+ 
+ 
+@@ -150,6 +150,7 @@
+   char  *w_akachange;		/* autoaka hack */
+   char	 w_akabuf[MAXSTR];	/* aka buffer */
+   int	 w_autoaka;		/* autoaka hack */
++  struct win *w_group;		/* window group we belong to */
+   int	 w_intermediate;	/* char used while parsing ESC-seq */
+   int	 w_args[MAXARGS];	/* emulator args */
+   int	 w_NumArgs;
+@@ -236,6 +237,7 @@
+   int	 w_histheight;		/* always 0 */
+ #endif
+   int	 w_pid;			/* process at the other end of ptyfd */	
++  int	 w_deadpid;		/* saved w_pid of a process that closed the ptyfd to us */	
+ 
+   char  *w_cmdargs[MAXARGS];	/* command line argument vector */
+   char	*w_dir;			/* directory for chdir */
+@@ -286,6 +288,7 @@
+ #define W_TYPE_PTY		0
+ #define W_TYPE_PLAIN		1
+ #define W_TYPE_TELNET		2
++#define W_TYPE_GROUP		3
+ 
+ 
+ /*

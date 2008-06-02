@@ -5,9 +5,10 @@
 ## DP: an extra expansion step.
 
 @DPATCH@
---- screen-4.0.3.orig/configure.in	2007-07-31 13:15:03.000000000 +0200
-+++ screen-4.0.3/configure.in	2007-07-31 13:15:56.000000000 +0200
-@@ -1283,7 +1283,7 @@
+diff -Naur screen-4.0.3.orig/configure.in screen-4.0.3/configure.in
+--- screen-4.0.3.orig/configure.in	2008-06-01 23:40:01.000000000 +0200
++++ screen-4.0.3/configure.in	2008-06-01 23:40:03.000000000 +0200
+@@ -1287,7 +1287,7 @@
  SCREENENCODINGS="\"/usr/local/lib/screen/utf8encodings\""
  if test -n "$datadir"; then
  eval SCREENENCODINGS="$datadir/screen/utf8encodings"

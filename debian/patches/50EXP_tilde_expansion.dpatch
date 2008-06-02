@@ -6,20 +6,20 @@
 ## DP: (#477210) for patch suggestions.
 
 @DPATCH@
-diff -Nau screen-4.0.3.orig/extern.h screen-4.0.3/extern.h
---- screen-4.0.3.orig/extern.h	2008-04-27 02:37:32.000000000 +0200
-+++ screen-4.0.3/extern.h	2008-04-27 02:31:59.000000000 +0200
+diff -Naur screen-4.0.3.orig/extern.h screen-4.0.3/extern.h
+--- screen-4.0.3.orig/extern.h	2008-06-01 23:41:50.000000000 +0200
++++ screen-4.0.3/extern.h	2008-06-01 23:45:01.000000000 +0200
 @@ -65,6 +65,7 @@
  extern int   MFindUsedLine __P((struct win *, int, int));
  
  /* fileio.c */
 +extern char *ExpandFilename __P((const char *));
- extern void  StartRc __P((char *));
+ extern int   StartRc __P((char *, int));
  extern void  FinishRc __P((char *));
  extern void  RcLine __P((char *, int));
-diff -Nau screen-4.0.3.orig/fileio.c screen-4.0.3/fileio.c
---- screen-4.0.3.orig/fileio.c	2008-04-27 02:37:35.000000000 +0200
-+++ screen-4.0.3/fileio.c	2008-04-27 02:35:29.000000000 +0200
+diff -Naur screen-4.0.3.orig/fileio.c screen-4.0.3/fileio.c
+--- screen-4.0.3.orig/fileio.c	2008-06-01 23:44:59.000000000 +0200
++++ screen-4.0.3/fileio.c	2008-06-01 23:45:01.000000000 +0200
 @@ -24,6 +24,7 @@
  #include <sys/types.h>
  #include <fcntl.h>
@@ -85,7 +85,7 @@ diff -Nau screen-4.0.3.orig/fileio.c screen-4.0.3/fileio.c
  static char *
  findrcfile(rcfile)
  char *rcfile;
-@@ -291,17 +342,21 @@
+@@ -293,17 +344,21 @@
  do_source(rcfilename)
  char *rcfilename;
  {
@@ -109,10 +109,10 @@ diff -Nau screen-4.0.3.orig/fileio.c screen-4.0.3/fileio.c
  /*
   * Running a Command Line in the environment determined by the display.
   * The fore window is taken from the display as well as the user.
-diff -Nau screen-4.0.3.orig/process.c screen-4.0.3/process.c
---- screen-4.0.3.orig/process.c	2008-04-27 02:37:35.000000000 +0200
-+++ screen-4.0.3/process.c	2008-04-27 02:25:03.000000000 +0200
-@@ -2375,9 +2375,10 @@
+diff -Naur screen-4.0.3.orig/process.c screen-4.0.3/process.c
+--- screen-4.0.3.orig/process.c	2008-06-01 23:45:01.000000000 +0200
++++ screen-4.0.3/process.c	2008-06-01 23:45:01.000000000 +0200
+@@ -2418,9 +2418,10 @@
  #endif
        break;
      case RC_CHDIR:

@@ -5,19 +5,9 @@
 ## DP: * Increase the maximum length of the input line buffer likewise.
 
 @DPATCH@
---- screen-4.0.3.orig/screen.h	2007-07-31 00:55:30.000000000 +0200
-+++ screen-4.0.3/screen.h	2007-07-31 00:55:39.000000000 +0200
-@@ -86,7 +86,7 @@
- 
- #define Ctrl(c) ((c)&037)
- 
--#define MAXSTR		256
-+#define MAXSTR		768
- #define MAXARGS 	64
- #define MSGWAIT 	5
- #define MSGMINWAIT 	1
---- screen-4.0.3.orig/input.c	2007-08-09 18:29:57.000000000 +0200
-+++ screen-4.0.3/input.c	2007-08-09 18:30:54.000000000 +0200
+diff -Naur screen-4.0.3.orig/input.c screen-4.0.3/input.c
+--- screen-4.0.3.orig/input.c	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/input.c	2008-06-01 23:40:37.000000000 +0200
 @@ -38,7 +38,7 @@
  
  struct inpline
@@ -32,11 +22,11 @@
  {
    struct inpline inp;
 -  int  inpmaxlen;	/* 100, or less, if caller has shorter buffer */
-+  int  inpmaxlen;	/* MAXSTR or less if caller has shorter buffer */
++  int  inpmaxlen;	/* MAXSTR, or less, if caller has shorter buffer */
    char *inpstring;	/* the prompt */
    int  inpstringlen;	/* length of the prompt */
    int  inpmode;		/* INP_NOECHO, INP_RAW, INP_EVERY */
-@@ -116,8 +116,8 @@
+@@ -120,8 +120,8 @@
    int maxlen;
    struct inpdata *inpdata;
    
@@ -47,25 +37,39 @@
    if (!(mode & INP_NOECHO))
      {
        maxlen = flayer->l_width - 1 - strlen(istr);
---- screen-4.0.3.orig/window.c	2007-08-09 18:31:24.000000000 +0200
-+++ screen-4.0.3/window.c	2007-08-09 18:31:31.000000000 +0200
-@@ -2139,7 +2139,7 @@
-       return;
-     }
-   flayer = &p->w_layer;
--  Input(":", 100, INP_COOKED, zmodem_fin, NULL);
-+  Input(":", MAXSTR, INP_COOKED, zmodem_fin, NULL);
-   s = send ? zmodem_sendcmd : zmodem_recvcmd;
-   n = strlen(s);
-   LayProcess(&s, &n);
---- screen-4.0.3.orig/process.c	2007-08-09 18:31:54.000000000 +0200
-+++ screen-4.0.3/process.c	2007-08-09 18:32:00.000000000 +0200
-@@ -1891,7 +1891,7 @@
+diff -Naur screen-4.0.3.orig/process.c screen-4.0.3/process.c
+--- screen-4.0.3.orig/process.c	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/process.c	2008-06-01 23:40:37.000000000 +0200
+@@ -1934,7 +1934,7 @@
  	ChangeAKA(fore, *args, strlen(*args));
        break;
      case RC_COLON:
--      Input(":", 100, INP_COOKED, Colonfin, NULL);
-+      Input(":", MAXSTR, INP_COOKED, Colonfin, NULL);
+-      Input(":", 100, INP_COOKED, Colonfin, NULL, 0);
++      Input(":", MAXSTR, INP_COOKED, Colonfin, NULL, 0);
        if (*args && **args)
  	{
  	  s = *args;
+diff -Naur screen-4.0.3.orig/screen.h screen-4.0.3/screen.h
+--- screen-4.0.3.orig/screen.h	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/screen.h	2008-06-01 23:40:37.000000000 +0200
+@@ -86,7 +86,7 @@
+ 
+ #define Ctrl(c) ((c)&037)
+ 
+-#define MAXSTR		256
++#define MAXSTR		768
+ #define MAXARGS 	64
+ #define MSGWAIT 	5
+ #define MSGMINWAIT 	1
+diff -Naur screen-4.0.3.orig/window.c screen-4.0.3/window.c
+--- screen-4.0.3.orig/window.c	2008-06-01 23:39:49.000000000 +0200
++++ screen-4.0.3/window.c	2008-06-01 23:40:37.000000000 +0200
+@@ -2171,7 +2171,7 @@
+       return;
+     }
+   flayer = &p->w_layer;
+-  Input(":", 100, INP_COOKED, zmodem_fin, NULL, 0);
++  Input(":", MAXSTR, INP_COOKED, zmodem_fin, NULL, 0);
+   s = send ? zmodem_sendcmd : zmodem_recvcmd;
+   n = strlen(s);
+   LayProcess(&s, &n);
