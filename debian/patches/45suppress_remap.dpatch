@@ -1,0 +1,17 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 45suppress_remap.dpatch by Loic Minier <lool@dooz.org>
+##
+## DP: Unbreak several useful keybindings.
+
+@DPATCH@
+--- screen-4.0.3.orig/termcap.c	2008-06-05 12:24:28.000000000 +0200
++++ screen-4.0.3/termcap.c	2008-06-05 12:24:59.000000000 +0200
+@@ -548,8 +548,6 @@
+       else
+ 	break;
+     }
+-  if (n < KMAP_KEYS)
+-    domap = 1;
+   if (map == 0 && domap)
+     return 0;
+   if (map && !domap)

@@ -1,3 +1,12 @@
+screen (4.0.3-11) unstable; urgency=low
+
+  * Unbreak <End> and <^A Bksp> using a patch from Loïc Minier
+    (thanks!) - introduced as new 45suppress_remap.dpatch.
+    Closes: #484647.
+  * Bump Standards version to 3.8.0. No changes necessary.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Thu, 12 Jun 2008 19:33:30 +0200
+
 screen (4.0.3-10) unstable; urgency=low
 
   * The "Whoa, this feels like a time machine" release.
