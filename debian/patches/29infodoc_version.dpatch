@@ -1,0 +1,17 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 29infodoc_version.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Update software version number in info documentation.
+
+@DPATCH@
+--- screen-4.0.3.orig/doc/screen.texinfo	2003-12-05 14:51:46.000000000 +0100
++++ screen-4.0.3/doc/screen.texinfo	2009-02-04 01:06:52.573469826 +0100
+@@ -7,7 +7,7 @@
+ @finalout
+ @setchapternewpage odd
+ @c %**end of header
+-@set version 4.0.2
++@set version 4.0.3
+ 
+ @direntry
+ * Screen: (screen).             Full-screen window manager.

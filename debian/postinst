@@ -6,7 +6,7 @@ if [ "$1" = configure ]; then
     install -g utmp -m 0775 -d /var/run/screen
     [ `stat -c%a /usr/bin/screen` -lt 4000 ] || chmod 0755 /var/run/screen
   fi
-  /usr/sbin/add-shell /usr/bin/screen || true
+  add-shell /usr/bin/screen || true
 fi
 
 #DEBHELPER#

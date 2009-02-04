@@ -1,0 +1,28 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 31upstream_cherries.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Cherry-picked upstream commits:
+## DP: - (#501201, git d128abd5...)
+
+@DPATCH@
+--- screen-4.0.3.orig/attacher.c
++++ screen-4.0.3/attacher.c
+@@ -52,6 +52,7 @@ static sigret_t AttachSigCont __P(SIGPROTOARG);
+ 
+ extern int real_uid, real_gid, eff_uid, eff_gid;
+ extern char *SockName, *SockMatch, SockPath[];
++extern char HostName[];
+ extern struct passwd *ppp;
+ extern char *attach_tty, *attach_term, *LoginName, *preselect;
+ extern int xflag, dflag, rflag, quietflag, adaptflag;
+@@ -891,8 +892,8 @@ screen_builtin_lck()
+        *cp1 -= 'a' - 'A';
+     }
+ 
+-  sprintf(message, "Screen used by %s <%s>.\nPassword:\007",
+-          fullname, ppp->pw_name);
++  sprintf(message, "Screen used by %s%s<%s> on %s.\nPassword:\007",
++          fullname, fullname[0] ? " " : "", ppp->pw_name, HostName);
+ 
+   /* loop here to wait for correct password */
+   for (;;)

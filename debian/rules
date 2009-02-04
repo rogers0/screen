@@ -7,25 +7,25 @@
 # Uncomment me to turn on debugging
 #export DH_VERBOSE=1
 
+include /usr/share/dpatch/dpatch.make
+
 package := screen
 ROOT := $(CURDIR)/debian/$(package)
 # statically define this... sucko
 TTYGROUP := 5
 
-clean:
+clean: unpatch
 	dh_testdir
 	dh_testroot
 	rm -f configure-stamp build-stamp
 	test ! -s doc/Makefile || $(MAKE) -C doc realclean
 	test ! -s Makefile || ! grep -q clean Makefile || $(MAKE) realclean
 	rm -f config.log config.status Makefile
-	dpatch deapply-all
 	dh_clean
 
 configure: configure-stamp
-configure-stamp:
+configure-stamp: patch
 	dh_testdir
-	dpatch apply-all
 	./configure --prefix=/usr \
 		    --infodir='$$(prefix)/share/info' \
 		    --mandir='$$(prefix)/share/man' \

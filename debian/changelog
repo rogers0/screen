@@ -1,11 +1,17 @@
-screen (4.0.3-11+lenny1) stable; urgency=high
+screen (4.0.3-12) unstable; urgency=low
 
-  * Security upload.
-  * Change the fix for #433338 so symlink attacks against the
-    public exchange file are prevented again. Closes: #521123.
-    Tracked as CVE-2009-1214 and CVE-2009-1215.
+  * Back to work.
+  * Make the package build lintian-clean again.
+  * Add a Homepage field. Closes: #515803.
+  * Use the stock [un]patch targets from dpatch. Closes: #488618.
+    Thanks to Ryan Niebur.
+  * Adjust version number in the info doc. Closes: #492274, thanks
+    to Juhapekka Tolvanen.
+  * Cherry pick from upstream:
+    * d128abd5...: Display hostname when locked. Closes: #501201.
+  * Remove a spurious nethack message. Closes: #512299.
 
- -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Thu, 04 Apr 2009 02:10:09 +0200
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Wed, 04 Feb 2009 01:14:20 +0100
 
 screen (4.0.3-11) unstable; urgency=low
 

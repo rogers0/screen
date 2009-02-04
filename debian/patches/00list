@@ -21,14 +21,17 @@
 19flowcontrol_lockup
 20defmonitor
 21manpage_nethack_activation
-22exchange_file_mode
+22no_public_exchange
 23exitcode_q_ls
 24option_parser
 25allow_symlink_sockdir
 26source_encoding
 27doc_sty_noenvpassing
 28blankerprg_callsemantics
+29infodoc_version
 30fix_fsf_address
+31upstream_cherries
+32misc_minor_fixes
 40cjk_eastasian
 45suppress_remap
 # 50-99: experimental patches, new features etc.

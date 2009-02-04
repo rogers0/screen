@@ -2,7 +2,7 @@
 set -e
 
 if [ "$1" = remove ] || [ "$1" = deconfigure ]; then
-  /usr/sbin/remove-shell /usr/bin/screen || true
+  remove-shell /usr/bin/screen || true
 fi 
 
 #DEBHELPER#
