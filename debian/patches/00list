@@ -21,7 +21,7 @@
 19flowcontrol_lockup
 20defmonitor
 21manpage_nethack_activation
-22no_public_exchange
+22exchange_file_mode
 23exitcode_q_ls
 24option_parser
 25allow_symlink_sockdir

@@ -1,3 +1,12 @@
+screen (4.0.3-11+lenny1) stable; urgency=high
+
+  * Security upload.
+  * Change the fix for #433338 so symlink attacks against the
+    public exchange file are prevented again. Closes: #521123.
+    Tracked as CVE-2009-1214 and CVE-2009-1215.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Thu, 04 Apr 2009 02:10:09 +0200
+
 screen (4.0.3-11) unstable; urgency=low
 
   * Unbreak <End> and <^A Bksp> using a patch from Loïc Minier
