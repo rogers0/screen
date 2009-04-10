@@ -17,14 +17,14 @@ TTYGROUP := 5
 clean: unpatch
 	dh_testdir
 	dh_testroot
-	rm -f configure-stamp build-stamp
+	rm -f configure-stamp build-stamp install-stamp
 	test ! -s doc/Makefile || $(MAKE) -C doc realclean
 	test ! -s Makefile || ! grep -q clean Makefile || $(MAKE) realclean
 	rm -f config.log config.status Makefile
 	dh_clean
 
 configure: configure-stamp
-configure-stamp: patch
+configure-stamp: patch-stamp
 	dh_testdir
 	./configure --prefix=/usr \
 		    --infodir='$$(prefix)/share/info' \
@@ -41,13 +41,14 @@ configure-stamp: patch
 	touch $@
 
 build: build-stamp
-build-stamp: configure
+build-stamp: configure-stamp
 	dh_testdir
-	$(MAKE) CFLAGS+='-O2 -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
-	$(MAKE) CFLAGS+='-O2 -g -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers' -C doc
+	$(MAKE) CFLAGS+='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
+	$(MAKE) CFLAGS+='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers' -C doc
 	touch $@
 
-install: build
+install: install-stamp
+install-stamp: build-stamp
 	dh_testdir
 	dh_testroot
 	dh_clean
@@ -66,10 +67,11 @@ install: build
 	# lintian overrides for the setgid bin etc
 	install -m 755 -d $(ROOT)/usr/share/lintian/overrides
 	install -m 644 debian/screen.lintian.overrides $(ROOT)/usr/share/lintian/overrides/screen
+	touch $@
 
 binary: binary-arch
-binary-indep: build install
-binary-arch: build install
+binary-indep: install
+binary-arch: install
 	dh_testdir
 	dh_testroot
 	dh_installdocs
@@ -88,4 +90,4 @@ binary-arch: build install
 	dh_md5sums
 	dh_builddeb
 
-.PHONY: configure build clean binary-indep binary-arch binary install
+.PHONY: patch configure build clean binary-indep binary-arch binary install

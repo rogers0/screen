@@ -1,3 +1,23 @@
+screen (4.0.3-13) unstable; urgency=low
+
+  * Sync with Ubuntu, closes: #520359. New dpatches:
+    * 33increase_max_winmsg_renditions
+    * 35screen_invoked_with_a_command (cherry-picked from upstream)
+  * Bump Standards version to 3.8.1 (again, no changes).
+  * Accommodate initscript to adjust the $SCREENDIR permissions
+    correctly even if /usr/bin/screen is installed 0755.
+    Add a Q&A pair to README.Debian to clarify this problem.
+    Closes: #520317.
+  * Fix #433338 properly by keeping the umask instead of dropping
+    the 'public exchange file' concept. Modify dpatch 22.
+    Addresses CVE-2009-1214, CVE-2009-1215, closes: #521123.
+  * Depend on patch-stamp instead of patch in debian/rules.
+    (Phony targets as intermediates in a dep chain are braindead.)
+  * Fix job control and CTTY handling on our new kfreebsd archs.
+    Closes: #522689. Thanks to Axel Beckert for his support!
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Fri, 10 Apr 2009 18:20:49 +0200
+
 screen (4.0.3-12) unstable; urgency=low
 
   * Back to work.

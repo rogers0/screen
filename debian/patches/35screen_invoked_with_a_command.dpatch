@@ -1,0 +1,29 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 35screen_invoked_with_a_command.dpatch
+##
+## DP: Cherry-picked from upstream.
+## DP: From 25c4f34d19c9f7d7262ef2a173238fdab7e283be Mon Sep 17 00:00:00 2001
+## DP: From: Sadrul Habib Chowdhury <sadrul@users.sourceforge.net>
+## DP: Date: Mon, 26 Jan 2009 21:19:47 +0000
+## DP: Subject: Don't forget the startup command.
+
+## DP:Fixes savannah bug #25348, launchpad bug #311443.
+## DP:---
+## DP:diff --git a/src/screen.c b/src/screen.c
+## DP:index c914c59..7239560 100644
+
+@DPATCH@
+
+--- src/screen.c
++++ src/screen.c
+@@ -1420,6 +1420,10 @@ char **av;
+ 	  /* NOTREACHED */
+ 	}
+     }
++  else if (ac) /* Screen was invoked with a command */
++    {
++      MakeWindow(&nwin);
++    }
+ 
+ #ifdef HAVE_BRAILLE
+   StartBraille();

@@ -10,7 +10,7 @@
 # 10-49: "regular" code and documentation fixes
 10norootpassword
 11replace_doc_paths
-## <12 REMOVED>
+12kfreebsd_ctty
 13split_info_files
 14size_matters
 15manpage_typos
@@ -21,7 +21,7 @@
 19flowcontrol_lockup
 20defmonitor
 21manpage_nethack_activation
-22no_public_exchange
+22exchange_file_mode
 23exitcode_q_ls
 24option_parser
 25allow_symlink_sockdir
@@ -32,6 +32,8 @@
 30fix_fsf_address
 31upstream_cherries
 32misc_minor_fixes
+33increase_max_winmsg_renditions
+35screen_invoked_with_a_command
 40cjk_eastasian
 45suppress_remap
 # 50-99: experimental patches, new features etc.

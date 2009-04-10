@@ -1,0 +1,38 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 22exchange_file_mode.dpatch by  <hesso@pool.math.tu-berlin.de>
+##
+## DP: Make it a bit harder to shoot oneself in the foot by
+## DP: keeping the umask tight by default when creating the
+## DP: screen exchange file. Fearless users may still chmod it.
+
+@DPATCH@
+--- screen-4.0.3.orig/fileio.c	2009-04-02 02:01:23.530568088 +0200
++++ screen-4.0.3/fileio.c	2009-04-02 02:02:18.155521670 +0200
+@@ -367,11 +367,6 @@
+   char *mode = "w";
+ #ifdef COPY_PASTE
+   int public = 0;
+-# ifdef _MODE_T
+-  mode_t old_umask;
+-# else
+-  int old_umask;
+-# endif
+ # ifdef HAVE_LSTAT
+   struct stat stb, stb2;
+   int fd, exists = 0;
+@@ -434,7 +429,6 @@
+ #ifdef COPY_PASTE
+       if (dump == DUMP_EXCHANGE && public)
+ 	{
+-          old_umask = umask(0);
+ # ifdef HAVE_LSTAT
+ 	  if (exists)
+ 	    {
+@@ -455,7 +449,6 @@
+ # else
+           f = fopen(fn, mode);
+ # endif
+-          umask(old_umask);
+ 	}
+       else
+ #endif /* COPY_PASTE */
