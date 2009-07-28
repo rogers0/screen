@@ -1,3 +1,16 @@
+screen (4.0.3-14) unstable; urgency=low
+
+  * Cherry-pick a few upstream commits:
+    * f6b50e17 (create windows in detached session, closes: #466072).
+    * 97708d58 (vertical split documentation, closes: #525998).
+    * bb04008e (report session identifier on detach, closes: #199747).
+  * Slightly adjust Homepage field.
+  * Add support for build option 'noopt'.
+  * Bump Standards version to 3.8.2, no changes.
+  * Specify GPL version in d/copyright.
+
+ -- Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>  Tue, 28 Jul 2009 13:21:24 +0200
+
 screen (4.0.3-13) unstable; urgency=low
 
   * Sync with Ubuntu, closes: #520359. New dpatches:

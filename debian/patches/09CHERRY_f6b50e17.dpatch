@@ -1,0 +1,25 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 09CHERRY_f6b50e17.dpatch
+##
+## DP: Cherry-pick commit f6b50e175bc39763c4660cc88d7f82e5811797de
+## DP: (do not enforce the existence of a display, see #466072).
+
+@DPATCH@
+diff --git a/socket.c b/socket.c
+index 09aa73d..4c32ed5 100644
+--- a/socket.c
++++ b/socket.c
+@@ -1102,12 +1097,8 @@ ReceiveMsg()
+        * the window that issued the create message need not be an active
+        * window. Then we create the window without having a display.
+        * Resulting in another inactive window.
+-       * 
+-       * Currently we enforce that at least one display exists. But why?
+-       * jw.
+        */
+-      if (displays)
+-	ExecCreate(&m);
++      ExecCreate(&m);
+       break;
+     case MSG_CONT:
+ 	if (display && D_userpid != 0 && kill(D_userpid, 0) == 0)

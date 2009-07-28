@@ -1,0 +1,94 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 09CHERRY_97708d58.dpatch
+##
+## DP: Cherry-pick commit 97708d5800ac845b4c3a25d96d544f0dafa735d7
+## DP: (documentation for the vertical split feature).
+
+@DPATCH@
+diff --git a/doc/screen.1 b/doc/screen.1
+index 80c6483..b781e3a 100644
+--- a/doc/screen.1
++++ b/doc/screen.1
+@@ -509,7 +509,7 @@ automatic margins on and off).
+ .PD
+ Send a control-s to the current window.
+ .IP "\fBC-a S\fP	(split)"
+-Split the current region into two new ones.
++Split the current region horizontally into two new ones.
+ See also \fIonly, remove, focus\fP.
+ .IP "\fBC-a t\fP"
+ .PD 0
+@@ -582,6 +582,8 @@ Shows where
+ comes from, where it went to and why you can use it.
+ .IP "\fBC-a _\fP	(silence)"
+ Start/stop monitoring the current window for inactivity.
++.IP "\fBC-a |\fP	(split -v)"
++Split the current region vertically into two new ones.
+ .IP "\fBC-a *\fP	(displays)"
+ Show a listing of all currently attached displays.
+ 
+@@ -2729,12 +2731,13 @@ The default is currently \*Q=s dd\*U (standout, default colors).
+ .sp
+ .ne 3
+ .B split
++.RB [ -v ]
+ .PP
+ Split the current region into two new ones. All regions on the
+ display are resized to make room for the new region. The blank
+-window is displayed on the new region. Use the \*Qremove\*U or the
+-\*Qonly\*U command to delete regions.
+-Use \*Qfocus\*U to toggle between regions.
++window is displayed on the new region. Splits are made horizontally
++unless -v is used. Use the \*Qremove\*U or the \*Qonly\*U command
++to delete regions. Use \*Qfocus\*U to toggle between regions.
+ .sp
+ .ne 3
+ .B "startup_message on\fP|\fBoff"
+diff --git a/doc/screen.texinfo b/doc/screen.texinfo
+index 1acabe2..cfcbafe 100644
+--- a/doc/screen.texinfo
++++ b/doc/screen.texinfo
+@@ -705,7 +705,7 @@ Send a ^S (ASCII XOFF) to the current window.  @xref{XON/XOFF}.
+ 
+ @item @kbd{C-a S}
+ (split)@*
+-Split the current region into two new ones.  @xref{Regions}.
++Split the current region horizontally into two new ones.  @xref{Regions}.
+ 
+ @item @kbd{C-a t}
+ @itemx @kbd{C-a C-t}
+@@ -799,6 +799,10 @@ Delete the screen-exchange file.  @xref{Screen Exchange}.
+ (silence)@*
+ Start/stop monitoring the current window for inactivity. @xref{Silence},
+ 
++@item @kbd{C-a |}
++(split -v)@*
++Split the current region vertically into two new ones.  @xref{Regions}.
++
+ @item @kbd{C-a ,}
+ (license)@*
+ Show the copyright page.
+@@ -1808,11 +1812,20 @@ which can contain different windows.
+ @node Split, Focus,  , Regions
+ @section Split
+ @kindex S
+-@deffn Command split
+-(@kbd{C-a S})@*
++@kindex |
++@deffn Command split [-v]
++(@kbd{C-a S}, @kbd{C-a |})@*
+ Split the current region into two new ones. All regions on the
+ display are resized to make room for the new region. The blank
+-window is displayed on the new region.
++window is displayed on the new region. The default is to create
++a horizontal split, putting the new regions on the top and
++bottom of each other. Using -v will create a vertical split,
++causing the new regions to appear side by side of each other.
++
++With this current implementation of @code{screen}, scrolling data
++will appear much slower in a vertically splited region than one
++that is not. This should be taken into consideration if you need
++to use system commands such as @code{cat} or @code{tail -f}.
+ @end deffn
+ 
+ @node Focus, Only, Split, Regions

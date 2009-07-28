@@ -2,7 +2,7 @@ This is the Debian prepackaged version of screen, a screen manager with
 VT100/ANSI terminal emulation.
 
 This package was put together from sources obtained from:
-  ftp://ftp.uni-erlangen.de/pub/utilities/screen
+  http://savannah.gnu.org/projects/screen
 
 See the info documentation for contact information for the upstream authors.
 
@@ -28,8 +28,8 @@ License:
 	with this program; if not, write to the Free Software Foundation, Inc.,
 	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-On Debian systems, the complete text of the GNU General Public License can
-be found in /usr/share/common-licenses/GPL file.
+On Debian systems, the complete text of the GNU General Public License, version 2
+can be found in /usr/share/common-licenses/GPL-2.
 
 Debian Modifications:
   Copyright (C) 1996 Ian Murdock <imurdock@debian.org>

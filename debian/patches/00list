@@ -1,12 +1,15 @@
 # before doing anything else, advance to CVS HEAD
 01CVS
-# 01-09: fixes to configure, altering preprocessor macros etc.
+# 01-08: fixes to configure, altering preprocessor macros etc.
 01configure_fix_alpha_vsprintf
 02configure_use_ncursesw
 03fully_expand_screenencodings
 04AUTOCONF
 05fix_osdef_include
-## <06 REMOVED>
+# 09   : Cherry-picked upstream commits
+09CHERRY_f6b50e17
+09CHERRY_97708d58
+09CHERRY_bb04008e
 # 10-49: "regular" code and documentation fixes
 10norootpassword
 11replace_doc_paths
