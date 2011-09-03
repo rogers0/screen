@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2000
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -49,8 +49,12 @@
  *
  * Screen will name the subdirectories "S-$USER" (e.g /tmp/S-davison).
  */
+#undef SOCKDIR
 
-#define SOCKDIR (eff_uid ? "/tmp/uscreens" : "/tmp/screens")
+/*
+ * Define this if the SOCKDIR is not shared between hosts.
+ */
+#define SOCKDIR_IS_LOCAL_TO_HOST
 
 /*
  * Screen sources two startup files. First a global file with a path
@@ -69,6 +73,14 @@
  */
 #define ALLOW_SYSSCREENRC 1
 
+/*
+ * Screen needs encoding files for the translation of utf8
+ * into some encodings, e.g. JIS, BIG5.
+ * Only needed if FONT, ENCODINGS and UTF8 are defined.
+ */
+#ifndef SCREENENCODINGS
+# define SCREENENCODINGS "/usr/local/lib/screen/encodings"
+#endif
 /*
  * Define CHECKLOGIN to force Screen users to enter their Unix password
  * in addition to the screen password.
@@ -127,10 +139,18 @@
  * define FONT to support ISO2022/alternet charset support
  * define COLOR to include ansi color support. This may expose
  *        a bug in x11r6-color-xterm.
- * define KANJI to include support for japanese character sets.
+ * define DW_CHARS to include support for double-width character
+ *        sets.
+ * define ENCODINGS to include support for encodings like euc or big5.
  *        Needs FONT to work.
+ * define UTF8 if you want support for UTF-8 encoding.
+ *        Needs FONT and ENCODINGS to work.
+ * define COLORS16 if you want 16 colors.
+ *        Needs COLOR to work.
  * define BUILTIN_TELNET to add telnet support to screen.
  *        Syntax: screen //telnet host [port]
+ * define RXVT_OSC if you want support for rxvts special
+ *        change fgcolor/bgcolor/bgpicture sequences
  */
 #undef SIMPLESCREEN
 #ifndef SIMPLESCREEN
@@ -146,10 +166,15 @@
 # define MAPKEYS
 # define COLOR
 # define FONT
-# define KANJI
+# define DW_CHARS
+# define ENCODINGS
+# define UTF8
+# define COLORS16
 #endif /* SIMPLESCREEN */
 
 #undef BUILTIN_TELNET
+#undef RXVT_OSC
+#undef COLORS256
 
 
 /*
@@ -251,6 +276,19 @@
  */
 #undef USE_SGR
 
+
+/*
+ * Define USE_LOCALE if you want screen to use the locale names
+ * for the name of the month and day of the week.
+ */
+#define USE_LOCALE
+
+/*
+ * Define USE_PAM if your system supports PAM (Pluggable Authentication
+ * Modules) and you want screen to use it instead of calling crypt().
+ * (You may also need to add -lpam to LIBS in the Makefile.)
+ */
+#undef USE_PAM
 
 /**********************************************************************
  *
@@ -425,6 +463,7 @@
 #undef LOADAV_GETLOADAVG
 #undef LOADAV_UNIX
 #undef LOADAV_AVENRUN
+#undef LOADAV_USE_NLIST64
 
 #undef NLIST_DECLARED
 #undef NLIST_STRUCT
@@ -551,6 +590,22 @@
 #undef HAVE_GETCWD
 
 /*
+ * define HAVE_SETLOCALE if your system has the setlocale() call.
+ */
+#undef HAVE_SETLOCALE
+
+/*
+ * define HAVE_STRFTIME if your system has the strftime() call.
+ */
+#undef HAVE_STRFTIME
+
+/*
+ * define HAVE_NL_LANGINFO if your system has the nl_langinfo() call
+ * and <langinfo.h> defines CODESET.
+ */
+#undef HAVE_NL_LANGINFO
+
+/*
  * define HAVE_DEV_PTC if you have a /dev/ptc character special
  * device.
  */
@@ -561,6 +616,11 @@
  * device and support the ptsname(), grantpt(), unlockpt() functions.
  */
 #undef HAVE_SVR4_PTYS
+
+/*
+ * define HAVE_GETPT if you have the getpt() function.
+ */
+#undef HAVE_GETPT
 
 /* 
  * define PTYRANGE0 and or PTYRANGE1 if you want to adapt screen

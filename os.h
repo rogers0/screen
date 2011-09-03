@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -25,11 +25,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-#ifdef __hpux
-/* workaround for HPUX-11 which manages to include sys/user.h! */
-# define _SYS_USER_INCLUDED
-#endif
-
 #include <sys/param.h>
 
 /* In strict ANSI mode, HP-UX machines define __hpux but not hpux */
@@ -37,9 +32,9 @@
 # define hpux
 #endif
 
-#if defined(__bsdi__) || defined(__386BSD__) || defined(_CX_UX) || defined(hpux) || defined(_IBMR2)
+#if defined(__bsdi__) || defined(__386BSD__) || defined(_CX_UX) || defined(hpux) || defined(_IBMR2) || defined(linux)
 # include <signal.h>
-#endif /* __bsdi__ || __386BSD__ || _CX_UX || hpux || _IBMR2 */
+#endif /* __bsdi__ || __386BSD__ || _CX_UX || hpux || _IBMR2 || linux */
 
 #ifdef ISC
 # ifdef ENAMETOOLONG
@@ -75,7 +70,7 @@ extern int errno;
 #undef strerror
 #endif
 
-#ifndef SYSV
+#if !defined(SYSV) && !defined(linux)
 # ifdef NEWSOS
 #  define strlen ___strlen___
 #  include <strings.h>
@@ -183,6 +178,11 @@ extern int errno;
 
 #ifdef BUILTIN_TELNET
 # include <netinet/in.h>
+# include <arpa/inet.h>
+#endif
+
+#if defined(USE_LOCALE) && (!defined(HAVE_SETLOCALE) || !defined(HAVE_STRFTIME))
+# undef USE_LOCALE
 #endif
 
 /*****************************************************************

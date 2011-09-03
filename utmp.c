@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -33,7 +33,15 @@ RCS_ID("$Id: utmp.c,v 1.7 1994/05/31 12:33:21 mlschroe Exp $ FAU")
 #include "screen.h"
 #include "extern.h"
 
+#ifdef HAVE_UTEMPTER
+#include <utempter.h>
+#endif
+
+
 extern struct display *display;
+#ifdef CAREFULUTMP
+extern struct win *windows;
+#endif
 extern struct win *fore;
 extern char *LoginName;
 extern int real_uid, eff_uid;
@@ -190,6 +198,7 @@ int how;
 	    Msg(0, "This window is now logged in.");
 	  else
 	    Msg(0, "This window should now be logged in.");
+	  WindowChanged(fore, 'f');
 	}
       else
 	Msg(0, "This window is already logged in.");
@@ -215,6 +224,7 @@ int how;
 #ifdef CAREFULUTMP
 	  CarefulUtmp();
 #endif
+	  WindowChanged(fore, 'f');
 	}
     }
 }

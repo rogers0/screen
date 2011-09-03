@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -75,6 +75,12 @@ RCS_ID("$Id: screen.c,v 1.24 1994/09/06 17:00:20 mlschroe Exp $ FAU")
 #if (defined(AUX) || defined(_AUX_SOURCE)) && defined(POSIX)
 # include <compat.h>
 #endif
+#if defined(USE_LOCALE) || defined(ENCODINGS)
+# include <locale.h>
+#endif
+#if defined(HAVE_NL_LANGINFO) && defined(ENCODINGS)
+# include <langinfo.h>
+#endif
 
 #include "screen.h"
 #ifdef HAVE_BRAILLE
@@ -104,16 +110,12 @@ FILE *dfp;
 #endif
 
 
-extern char *blank, *null, Term[], screenterm[], **environ, Termcap[];
-int force_vt = 1, assume_LP = 0;
+extern char Term[], screenterm[], **environ, Termcap[];
+int force_vt = 1;
 int VBellWait, MsgWait, MsgMinWait, SilenceWait;
 
-extern struct plop plop_tab[];
-extern struct user *users;
+extern struct acluser *users;
 extern struct display *displays, *display; 
-
-/* tty.c */
-extern int intrc;
 
 
 extern int visual_bell;
@@ -183,8 +185,12 @@ char *PowDetachString;
 #endif
 char *hstatusstring;
 char *captionstring;
+char *timestring;
+char *wliststr;
+char *wlisttit;
 int auto_detach = 1;
 int iflag, rflag, dflag, lsflag, quietflag, wipeflag, xflag;
+int cmdflag;
 int adaptflag;
 
 #ifdef MULTIUSER
@@ -203,6 +209,10 @@ int real_uid, real_gid, eff_uid, eff_gid;
 int default_startup;
 int ZombieKey_destroy, ZombieKey_resurrect;
 char *preselect = NULL;		/* only used in Attach() */
+
+#ifdef UTF8
+char *screenencodings;
+#endif
 
 #ifdef NETHACK
 int nethackflag = 0;
@@ -256,7 +266,7 @@ struct logfile *l;
 /********************************************************************/
 
 
-struct passwd *
+static struct passwd *
 getpwbyname(name, ppp)
 char *name;
 struct passwd *ppp;
@@ -267,7 +277,7 @@ struct passwd *ppp;
   static char *spw = NULL;
 #endif
  
-  if (!(ppp = getpwnam(name)))
+  if (!ppp && !(ppp = getpwnam(name)))
     return NULL;
 
   /* Do password sanity check..., allow ##user for SUN_C2 security */
@@ -281,7 +291,7 @@ pw_try_again:
   for (; n < 13; n++)
     {
       char c = ppp->pw_passwd[n];
-      if (!(c == '.' || c == '/' ||
+      if (!(c == '.' || c == '/' || c == '$' ||
 	    (c >= '0' && c <= '9') || 
 	    (c >= 'a' && c <= 'z') || 
 	    (c >= 'A' && c <= 'Z'))) 
@@ -382,7 +392,7 @@ char **av;
   debug("NAMEDPIPE\n");
 #endif
 #if defined(SIGWINCH) && defined(TIOCGWINSZ)
-  debug("Window changing enabled\n");
+  debug("Window size changing enabled\n");
 #endif
 #ifdef HAVE_SETREUID
   debug("SETREUID\n");
@@ -422,6 +432,9 @@ char **av;
   logtstamp_string = SaveStr("-- %n:%t -- time-stamp -- %M/%d/%y %c:%s --\n");
   hstatusstring = SaveStr("%h");
   captionstring = SaveStr("%3n %t");
+  timestring = SaveStr("%c:%s %M %d %H%? %l%?");
+  wlisttit = SaveStr("Num Name%=Flags");
+  wliststr = SaveStr("%3n %t%=%f");
 #ifdef COPY_PASTE
   BufferFile = SaveStr(DEFAULT_BUFFERFILE);
 #endif
@@ -441,6 +454,10 @@ char **av;
 
 #ifdef COPY_PASTE
   CompileKeys((char *)NULL, mark_key_tab);
+#endif
+#ifdef UTF8
+  InitBuiltinTabs();
+  screenencodings = SaveStr(SCREENENCODINGS);
 #endif
   nwin = nwin_undef;
   nwin_options = nwin_undef;
@@ -471,6 +488,10 @@ char **av;
 	      ac--;
 	      break;
 	    }
+	  if (ap[1] == '-' && !strcmp(ap, "--version"))
+	    Panic(0, "Screen version %s", version);
+	  if (ap[1] == '-' && !strcmp(ap, "--help"))
+	    exit_with_usage(myname, NULL, NULL);
 	  while (ap && *ap && *++ap)
 	    {
 	      switch (*ap)
@@ -517,7 +538,7 @@ char **av;
 		    }
 		  if (ParseEscape(NULL, ap))
 		    Panic(0, "Two characters are required with -e option, not '%s'.", ap);
-		  ap += 3; /* estimated size of notation */
+		  ap = NULL;
 		  break;
 		case 'f':
 		  ap++;
@@ -570,6 +591,9 @@ char **av;
 		    case 'y':
 		    case '1':
 		      nwin_options.lflag = 1;
+		      break;
+		    case 'a':
+		      nwin_options.lflag = 3;
 		      break;
 		    case 's':	/* -ls */
 		    case 'i':	/* -list */
@@ -670,9 +694,17 @@ char **av;
 		  if (!*SockMatch)
 		    exit_with_usage(myname, "Empty session-name?", NULL);
 		  break;
+		case 'X':
+		  cmdflag = 1;
+		  break;
 		case 'v':
 		  Panic(0, "Screen version %s", version);
 		  /* NOTREACHED */
+#ifdef UTF8
+		case 'U':
+		  nwin_options.encoding = nwin_options.encoding == -1 ? UTF8 : 0;
+		  break;
+#endif
 		default:
 		  exit_with_usage(myname, "Unknown option %s", --ap);
 		}
@@ -681,11 +713,40 @@ char **av;
       else
 	break;
     }
+#ifdef USE_LOCALE
+  setlocale(LC_ALL, "");
+#endif
+#ifdef ENCODINGS
+  if (nwin_options.encoding == -1)
+    {
+      /* ask locale if we should start in UTF-8 mode */
+# ifdef HAVE_NL_LANGINFO
+#  ifndef USE_LOCALE
+      setlocale(LC_CTYPE, "");
+#  endif
+      nwin_options.encoding = FindEncoding(nl_langinfo(CODESET));
+      debug1("locale says encoding = %d\n", nwin_options.encoding);
+# else
+#  ifdef UTF8
+      char *s;
+      if (((s = getenv("LC_ALL")) || (s = getenv("LC_CTYPE")) ||
+          (s = getenv("LANG"))) && InStr(s, "UTF-8"))
+        nwin_options.encoding = UTF8;
+#  endif
+      debug1("environment says encoding=%d\n", nwin_options.encoding);
+#endif
+    }
+#endif
   if (SockMatch && strlen(SockMatch) >= MAXSTR)
     Panic(0, "Ridiculously long socketname - try again.");
-  if (dflag && mflag && !(rflag || xflag))
+  if (cmdflag && !rflag && !dflag && !xflag)
+    xflag = 1;
+  if (!cmdflag && dflag && mflag && !(rflag || xflag))
     detached = 1;
   nwin = nwin_options;
+#ifdef ENCODINGS
+  nwin.encoding = nwin_undef.encoding;	/* let screenrc overwrite it */
+#endif
   if (ac)
     nwin.args = av;
   real_uid = getuid();
@@ -815,7 +876,7 @@ char **av;
     Panic(0, "$HOME too long - sorry.");
 
   attach_tty = "";
-  if (!detached && !lsflag && !(dflag && !mflag && !rflag && !xflag))
+  if (!detached && !lsflag && !cmdflag && !(dflag && !mflag && !rflag && !xflag))
     {
       /* ttyname implies isatty */
       if (!(attach_tty = ttyname(0)))
@@ -840,7 +901,7 @@ char **av;
       DebugTTY(&attach_Mode);
 #endif /* DEBUG */
     }
-  
+
 #ifdef _MODE_T
   oumask = umask(0);		/* well, unsigned never fails? jw. */
 #else
@@ -901,14 +962,14 @@ char **av;
 	  SockDir = SOCKDIR;
 	  if (lstat(SockDir, &st))
 	    {
-	      n = (eff_uid == 0) ? 0755 :
+	      n = (eff_uid == 0 && (real_uid || eff_gid == real_gid)) ? 0755 :
 	          (eff_gid != real_gid) ? 0775 :
 #ifdef S_ISVTX
 		  0777|S_ISVTX;
 #else
 		  0777;
 #endif
-	      if (mkdir(SockDir, eff_uid ? 0777 : 0755) == -1)
+	      if (mkdir(SockDir, n) == -1)
 		Panic(errno, "Cannot make directory '%s'", SockDir);
 	    }
 	  else
@@ -917,7 +978,7 @@ char **av;
 		Panic(0, "'%s' must be a directory.", SockDir);
               if (eff_uid == 0 && real_uid && st.st_uid != eff_uid)
 		Panic(0, "Directory '%s' must be owned by root.", SockDir);
-	      n = (eff_uid == 0 && (real_uid || (st.st_mode & 0777) != 0777)) ? 0755 :
+	      n = (eff_uid == 0 && (real_uid || (st.st_mode & 0775) != 0775)) ? 0755 :
 	          (eff_gid == st.st_gid && eff_gid != real_gid) ? 0775 :
 		  0777;
 	      if ((st.st_mode & 0777) != n)
@@ -978,8 +1039,8 @@ char **av;
       if (multi)
 	real_uid = multi_uid;
 #endif
-      setuid(real_uid);
       setgid(real_gid);
+      setuid(real_uid);
       eff_uid = real_uid;
       eff_gid = real_gid;
       i = FindSocket((int *)NULL, &fo, &oth, SockMatch);
@@ -991,7 +1052,31 @@ char **av;
       /* NOTREACHED */
     }
   signal(SIG_BYE, AttacherFinit);	/* prevent races */
-  if (rflag || xflag)
+  if (cmdflag)
+    {
+      char *sty = 0;
+
+      /* attach_tty is not mandatory */
+      if ((attach_tty = ttyname(0)) == 0)
+        attach_tty = "";
+      if (strlen(attach_tty) >= MAXPATHLEN)
+	Panic(0, "TtyName too long - sorry.");
+      if (!*av)
+	Panic(0, "Please specify a command.");
+      setgid(real_gid);
+      setuid(real_uid);
+      eff_uid = real_uid;
+      eff_gid = real_gid;
+      if (!mflag && !SockMatch)
+	{
+	  sty = getenv("STY");
+	  if (sty && *sty == 0)
+	    sty = 0;
+	}
+      SendCmdMessage(sty, SockMatch, av);
+      exit(0);
+    }
+  else if (rflag || xflag)
     {
       debug("screen -r: - is there anybody out there?\n");
       if (Attach(MSG_ATTACH))
@@ -999,6 +1084,10 @@ char **av;
 	  Attacher();
 	  /* NOTREACHED */
 	}
+#ifdef MULTIUSER
+      if (multiattach)
+	Panic(0, "Can't create sessions of other users.");
+#endif
       debug("screen -r: backend not responding -- still crying\n");
     }
   else if (dflag && !mflag)
@@ -1014,8 +1103,8 @@ char **av;
 
       if ((sty = getenv("STY")) != 0 && *sty != '\0')
 	{
-	  setuid(real_uid);
 	  setgid(real_gid);
+	  setuid(real_uid);
 	  eff_uid = real_uid;
 	  eff_gid = real_gid;
 	  nwin_options.args = av;
@@ -1025,11 +1114,6 @@ char **av;
 	}
     }
   nwin_compose(&nwin_default, &nwin_options, &nwin_default);
-
-  if (DefaultEsc == -1)
-    DefaultEsc = Ctrl('a');
-  if (DefaultMetaEsc == -1)
-    DefaultMetaEsc = 'a';
 
   if (!detached || dflag != 2)
     MasterPid = fork();
@@ -1041,16 +1125,9 @@ char **av;
     case -1:
       Panic(errno, "fork");
       /* NOTREACHED */
-#ifdef FORKDEBUG
-    default:
-      break;
-    case 0:
-      MasterPid = getppid();
-#else
     case 0:
       break;
     default:
-#endif
       if (detached)
         exit(0);
       if (SockMatch)
@@ -1065,13 +1142,18 @@ char **av;
         socknamebuf[NAME_MAX] = 0;
 #endif
       sprintf(SockPath + strlen(SockPath), "/%s", socknamebuf);
-      setuid(real_uid);
       setgid(real_gid);
+      setuid(real_uid);
       eff_uid = real_uid;
       eff_gid = real_gid;
       Attacher();
       /* NOTREACHED */
     }
+
+  if (DefaultEsc == -1)
+    DefaultEsc = Ctrl('a');
+  if (DefaultMetaEsc == -1)
+    DefaultMetaEsc = 'a';
 
   ap = av0 + strlen(av0) - 1;
   while (ap >= av0)
@@ -1121,16 +1203,16 @@ char **av;
    * start detached. From now on we should not refer to 'LoginName'
    * any more, use users->u_name instead.
    */
-  if (UserAdd(LoginName, (char *)0, (struct user **)0) < 0)
+  if (UserAdd(LoginName, (char *)0, (struct acluser **)0) < 0)
     Panic(0, "Could not create user info");
   if (!detached)
     {
-#ifdef FORKDEBUG
-      if (MakeDisplay(LoginName, attach_tty, attach_term, n, MasterPid, &attach_Mode) == 0)
-#else
       if (MakeDisplay(LoginName, attach_tty, attach_term, n, getppid(), &attach_Mode) == 0)
-#endif
 	Panic(0, "Could not alloc display");
+#ifdef ENCODINGS
+      D_encoding = nwin_options.encoding > 0 ? nwin_options.encoding : 0;
+      debug1("D_encoding = %d\n", D_encoding);
+#endif
     }
 
   if (SockMatch)
@@ -1206,7 +1288,7 @@ char **av;
   if (display)
     {
       brktty(D_userfd);
-      SetMode(&D_OldMode, &D_NewMode, display->d_flow, iflag);
+      SetMode(&D_OldMode, &D_NewMode, D_flow, iflag);
       /* Note: SetMode must be called _before_ FinishRc. */
       SetTTY(D_userfd, &D_NewMode);
       if (fcntl(D_userfd, F_SETFL, FNBLOCK))
@@ -1299,6 +1381,7 @@ struct win *p;
       p->w_y = MFindUsedLine(p, p->w_bot, 1);
       sprintf(buf, "\n\r=== Window terminated (%s) ===", s ? s : "?");
       WriteString(p, buf, strlen(buf));
+      WindowChanged(p, 'f');
     }
   else
     KillWindow(p);
@@ -1348,18 +1431,9 @@ SigChld SIGDEFARG
 sigret_t
 SigHup SIGDEFARG
 {
-  if (display == 0)
-    return;
-  debug("SigHup()\n");
-  if (D_userfd >= 0)
-    {
-      close(D_userfd);
-      D_userfd = -1;
-    }
-  if (auto_detach || displays->d_next)
-    Detach(D_DETACH);
-  else
-    Finit(0);
+  /* Hangup all displays */
+  while ((display = displays) != 0)
+    Hangup();
   SIGRETURN;
 }
 
@@ -1372,14 +1446,19 @@ static sigret_t
 SigInt SIGDEFARG
 {
 #if HAZARDOUS
-  char buf[1];
+  char ibuf;
 
   debug("SigInt()\n");
-  *buf = (char) intrc;
-  if (fore)
-    fore->w_inlen = 0;
-  if (fore)
-    write(fore->w_ptyfd, buf, 1);
+  if (fore && displays)
+    {
+# if defined(TERMIO) || defined(POSIX)
+      ibuf = displays->d_OldMode.tio.c_cc[VINTR];
+# else
+      ibuf = displays->d_OldMode.m_tchars.t_intrc;
+# endif
+      fore->w_inlen = 0;
+      write(fore->w_ptyfd, &ibuf, 1);
+    }
 #else
   signal(SIGINT, SigInt);
   debug("SigInt() careful\n");
@@ -1581,16 +1660,34 @@ int e;
   if (ServerSocket != -1)
     {
       debug1("we unlink(%s)\n", SockPath);
-      setuid(real_uid);
       setgid(real_gid);
+      setuid(real_uid);
       (void) unlink(SockPath);
     }
   exit(e);
 }
 
+void
+Hangup()
+{
+  if (display == 0)
+    return;
+  debug1("Hangup %x\n", display);
+  if (D_userfd >= 0)
+    {
+      close(D_userfd);
+      D_userfd = -1;
+    }
+  if (auto_detach || displays->d_next)
+    Detach(D_HANGUP);
+  else
+    Finit(0);
+}
+
 /*
  * Detach now has the following modes:
  *D_DETACH	 SIG_BYE	detach backend and exit attacher
+ *D_HANGUP	 SIG_BYE	detach backend and exit attacher
  *D_STOP	 SIG_STOP	stop attacher (and detach backend)
  *D_REMOTE	 SIG_BYE	remote detach -- reattach to new attacher
  *D_POWER 	 SIG_POWER_BYE 	power detach -- attacher kills his parent
@@ -1616,8 +1713,13 @@ int mode;
   if (D_status)
     RemoveStatus();
   FinitTerm();
+  if (!display)
+    return;
   switch (mode)
     {
+    case D_HANGUP:
+      sign = SIG_BYE;
+      break;
     case D_DETACH:
       AddStr("[detached]\r\n");
       sign = SIG_BYE;
@@ -1656,7 +1758,7 @@ int mode;
 #endif
 #endif
     case D_LOCK:
-      ClearDisplay();
+      ClearAll();
       sign = SIG_LOCK;
       /* tell attacher to lock terminal with a lockprg. */
       break;
@@ -1666,7 +1768,7 @@ int mode;
     {
       for (p = windows; p; p = p->w_next)
         {
-	  if (p->w_slot != (slot_t) -1)
+	  if (p->w_slot != (slot_t) -1 && !(p->w_lflag & 2))
 	    {
 	      RemoveUtmp(p);
 	      /*
@@ -1677,7 +1779,8 @@ int mode;
 	    }
 	}
     }
-  RestoreLoginSlot();
+  if (mode != D_HANGUP)
+    RestoreLoginSlot();
 #endif
   if (displays->d_next == 0 && console_window)
     {
@@ -1904,34 +2007,91 @@ VA_DECL
  *
  */
 
+#ifndef USE_LOCALE
 static const char days[]   = "SunMonTueWedThuFriSat";
 static const char months[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+#endif
+
+static char winmsg_buf[MAXSTR];
+#define MAX_WINMSG_REND 16	/* rendition changes */
+static int winmsg_rend[MAX_WINMSG_REND];
+static int winmsg_rendpos[MAX_WINMSG_REND];
+static int winmsg_numrend;
+
+static char *
+pad_expand(buf, p, numpad, padlen)
+char *buf;
+char *p;
+int numpad;
+int padlen;
+{
+  char *pn, *pn2;
+  int i, r;
+
+  padlen = padlen - (p - buf);	/* space for rent */
+  if (padlen < 0)
+    padlen = 0;
+  pn2 = pn = p + padlen;
+  r = winmsg_numrend;
+  while (p >= buf)
+    {
+      if (r && p - buf == winmsg_rendpos[r - 1])
+	{
+	  winmsg_rendpos[--r] = pn - buf;
+	  continue;
+	}
+      *pn-- = *p;
+      if (*p-- == 127)
+	{
+	  pn[1] = ' ';
+	  i = numpad > 0 ? (padlen + numpad - 1) / numpad : 0;
+	  padlen -= i;
+	  while (i-- > 0)
+	    *pn-- = ' ';
+	  numpad--;
+	}
+    }
+  return pn2;
+}
 
 char *
-MakeWinMsgEv(str, win, esc, ev)
+MakeWinMsgEv(str, win, esc, padlen, ev)
 char *str;
 struct win *win;
 int esc;
+int padlen;
 struct event *ev;
 {
-  static char buf[MAXSTR];
   static int tick;
   char *s = str;
-  register char *p = buf;
+  register char *p = winmsg_buf;
   register int ctrl;
   struct timeval now;
   struct tm *tm;
-  int l;
+  int l, i, r;
   int num;
   int zeroflg;
-  int qmflag = 0, omflag = 0;
+  int longflg;
+  int minusflg;
+  int plusflg;
+  int qmflag = 0, omflag = 0, qmnumrend = 0;
   char *qmpos = 0;
+  int numpad = 0;
+  int lastpad = 0;
+  int truncpos = -1;
+  int truncper = 0;
+  int trunclong = 0;
  
+  if (winmsg_numrend >= 0)
+    winmsg_numrend = 0;
+  else
+    winmsg_numrend = -winmsg_numrend;
+    
   tick = 0;
   tm = 0;
   ctrl = 0;
   gettimeofday(&now, NULL);
-  for (; *s && (l = buf + MAXSTR - 1 - p) > 0; s++, p++)
+  for (; *s && (l = winmsg_buf + MAXSTR - 1 - p) > 0; s++, p++)
     {
       *p = *s;
       if (ctrl)
@@ -1964,11 +2124,17 @@ struct event *ev;
 	}
       if (*++s == esc)	/* double escape ? */
 	continue;
+      if ((plusflg = *s == '+') != 0)
+	s++;
+      if ((minusflg = *s == '-') != 0)
+	s++;
       if ((zeroflg = *s == '0') != 0)
 	s++;
       num = 0;
       while(*s >= '0' && *s <= '9')
 	num = num * 10 + (*s++ - '0');
+      if ((longflg = *s == 'L') != 0)
+	s++;
       switch (*s)
 	{
         case '?':
@@ -1976,11 +2142,16 @@ struct event *ev;
 	  if (qmpos)
 	    {
 	      if ((!qmflag && !omflag) || omflag == 1)
-	        p = qmpos;
+		{
+	          p = qmpos;
+	          if (qmnumrend < winmsg_numrend)
+		    winmsg_numrend = qmnumrend;
+		}
 	      qmpos = 0;
 	      break;
 	    }
 	  qmpos = p;
+	  qmnumrend = winmsg_numrend;
 	  qmflag = omflag = 0;
 	  break;
         case ':':
@@ -1991,10 +2162,13 @@ struct event *ev;
 	    {
 	      omflag = 1;
 	      qmpos = p;
+	      qmnumrend = winmsg_numrend;
 	    }
 	  else
 	    {
 	      p = qmpos;
+	      if (qmnumrend < winmsg_numrend)
+		winmsg_numrend = qmnumrend;
 	      omflag = -1;
 	    }
 	  break;
@@ -2003,7 +2177,10 @@ struct event *ev;
 	  if (l < 4)
 	    break;
 	  if (tm == 0)
-	    tm = localtime(&now.tv_sec);
+            {
+	      time_t nowsec = now.tv_sec;
+	      tm = localtime(&nowsec);
+	    }
 	  qmflag = 1;
 	  switch (*s)
 	    {
@@ -2012,7 +2189,11 @@ struct event *ev;
 	      tick |= 4;
 	      break;
 	    case 'D':
+#ifdef USE_LOCALE
+	      strftime(p, l, (longflg ? "%A" : "%a"), tm);
+#else
 	      sprintf(p, "%3.3s", days + 3 * tm->tm_wday);
+#endif
 	      tick |= 4;
 	      break;
 	    case 'm':
@@ -2020,7 +2201,11 @@ struct event *ev;
 	      tick |= 4;
 	      break;
 	    case 'M':
+#ifdef USE_LOCALE
+	      strftime(p, l, (longflg ? "%B" : "%b"), tm);
+#else
 	      sprintf(p, "%3.3s", months + 3 * tm->tm_mon);
+#endif
 	      tick |= 4;
 	      break;
 	    case 'y':
@@ -2079,16 +2264,20 @@ struct event *ev;
 	    p--;
 	  else
 	    {
-	      char savebuf[sizeof(buf)];
+	      char savebuf[sizeof(winmsg_buf)];
 	      int oldtick = tick;
+	      int oldnumrend = winmsg_numrend;
 
 	      *p = 0;
-	      strcpy(savebuf, buf);
+	      strcpy(savebuf, winmsg_buf);
+	      winmsg_numrend = -winmsg_numrend;
 	      MakeWinMsg(win->w_hstatus, win, '\005');
 	      tick |= oldtick;		/* small hack... */
-	      if (strlen(buf) < l)
-		strcat(savebuf, buf);
-	      strcpy(buf, savebuf);
+	      if (strlen(winmsg_buf) < l)
+		strcat(savebuf, winmsg_buf);
+	      strcpy(winmsg_buf, savebuf);
+	      while (oldnumrend < winmsg_numrend)
+		winmsg_rendpos[oldnumrend++] += p - winmsg_buf;
 	      if (*p)
 		qmflag = 1;
 	      p += strlen(p) - 1;
@@ -2098,12 +2287,16 @@ struct event *ev;
 	case 'W':
 	  {
 	    struct win *oldfore = 0;
+	    char *ss;
+
 	    if (display)
 	      {
 		oldfore = D_fore;
 		D_fore = win;
 	      }
-	    AddWindows(p, l - 1, *s == 'w' ? 2 : 3, -1);
+	    ss = AddWindows(p, l - 1, (*s == 'w' ? 0 : 1) | (longflg ? 0 : 2) | (plusflg ? 4 : 0), win ? win->w_number : -1);
+	    if (minusflg)
+	       *ss = 0;
 	    if (display)
 	      D_fore = oldfore;
 	  }
@@ -2119,6 +2312,14 @@ struct event *ev;
 	    qmflag = 1;
 	  p += strlen(p) - 1;
 	  break;
+	case 'f':
+	  *p = 0;
+	  if (win)
+	    AddWindowFlags(p, l - 1, win);
+	  if (*p)
+	    qmflag = 1;
+	  p += strlen(p) - 1;
+	  break;
 	case 't':
 	  *p = 0;
 	  if (win && strlen(win->w_title) < l)
@@ -2128,6 +2329,168 @@ struct event *ev;
 		qmflag = 1;
 	    }
 	  p += strlen(p) - 1;
+	  break;
+	case '{':
+          {
+	    char rbuf[128];
+	    s++;
+	    for (i = 0; i < 127; i++)
+	      if (s[i] && s[i] != '}')
+		rbuf[i] = s[i];
+	      else
+		break;
+	    if (s[i] == '}' && winmsg_numrend < MAX_WINMSG_REND)
+	      {
+		r = -1;
+		rbuf[i] = 0;
+		debug1("MakeWinMsg attrcolor %s\n", rbuf);
+	        if (i != 1 || rbuf[0] != '-')
+		  r = ParseAttrColor(rbuf, (char *)0, 0);
+	        if (r != -1 || (i == 1 && rbuf[0] == '-'))
+		  {
+		    winmsg_rend[winmsg_numrend] = r;
+		    winmsg_rendpos[winmsg_numrend] = p - winmsg_buf;
+		    winmsg_numrend++;
+		  }
+	      }
+	    s += i;
+	    p--;
+          }
+	  break;
+	case 'H':
+	  *p = 0;
+	  if (strlen(HostName) < l)
+	    {
+	      strcpy(p, HostName);
+	      if (*p)
+		qmflag = 1;
+	    }
+	  p += strlen(p) - 1;
+	  break;
+	case 'F':
+	  p--;
+	  /* small hack */
+	  if ((ev && ev == &D_forecv->c_captev) || (!ev && win && win == D_fore))
+	    qmflag = 1;
+	  break;
+	case '>':
+	  truncpos = p - winmsg_buf;
+	  truncper = num > 100 ? 100 : num;
+	  trunclong = longflg;
+	  p--;
+	  break;
+	case '=':
+	case '<':
+	  *p = ' ';
+	  if (num || zeroflg || plusflg || longflg || (*s != '='))
+	    {
+	      /* expand all pads */
+	      if (minusflg)
+		{
+		  num = (plusflg ? lastpad : padlen) - num;
+		  if (!plusflg && padlen == 0)
+		    num = p - winmsg_buf;
+		  plusflg = 0;
+		}
+	      else if (!zeroflg)
+		{
+		  if (*s != '=' && num == 0 && !plusflg)
+		    num = 100;
+		  if (num > 100)
+		    num = 100;
+		  if (padlen == 0)
+		    num = p - winmsg_buf;
+		  else
+		    num = (padlen - (plusflg ? lastpad : 0)) * num / 100;
+		}
+	      if (num < 0)
+		num = 0;
+	      if (plusflg)
+		num += lastpad;
+	      if (num > MAXSTR - 1)
+		num = MAXSTR - 1;
+	      if (numpad)
+	        p = pad_expand(winmsg_buf, p, numpad, num);
+	      numpad = 0;
+	      if (p - winmsg_buf > num && !longflg)
+		{
+		  int left, trunc;
+
+		  if (truncpos == -1)
+		    {
+		      truncpos = lastpad;
+		      truncper = 0;
+		    }
+		  trunc = lastpad + truncper * (num - lastpad) / 100;
+		  if (trunc > num)
+		    trunc = num;
+		  if (trunc < lastpad)
+		    trunc = lastpad;
+		  left = truncpos - trunc;
+		  if (left > p - winmsg_buf - num)
+		    left = p - winmsg_buf - num;
+		  debug3("truncpos = %d, trunc = %d, left = %d\n", truncpos, trunc, left);
+		  if (left > 0)
+		    {
+		      if (left + lastpad > p - winmsg_buf)
+			left = p - winmsg_buf - lastpad;
+		      if (p - winmsg_buf - lastpad - left > 0)
+		        bcopy(winmsg_buf + lastpad + left, winmsg_buf + lastpad,  p - winmsg_buf - lastpad - left);
+		      p -= left;
+		      r = winmsg_numrend;
+		      while (r && winmsg_rendpos[r - 1] > lastpad)
+			{
+			  r--;
+			  winmsg_rendpos[r] -= left;
+			  if (winmsg_rendpos[r] < lastpad)
+			    winmsg_rendpos[r] = lastpad;
+			}
+		      if (trunclong)
+			{
+			  if (p - winmsg_buf > lastpad)
+			    winmsg_buf[lastpad] = '.';
+			  if (p - winmsg_buf > lastpad + 1)
+			    winmsg_buf[lastpad + 1] = '.';
+			  if (p - winmsg_buf > lastpad + 2)
+			    winmsg_buf[lastpad + 2] = '.';
+			}
+		    }
+		  if (p - winmsg_buf > num)
+		    {
+		      p = winmsg_buf + num;
+		      if (trunclong)
+			{
+			  if (num - 1 >= lastpad)
+			    p[-1] = '.';
+			  if (num - 2 >= lastpad)
+			    p[-2] = '.';
+			  if (num - 3 >= lastpad)
+			    p[-3] = '.';
+			}
+		      r = winmsg_numrend;
+		      while (r && winmsg_rendpos[r - 1] > num)
+			winmsg_rendpos[--r] = num;
+		    }
+		  truncpos = -1;
+		  trunclong = 0;
+		  if (lastpad > p - winmsg_buf)
+		    lastpad = p - winmsg_buf;
+		}
+	      if (*s == '=')
+		{
+		  while (p - winmsg_buf < num)
+		    *p++ = ' ';
+		  lastpad = p - winmsg_buf;
+		  truncpos = -1;
+		  trunclong = 0;
+		}
+	      p--;
+	    }
+	  else if (padlen)
+	    {
+	      *p = 127;		/* internal pad representation */
+	      numpad++;
+	    }
 	  break;
 	case 'n':
 	  s++;
@@ -2151,6 +2514,12 @@ struct event *ev;
   if (qmpos && !qmflag)
     p = qmpos + 1;
   *p = '\0';
+  if (numpad)
+    {
+      if (padlen > MAXSTR - 1)
+	padlen = MAXSTR - 1;
+      p = pad_expand(winmsg_buf, p, numpad, padlen);
+    }
   if (ev)
     {
       evdeq(ev);		/* just in case */
@@ -2168,7 +2537,7 @@ struct event *ev;
 	now.tv_sec += 3600 - (now.tv_sec % 3600);
       ev->timeout = now;
     }
-  return buf;
+  return winmsg_buf;
 }
 
 char *
@@ -2177,12 +2546,77 @@ char *s;
 struct win *win;
 int esc;
 {
-  return MakeWinMsgEv(s, win, esc, (struct event *)0);
+  return MakeWinMsgEv(s, win, esc, 0, (struct event *)0);
+}
+
+int
+PutWinMsg(s, start, max)
+char *s;
+int start, max;
+{
+  int i, p, l, r, n;
+  struct mchar rend;
+  struct mchar rendstack[MAX_WINMSG_REND];
+  int rendstackn = 0;
+
+  if (s != winmsg_buf)
+    return 0;
+  rend = D_rend;
+  p = 0;
+  l = strlen(s);
+  debug2("PutWinMsg %s start attr %x\n", s, rend.attr);
+  for (i = 0; i < winmsg_numrend && max > 0; i++)
+    {
+      if (p > winmsg_rendpos[i] || winmsg_rendpos[i] > l)
+	break;
+      if (p < winmsg_rendpos[i])
+	{
+	  n = winmsg_rendpos[i] - p;
+	  if (n > max)
+	    n = max;
+	  max -= n;
+	  p += n;
+	  while(n-- > 0)
+	    {
+	      if (start-- > 0)
+		s++;
+	      else
+	        PUTCHARLP(*s++);
+	    }
+	}
+      r = winmsg_rend[i];
+      if (r == -1)
+	{
+	  if (rendstackn > 0)
+	    rend = rendstack[--rendstackn];
+	}
+      else
+	{
+	  rendstack[rendstackn++] = rend;
+	  ApplyAttrColor(r, &rend);
+	}
+      SetRendition(&rend);
+    }
+  if (p < l)
+    {
+      n = l - p;
+      if (n > max)
+	n = max;
+      while(n-- > 0)
+	{
+	  if (start-- > 0)
+	    s++;
+	  else
+	    PUTCHARLP(*s++);
+	}
+    }
+  return 1;
 }
 
 void
-DisplaySleep(n)
+DisplaySleep(n, eat)
 int n;
+int eat;
 {
   char buf;
   fd_set r;
@@ -2201,9 +2635,10 @@ int n;
   if (select(FD_SETSIZE, &r, (fd_set *)0, (fd_set *)0, &t) > 0)
     {
       debug("display activity stopped sleep\n");
-      read(D_userfd, &buf, 1);
+      if (eat)
+        read(D_userfd, &buf, 1);
     }
-  debug1("DisplaySleep(%d) ending\n", n);
+  debug2("DisplaySleep(%d) ending, eat was %d\n", n, eat);
 }
 
 
@@ -2265,9 +2700,13 @@ char *data;
       debug("Backend received interrupt\n");
       /* This approach is rather questionable in a multi-display
        * environment */
-      if (fore)
+      if (fore && displays)
 	{
-	  char ibuf = intrc;
+#if defined(TERMIO) || defined(POSIX)
+	  char ibuf = displays->d_OldMode.tio.c_cc[VINTR];
+#else
+	  char ibuf = displays->d_OldMode.m_tchars.t_intrc;
+#endif
 #ifdef PSEUDOS
 	  write(W_UWP(fore) ? fore->w_pwin->p_ptyfd : fore->w_ptyfd, 
 		&ibuf, 1);
@@ -2279,15 +2718,6 @@ char *data;
 #endif
 	}
       InterruptPlease = 0;
-    }
-
-  for (display = displays; display; display = display->d_next)
-    {
-      if (D_status_delayed > 0)
-	{
-	  D_status_delayed = -1;
-	  MakeStatus(D_status_lastmsg);
-	}
     }
 
   for (p = windows; p; p = p->w_next)
@@ -2305,13 +2735,11 @@ char *data;
 	      if (cv == 0)
 		{
 		  p->w_bell = BELL_DONE;
-		  D_status_delayed = -1;
 		  Msg(0, "%s", MakeWinMsg(BellString, p, '%'));
 		}
 	      else if (visual && !D_VB && (!D_status || !D_status_bell))
 		{
-		  D_status_delayed = -1;
-		  Msg(0, VisualBellString);
+		  Msg(0, "%s", VisualBellString);
 		  if (D_status)
 		    {
 		      D_status_bell = 1;
@@ -2323,6 +2751,7 @@ char *data;
 	  /* don't annoy the user with two messages */
 	  if (p->w_monitor == MON_FOUND)
 	    p->w_monitor = MON_DONE;
+          WindowChanged(p, 'f');
 	}
       if (p->w_monitor == MON_FOUND)
 	{
@@ -2339,10 +2768,10 @@ char *data;
 	      if (!(ACLBYTE(p->w_mon_notify, D_user->u_id) & ACLBIT(D_user->u_id)))
 		continue;	/* user doesn't care */
 #endif
-	      D_status_delayed = -1;
 	      Msg(0, "%s", MakeWinMsg(ActivityString, p, '%'));
 	      p->w_monitor = MON_DONE;
 	    }
+          WindowChanged(p, 'f');
 	}
     }
 
@@ -2369,12 +2798,12 @@ char *data;
 	      if (n > cv->c_layer->l_height)
 		n = cv->c_layer->l_height;
 	      CV_CALL(cv, 
-		LScrollV(flayer, -n, 0, flayer->l_height - 1);
-		RedisplayLine(-1, -1, -1, 1);
+		LScrollV(flayer, -n, 0, flayer->l_height - 1, 0);
+		LayRedisplayLine(-1, -1, -1, 1);
 		for (i = 0; i < n; i++)
-		  RedisplayLine(i, 0, flayer->l_width - 1, 1);
+		  LayRedisplayLine(i, 0, flayer->l_width - 1, 1);
 	        if (cv == cv->c_display->d_forecv)
-	          SetCursor();
+	          LaySetCursor();
 	      );
 	    }
 	  else if (ly + cv->c_yoff > cv->c_ye)
@@ -2385,12 +2814,12 @@ char *data;
 	      if (n > cv->c_layer->l_height)
 		n = cv->c_layer->l_height;
 	      CV_CALL(cv, 
-	        LScrollV(flayer, n, 0, cv->c_layer->l_height - 1);
-		RedisplayLine(-1, -1, -1, 1);
+	        LScrollV(flayer, n, 0, cv->c_layer->l_height - 1, 0);
+		LayRedisplayLine(-1, -1, -1, 1);
 		for (i = 0; i < n; i++)
-		  RedisplayLine(i + flayer->l_height - n, 0, flayer->l_width - 1, 1);
+		  LayRedisplayLine(i + flayer->l_height - n, 0, flayer->l_width - 1, 1);
 	        if (cv == cv->c_display->d_forecv)
-	          SetCursor();
+	          LaySetCursor();
 	      );
 	    }
 	  if (lx + cv->c_xoff < cv->c_xs)
@@ -2405,14 +2834,14 @@ char *data;
 	      if (n > cv->c_layer->l_width)
 		n = cv->c_layer->l_width;
 	      CV_CALL(cv, 
-		RedisplayLine(-1, -1, -1, 1);
+		LayRedisplayLine(-1, -1, -1, 1);
 		for (i = 0; i < flayer->l_height; i++)
 		  {
-		    LScrollH(flayer, -n, i, 0, flayer->l_width - 1, 0);
-		    RedisplayLine(i, 0, n - 1, 1);
+		    LScrollH(flayer, -n, i, 0, flayer->l_width - 1, 0, 0);
+		    LayRedisplayLine(i, 0, n - 1, 1);
 		  }
 	        if (cv == cv->c_display->d_forecv)
-	          SetCursor();
+	          LaySetCursor();
 	      );
 	    }
 	  else if (lx + cv->c_xoff > cv->c_xe)
@@ -2427,14 +2856,14 @@ char *data;
 	      if (n > cv->c_layer->l_width)
 		n = cv->c_layer->l_width;
 	      CV_CALL(cv, 
-		RedisplayLine(-1, -1, -1, 1);
+		LayRedisplayLine(-1, -1, -1, 1);
 		for (i = 0; i < flayer->l_height; i++)
 		  {
-		    LScrollH(flayer, n, i, 0, flayer->l_width - 1, 0);
-		    RedisplayLine(i, flayer->l_width - n, flayer->l_width - 1, 1);
+		    LScrollH(flayer, n, i, 0, flayer->l_width - 1, 0, 0);
+		    LayRedisplayLine(i, flayer->l_width - n, flayer->l_width - 1, 1);
 		  }
 	        if (cv == cv->c_display->d_forecv)
-	          SetCursor();
+	          LaySetCursor();
 	      );
 	    }
 	}
@@ -2445,7 +2874,7 @@ char *data;
       if (D_status == STATUS_ON_WIN || D_cvlist == 0 || D_cvlist->c_next == 0)
 	continue;
       debug1("serv_select_fn: Restore on cv %#x\n", (int)D_forecv);
-      CV_CALL(D_forecv, Restore();SetCursor());
+      CV_CALL(D_forecv, LayRestore();LaySetCursor());
     }
 }
 

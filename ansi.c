@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -44,8 +44,12 @@ extern int  log_flush, logtstamp_on, logtstamp_after;
 extern char *logtstamp_string;
 extern char *captionstring;
 extern char *hstatusstring;
+extern char *wliststr;
 #ifdef COPY_PASTE
 extern int compacthist;
+#endif
+#ifdef MULTIUSER
+extern struct acluser *EffectiveAclUser;
 #endif
 
 int Z0width, Z1width;		/* widths for Z0/Z1 switching */
@@ -58,8 +62,8 @@ int visual_bell = 0;
 int use_hardstatus = 1;		/* display status line in hs */
 char *printcmd = 0;
 
-char *blank;			/* line filled with spaces */
-char *null;			/* line filled with '\0' */
+unsigned char *blank;		/* line filled with spaces */
+unsigned char *null;		/* line filled with '\0' */
 
 struct mline mline_old;
 struct mline mline_blank;
@@ -117,7 +121,6 @@ static void BackSpace __P((void));
 static void Return __P((void));
 static void LineFeed __P((int));
 static void ReverseLineFeed __P((void));
-static void InsertAChar __P((int));
 static void InsertChar __P((int));
 static void DeleteChar __P((int));
 static void DeleteLine __P((int));
@@ -140,18 +143,29 @@ static void FillWithEs __P((void));
 static void FindAKA __P((void));
 static void Report __P((char *, int, int));
 static void ScrollRegion __P((int));
-static void AddLineToHist __P((struct win *, struct mline *));
-static void LogString __P((struct win *, char *, int));
+#ifdef COPY_PASTE
+static void WAddLineToHist __P((struct win *, struct mline *));
+#endif
+static void WLogString __P((struct win *, char *, int));
 static void WReverseVideo __P((struct win *, int));
+static int  WindowChangedCheck __P((char *, int, int *));
 static void MFixLine __P((struct win *, int, struct mchar *));
-static void MScrollH __P((struct win *, int, int, int, int));
-static void MScrollV __P((struct win *, int, int, int));
-static void MClear __P((struct win *, int, int, int, int));
+static void MScrollH __P((struct win *, int, int, int, int, int));
+static void MScrollV __P((struct win *, int, int, int, int));
+static void MClearArea __P((struct win *, int, int, int, int, int));
 static void MInsChar __P((struct win *, struct mchar *, int, int));
 static void MPutChar __P((struct win *, struct mchar *, int, int));
+static void MPutStr __P((struct win *, char *, int, struct mchar *, int, int));
 static void MWrapChar __P((struct win *, struct mchar *, int, int, int, int));
-static int  WindowChangedCheck __P((char *, int, int *));
+#ifdef COLOR
+static void MBceLine __P((struct win *, int, int, int, int));
+#endif
 
+#ifdef COLOR
+# define CURR_BCE (curr->w_bce ? rend_getbg(&curr->w_rend) : 0)
+#else
+# define CURR_BCE 0
+#endif
 
 void
 ResetAnsiState(p)
@@ -171,6 +185,7 @@ register struct win *p;
   p->w_origin = 0;
   p->w_insert = 0;
   p->w_revvid = 0;
+  p->w_mouse = 0;
   p->w_curinv = 0;
   p->w_curvvis = 0;
   p->w_autolf = 0;
@@ -188,6 +203,9 @@ register struct win *p;
   p->w_rend = mchar_null;
 #ifdef FONT
   ResetCharsets(p);
+#endif
+#ifdef COLOR
+  p->w_bce = nwin_default.bce;
 #endif
 }
 
@@ -210,6 +228,7 @@ char *buf;
       if (w->w_intermediate > 0xff)
 	p += AddXChar(p, w->w_intermediate >> 8);
       p += AddXChar(p, w->w_intermediate & 0xff);
+      *p = 0;
     }
   if (w->w_state == ASTR || w->w_state == STRESC)
     sprintf(p, "-%s", string_t_string[w->w_StringType]);
@@ -220,31 +239,17 @@ char *buf;
 
 #ifdef FONT
 
-# ifdef KANJI
-static char *kanjicharsets[3] = {
-  "BBBB02", 	/* jis */
-  "B\002IB01",	/* euc  */
-  "BIBB01"	/* sjis  */
-};
-# endif
-
 void
 ResetCharsets(p)
-register struct win *p;
+struct win *p;
 {
   p->w_gr = nwin_default.gr;
   p->w_c1 = nwin_default.c1;
   SetCharsets(p, "BBBB02");
   if (nwin_default.charset)
     SetCharsets(p, nwin_default.charset);
-#ifdef KANJI
-  if (p->w_kanji)
-    {
-      p->w_gr = 1;
-      if (p->w_kanji == SJIS)
-        p->w_c1 = 0;
-      SetCharsets(p, kanjicharsets[p->w_kanji]);
-    }
+#ifdef ENCODINGS
+  ResetEncoding(p);
 #endif
 }
 
@@ -266,7 +271,7 @@ char *s;
   p->w_FontL = p->w_charsets[p->w_Charset];
   p->w_FontR = p->w_charsets[p->w_CharsetR];
 }
-#endif
+#endif	/* FONT */
 
 /*****************************************************************/
 
@@ -298,7 +303,7 @@ register int len;
   if (!len)
     return;
   if (wp->w_log)
-    LogString(wp, buf, len);
+    WLogString(wp, buf, len);
 
   /* set global variables (yuck!) */
   curr = wp;
@@ -309,8 +314,10 @@ register int len;
   for (cv = wp->w_layer.l_cvlist; cv; cv = cv->c_lnext)
     {
       display = cv->c_display;
+#if 0	/* done by new status code */
       if (D_status == STATUS_ON_WIN)
 	RemoveStatus();
+#endif
       if (D_nonblock == 1 && (D_obufp - D_obuf > D_obufmax))
 	{
 	  /* one last surprising '~' means: lost data */
@@ -333,72 +340,71 @@ register int len;
     {
       c = (unsigned char)*buf++;
 #ifdef FONT
-      curr->w_rend.font = curr->w_FontL;	/* Default: GL */
+# ifdef DW_CHARS
+      if (!curr->w_mbcs)
+# endif
+        curr->w_rend.font = curr->w_FontL;	/* Default: GL */
 #endif
 
-      /* The next part is only for speedup
-       * (therefore no mchars are used) */
+      /* The next part is only for speedup */
       if (curr->w_state == LIT &&
-#ifdef KANJI
-          curr->w_FontL != KANJI && curr->w_FontL != KANA && !curr->w_mbcs &&
+#ifdef UTF8
+          curr->w_encoding != UTF8 &&
 #endif
-          c >= ' ' && 
+#ifdef DW_CHARS
+          !is_dw_font(curr->w_rend.font) &&
+# ifdef ENCODINGS
+          curr->w_rend.font != KANA && !curr->w_mbcs &&
+# endif
+#endif
+#ifdef FONT
+	  curr->w_rend.font != '<' &&
+#endif
+          c >= ' ' && c != 0x7f &&
           ((c & 0x80) == 0 || ((c >= 0xa0 || !curr->w_c1) && !curr->w_gr)) && !curr->w_ss &&
           !curr->w_insert && curr->w_x < cols - 1)
 	{
-	  register int currx;
-	  register char *imp, *atp, at;
-#ifdef FONT
-	  register char *fop, fo;
-#endif
-#ifdef COLOR
-	  register char *cop, co;
-#endif
+	  register int currx = curr->w_x;
+          char *imp = buf - 1;
 
-	  if (c == '\177')
-	    continue;
-	  MFixLine(curr, curr->w_y, &curr->w_rend);
-	  currx = curr->w_x;
-	  imp = curr->w_mlines[curr->w_y].image + currx;
-	  atp = curr->w_mlines[curr->w_y].attr  + currx;
-	  at = curr->w_rend.attr;
-#ifdef FONT
-	  fop = curr->w_mlines[curr->w_y].font  + currx;
-	  fo = curr->w_rend.font;
-#endif
-#ifdef COLOR
-	  cop = curr->w_mlines[curr->w_y].color + currx;
-	  co = curr->w_rend.color;
-#endif
 	  while (currx < cols - 1)
 	    {
-	      *imp++ = c;
-	      *atp++ = at;
-#ifdef FONT
-	      *fop++ = fo;
-#endif
-#ifdef COLOR
-	      *cop++ = co;
-#endif
 	      currx++;
-skip:	      if (--len == 0)
+	      if (--len == 0)
 		break;
               c = (unsigned char)*buf++;
-	      if (c == '\177')
-		goto skip;
-	      if (c < ' ' || ((c & 0x80) && ((c < 0xa0 && curr->w_c1) || curr->w_gr)))
+	      if (c < ' ' || c == 0x7f || ((c & 0x80) && ((c < 0xa0 && curr->w_c1) || curr->w_gr)))
 		break;
 	    }
 	  currx -= curr->w_x;
 	  if (currx > 0)
 	    {
-	      LPutStr(&curr->w_layer, imp - currx, currx, &curr->w_rend, curr->w_x, curr->w_y);
+	      MPutStr(curr, imp, currx, &curr->w_rend, curr->w_x, curr->w_y);
+	      LPutStr(&curr->w_layer, imp, currx, &curr->w_rend, curr->w_x, curr->w_y);
 	      curr->w_x += currx;
 	    }
 	  if (len == 0)
 	    break;
 	}
       /* end of speedup code */
+
+#ifdef UTF8
+      if (curr->w_encoding == UTF8)
+	{
+	  c = FromUtf8(c, &curr->w_decodestate);
+	  if (c == -1)
+	    continue;
+	  if (c == -2)
+	    {
+	      c = UCS_REPL;
+	      /* try char again */
+	      buf--;
+	      len++;
+	    }
+	  if (c > 0xff)
+	    debug1("read UNICODE %04x\n", c);
+	}
+#endif
 
     tryagain:
       switch (curr->w_state)
@@ -548,7 +554,7 @@ skip:	      if (--len == 0)
 		{
 		  if (curr->w_intermediate)
 		    {
-#ifdef KANJI
+#ifdef DW_CHARS
 		      if (curr->w_intermediate == '$')
 			c |= '$' << 8;
 		      else
@@ -576,8 +582,9 @@ skip:	      if (--len == 0)
 	    case '5': case '6': case '7': case '8': case '9':
 	      if (curr->w_NumArgs < MAXARGS)
 		{
-		  curr->w_args[curr->w_NumArgs] =
-		    10 * curr->w_args[curr->w_NumArgs] + (c - '0');
+		  if (curr->w_args[curr->w_NumArgs] < 100000000)
+		    curr->w_args[curr->w_NumArgs] =
+		      10 * curr->w_args[curr->w_NumArgs] + (c - '0');
 		}
 	      break;
 	    case ';':
@@ -605,9 +612,10 @@ skip:	      if (--len == 0)
 	  break;
 	case LIT:
 	default:
-#ifdef KANJI
-	  if (c <= ' ' || c == 0x7f || (c >= 0x80 && c < 0xa0 && curr->w_c1))
-	    curr->w_mbcs = 0;
+#ifdef DW_CHARS
+	  if (curr->w_mbcs)
+	    if (c <= ' ' || c == 0x7f || (c >= 0x80 && c < 0xa0 && curr->w_c1))
+	      curr->w_mbcs = 0;
 #endif
 	  if (c < ' ')
 	    {
@@ -623,6 +631,13 @@ skip:	      if (--len == 0)
 	      break;
 	    }
 	  if (c >= 0x80 && c < 0xa0 && curr->w_c1)
+#ifdef FONT
+	    if ((curr->w_FontR & 0xf0) != 0x20
+# ifdef UTF8
+		   || curr->w_encoding == UTF8
+# endif
+	       )
+#endif
 	    {
 	      switch (c)
 		{
@@ -652,9 +667,22 @@ skip:	      if (--len == 0)
 	    }
 
 #ifdef FONT
-	  font = curr->w_rend.font = (c >= 0x80 ? curr->w_FontR : curr->w_FontL);
-# ifdef KANJI
-	  if (font == KANA && curr->w_kanji == SJIS && curr->w_mbcs == 0)
+# ifdef DW_CHARS
+	  if (!curr->w_mbcs)
+# endif
+	    curr->w_rend.font = (c >= 0x80 ? curr->w_FontR : curr->w_FontL);
+# ifdef UTF8
+	  if (curr->w_encoding == UTF8)
+	    curr->w_rend.font = 0;
+#  ifdef DW_CHARS
+	  if (curr->w_encoding == UTF8 && utf8_isdouble(c))
+	    curr->w_mbcs = 0xff;
+#  endif
+	  font = curr->w_rend.font;
+# endif
+# ifdef DW_CHARS
+#  ifdef ENCODINGS
+	  if (font == KANA && curr->w_encoding == SJIS && curr->w_mbcs == 0)
 	    {
 	      /* Lets see if it is the first byte of a kanji */
 	      debug1("%x may be first of SJIS\n", c);
@@ -665,9 +693,10 @@ skip:	      if (--len == 0)
 		  break;
 		}
 	    }
-	  if (font == KANJI && c == ' ')
+#  endif
+	  if (is_dw_font(font) && c == ' ')
 	    font = curr->w_rend.font = 0;
-	  if (font == KANJI || curr->w_mbcs)
+	  if (is_dw_font(font) || curr->w_mbcs)
 	    {
 	      int t = c;
 	      if (curr->w_mbcs == 0)
@@ -680,42 +709,65 @@ skip:	      if (--len == 0)
 		  curr->w_x += curr->w_wrap ? 1 : -1;
 		  debug1("Patched w_x to %d\n", curr->w_x);
 		}
-	      c = curr->w_mbcs;
-	      if (font != KANJI)
+#  ifdef UTF8
+	      if (curr->w_encoding != UTF8)
+#  endif
 		{
-		  debug2("SJIS !! %x %x\n", c, t);
-		  /*
-		   * SJIS -> EUC mapping:
-		   *   First byte:
-		   *     81,82...9f -> 21,23...5d
-		   *     e0,e1...ef -> 5f,61...7d
-		   *   Second byte:
-		   *     40-7e -> 21-5f
-		   *     80-9e -> 60-7e
-		   *     9f-fc -> 21-7e (increment first byte!)
-		   */
-		  if (0x40 <= t && t <= 0xfc && t != 0x7f)
+		  c = curr->w_mbcs;
+#  ifdef ENCODINGS
+		  if (font == KANA && curr->w_encoding == SJIS)
 		    {
-		      if (c <= 0x9f) c = (c - 0x81) * 2 + 0x21;
-		      else c = (c - 0xc1) * 2 + 0x21;
-		      if (t <= 0x7e) t -= 0x1f;
-		      else if (t <= 0x9e) t -= 0x20;
-		      else t -= 0x7e, c++;
-		      curr->w_rend.font = KANJI;
+		      debug2("SJIS !! %x %x\n", c, t);
+		      /*
+		       * SJIS -> EUC mapping:
+		       *   First byte:
+		       *     81,82...9f -> 21,23...5d
+		       *     e0,e1...ef -> 5f,61...7d
+		       *   Second byte:
+		       *     40-7e -> 21-5f
+		       *     80-9e -> 60-7e
+		       *     9f-fc -> 21-7e (increment first byte!)
+		       */
+		      if (0x40 <= t && t <= 0xfc && t != 0x7f)
+			{
+			  if (c <= 0x9f) c = (c - 0x81) * 2 + 0x21;
+			  else c = (c - 0xc1) * 2 + 0x21;
+			  if (t <= 0x7e) t -= 0x1f;
+			  else if (t <= 0x9e) t -= 0x20;
+			  else t -= 0x7e, c++;
+			  curr->w_rend.font = KANJI;
+			}
+		      else
+			{
+			  /* Incomplete shift-jis - skip first byte */
+			  c = t;
+			  t = 0;
+			}
+		      debug2("SJIS after %x %x\n", c, t);
 		    }
-		  else
+#  endif
+		  if (t && curr->w_gr && font != 030)
 		    {
-		      /* Incomplete shift-jis - skip first byte */
-		      c = t;
-		      t = 0;
+		      t &= 0x7f;
+		      if (t < ' ')
+			goto tryagain;
 		    }
-		  debug2("SJIS after %x %x\n", c, t);
+		  if (t == '\177')
+		    break;
+		  curr->w_mbcs = t;
 		}
-	      curr->w_mbcs = t;
 	    }
-	  kanjiloop:
+# endif	/* DW_CHARS */
+	  if (font == '<' && c >= ' ')
+	    {
+	      font = curr->w_rend.font = 0;
+	      c |= 0x80;
+	    }
+# ifdef UTF8
+	  else if (curr->w_gr && curr->w_encoding != UTF8)
+# else
+	  else if (curr->w_gr)
 # endif
-	  if (curr->w_gr)
 	    {
 	      c &= 0x7f;
 	      if (c < ' ')	/* this is ugly but kanji support */
@@ -725,10 +777,22 @@ skip:	      if (--len == 0)
 	  if (c == '\177')
 	    break;
 	  curr->w_rend.image = c;
+#ifdef UTF8
+	  if (curr->w_encoding == UTF8)
+	    curr->w_rend.font = c >> 8;
+#endif
+#ifdef DW_CHARS
+	  curr->w_rend.mbcs = curr->w_mbcs;
+#endif
 	  if (curr->w_x < cols - 1)
 	    {
 	      if (curr->w_insert)
-		InsertAChar(c);
+		{
+		  save_mline(&curr->w_mlines[curr->w_y], cols);
+		  MInsChar(curr, &curr->w_rend, curr->w_x, curr->w_y);
+		  LInsChar(&curr->w_layer, &curr->w_rend, curr->w_x, curr->w_y, &mline_old);
+		  curr->w_x++;
+		}
 	      else
 		{
 		  MPutChar(curr, &curr->w_rend, curr->w_x, curr->w_y);
@@ -752,12 +816,11 @@ skip:	      if (--len == 0)
 	      curr->w_x = 1;
 	    }
 #ifdef FONT
-# ifdef KANJI
+# ifdef DW_CHARS
 	  if (curr->w_mbcs)
 	    {
-	      c = curr->w_mbcs;
-	      curr->w_mbcs = 0;
-	      goto kanjiloop;	/* what a hack! */
+	      curr->w_rend.mbcs = curr->w_mbcs = 0;
+	      curr->w_x++;
 	    }
 # endif
 	  if (curr->w_ss)
@@ -778,7 +841,7 @@ skip:	      if (--len == 0)
 }
 
 static void
-LogString(p, buf, len)
+WLogString(p, buf, len)
 struct win *p;
 char *buf;
 int len;
@@ -816,7 +879,7 @@ register int c;
     case '\n':
       if (curr->w_autoaka)
 	FindAKA();
-      LineFeed(1);
+      LineFeed(0);
       return 1;
     case '\007':
       WBell(curr, visual_bell);
@@ -847,10 +910,10 @@ int c, intermediate;
       switch (c)
 	{
 	case 'E':
-	  LineFeed(2);
+	  LineFeed(1);
 	  break;
 	case 'D':
-	  LineFeed(1);
+	  LineFeed(0);
 	  break;
 	case 'M':
 	  ReverseLineFeed();
@@ -873,24 +936,25 @@ int c, intermediate;
 	  LKeypadMode(&curr->w_layer, 0);
 	  LCursorkeysMode(&curr->w_layer, 0);
 #ifndef TIOCPKT
-	  NewAutoFlow(curr, 1);
+	  WNewAutoFlow(curr, 1);
 #endif
 	  /* XXX
           SetRendition(&mchar_null);
 	  InsertMode(0);
 	  ChangeScrollRegion(0, rows - 1);
 	  */
+	  LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
 	  break;
 	case '=':
 	  LKeypadMode(&curr->w_layer, curr->w_keypad = 1);
 #ifndef TIOCPKT
-	  NewAutoFlow(curr, 0);
+	  WNewAutoFlow(curr, 0);
 #endif /* !TIOCPKT */
 	  break;
 	case '>':
 	  LKeypadMode(&curr->w_layer, curr->w_keypad = 0);
 #ifndef TIOCPKT
-	  NewAutoFlow(curr, 1);
+	  WNewAutoFlow(curr, 1);
 #endif /* !TIOCPKT */
 	  break;
 #ifdef FONT
@@ -951,7 +1015,7 @@ int c, intermediate;
     case '+':
       DesignateCharset(c, G3);
       break;
-# ifdef KANJI
+# ifdef DW_CHARS
 /*
  * ESC $ ( Fn: invoke multi-byte charset, Fn, to G0
  * ESC $ Fn: same as above.  (old sequence)
@@ -1201,15 +1265,15 @@ int c, intermediate;
 	    case 1:	/* CKM:  cursor key mode */
 	      LCursorkeysMode(&curr->w_layer, curr->w_cursorkeys = i);
 #ifndef TIOCPKT
-	      NewAutoFlow(curr, !i);
+	      WNewAutoFlow(curr, !i);
 #endif /* !TIOCPKT */
 	      break;
 	    case 2:	/* ANM:  ansi/vt52 mode */
 	      if (i)
 		{
 #ifdef FONT
-# ifdef KANJI
-		  if (curr->w_kanji)
+# ifdef ENCODINGS
+		  if (curr->w_encoding)
 		    break;
 # endif
 		  curr->w_charsets[0] = curr->w_charsets[1] =
@@ -1248,6 +1312,10 @@ int c, intermediate;
 	      break;
 	 /* case 8:	   ARM:  auto repeat mode */
 	 /* case 9:	   INLM: interlace mode */
+	    case 9:	/* X10 mouse tracking */
+	      curr->w_mouse = i ? 9 : 0;
+	      LMouseMode(&curr->w_layer, curr->w_mouse);
+	      break;
 	 /* case 10:	   EDM:  edit mode */
 	 /* case 11:	   LTM:  line transmit mode */
 	 /* case 13:	   SCFDM: space compression / field delimiting */
@@ -1268,6 +1336,10 @@ int c, intermediate;
 	 /* case 44:	         margin bell enable */
 	 /* case 66:	   NKM:  Numeric keypad appl mode */
 	 /* case 68:	   KBUM: Keyboard usage mode (data process) */
+	    case 1000:	/* VT200 mouse tracking */
+	      curr->w_mouse = i ? 1000 : 0;
+	      LMouseMode(&curr->w_layer, curr->w_mouse);
+	      break;
 	    }
 	}
       break;
@@ -1311,20 +1383,73 @@ static int
 StringEnd()
 {
   struct canvas *cv;
+  char *p;
+  int typ;
 
   curr->w_state = LIT;
   *curr->w_stringp = '\0';
   switch (curr->w_StringType)
     {
     case OSC:	/* special xterm compatibility hack */
-      if (curr->w_stringp - curr->w_string < 2 ||
-	  curr->w_string[0] < '0' ||
-	  curr->w_string[0] > '2' ||
-	  curr->w_string[1] != ';')
+      if (curr->w_string[0] == ';' || (p = index(curr->w_string, ';')) == 0)
 	break;
-      curr->w_stringp -= 2;
+      typ = atoi(curr->w_string);
+      p++;
+#ifdef MULTIUSER
+      if (typ == 83)	/* 83 = 'S' */
+	{
+	  /* special execute commands sequence */
+	  char *args[MAXARGS];
+	  struct acluser *windowuser;
+
+	  windowuser = *FindUserPtr(":window:");
+	  if (windowuser && Parse(p, args))
+	    {
+	      for (display = displays; display; display = display->d_next)
+		if (D_forecv->c_layer->l_bottom == &curr->w_layer)
+		  break;	/* found it */
+	      if (display == 0 && curr->w_layer.l_cvlist)
+		display = curr->w_layer.l_cvlist->c_display;
+	      EffectiveAclUser = windowuser;
+	      DoCommand(args);
+	      EffectiveAclUser = 0;
+	    }
+	  break;
+	}
+#endif
+#ifdef RXVT_OSC
+      if (typ == 0 || typ == 1 || typ == 20 || typ == 39 || typ == 49)
+	{
+	  int typ2;
+	  typ2 = typ / 10;
+	  if (--typ2 < 0)
+	    typ2 = 0;
+	  if (strcmp(curr->w_xtermosc[typ2], p))
+	    {
+	      strncpy(curr->w_xtermosc[typ2], p, sizeof(curr->w_xtermosc[typ2]) - 1);
+	      curr->w_xtermosc[typ2][sizeof(curr->w_xtermosc[typ2]) - 1] = 0;
+	
+	      for (display = displays; display; display = display->d_next)
+		{
+		  if (!D_CXT)
+		    continue;
+		  if (D_forecv->c_layer->l_bottom == &curr->w_layer)
+		    SetXtermOSC(typ2, curr->w_xtermosc[typ2]);
+		  if ((typ2 == 2 || typ2 == 3) && D_xtermosc[typ2])
+		    Redisplay(0);
+		}
+	    }
+	}
+      if (typ != 0 && typ != 2)
+	break;
+#else
+      if (typ < 0 || typ > 2)
+	break;
+#endif
+      
+      curr->w_stringp -= p - curr->w_string;
       if (curr->w_stringp > curr->w_string)
-	bcopy(curr->w_string + 2, curr->w_string, curr->w_stringp - curr->w_string);
+	bcopy(p, curr->w_string, curr->w_stringp - curr->w_string);
       *curr->w_stringp = '\0';
       /* FALLTHROUGH */
     case APC:
@@ -1432,9 +1557,9 @@ PrintFlush()
     }
   else if (display && curr->w_stringp > curr->w_string)
     {
-      PutStr(D_PO);
+      AddCStr(D_PO);
       AddStrn(curr->w_string, curr->w_stringp - curr->w_string);
-      PutStr(D_PF);
+      AddCStr(D_PF);
       Flush();
     }
   curr->w_stringp = curr->w_string;
@@ -1442,11 +1567,11 @@ PrintFlush()
 
 
 void
-NewAutoFlow(win, on)
+WNewAutoFlow(win, on)
 struct win *win;
 int on;
 {
-  debug1("NewAutoFlow: %d\n", on);
+  debug1("WNewAutoFlow: %d\n", on);
   if (win->w_flow & FLOW_AUTOFLAG)
     win->w_flow = FLOW_AUTOFLAG | (FLOW_AUTO|FLOW_NOW) * on;
   else
@@ -1462,11 +1587,11 @@ DesignateCharset(c, n)
 int c, n;
 {
   curr->w_ss = 0;
-# ifdef KANJI
-  if (c == ('@' & 037))
+# ifdef ENCODINGS
+  if (c == ('@' & 037))		/* map JIS 6226 to 0208 */
     c = KANJI;
 # endif
-  if (c == 'B' || c == 'J')
+  if (c == 'B')
     c = ASCII;
   if (curr->w_charsets[n] != c)
     {
@@ -1517,7 +1642,7 @@ SaveCursor()
   curr->w_saved = 1;
   curr->w_Saved_x = curr->w_x;
   curr->w_Saved_y = curr->w_y;
-  curr->w_SavedRend= curr->w_rend;
+  curr->w_SavedRend = curr->w_rend;
 #ifdef FONT
   curr->w_SavedCharset = curr->w_Charset;
   curr->w_SavedCharsetR = curr->w_CharsetR;
@@ -1575,25 +1700,21 @@ static void
 LineFeed(out_mode)
 int out_mode;
 {
-  /* out_mode: 0=cr+lf no-output, 1=lf, 2=cr+lf */
-  if (out_mode != 1)
+  /* out_mode: 0=lf, 1=cr+lf */
+  if (out_mode)
     curr->w_x = 0;
   if (curr->w_y != curr->w_bot)		/* Don't scroll */
     {
       if (curr->w_y < rows-1)
 	curr->w_y++;
-      if (out_mode)
-        LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
+      LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
       return;
     }
-  MScrollV(curr, 1, curr->w_top, curr->w_bot);
   if (curr->w_autoaka > 1)
     curr->w_autoaka--;
-  if (out_mode)
-    {
-      LScrollV(&curr->w_layer, 1, curr->w_top, curr->w_bot);
-      LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
-    }
+  MScrollV(curr, 1, curr->w_top, curr->w_bot, CURR_BCE);
+  LScrollV(&curr->w_layer, 1, curr->w_top, curr->w_bot, CURR_BCE);
+  LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
 }
 
 static void
@@ -1601,25 +1722,12 @@ ReverseLineFeed()
 {
   if (curr->w_y == curr->w_top)
     {
-      MScrollV(curr, -1, curr->w_top, curr->w_bot);
-      LScrollV(&curr->w_layer, -1, curr->w_top, curr->w_bot);
+      MScrollV(curr, -1, curr->w_top, curr->w_bot, CURR_BCE);
+      LScrollV(&curr->w_layer, -1, curr->w_top, curr->w_bot, CURR_BCE);
       LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
     }
   else if (curr->w_y > 0)
     CursorUp(1);
-}
-
-static void
-InsertAChar(c)
-int c;
-{
-  register int y = curr->w_y, x = curr->w_x;
-
-  save_mline(&curr->w_mlines[y], cols);
-  curr->w_rend.image = c;
-  MInsChar(curr, &curr->w_rend, x, y);
-  curr->w_x = x + 1;
-  LInsChar(&curr->w_layer, &curr->w_rend, x, y, &mline_old);
 }
 
 static void
@@ -1633,8 +1741,8 @@ int n;
   if (x == cols)
     x--;
   save_mline(&curr->w_mlines[y], cols);
-  MScrollH(curr, -n, y, x, curr->w_width - 1);
-  LScrollH(&curr->w_layer, -n, y, x, curr->w_width - 1, &mline_old);
+  MScrollH(curr, -n, y, x, curr->w_width - 1, CURR_BCE);
+  LScrollH(&curr->w_layer, -n, y, x, curr->w_width - 1, CURR_BCE, &mline_old);
   LGotoPos(&curr->w_layer, x, y);
 }
 
@@ -1647,8 +1755,8 @@ int n;
   if (x == cols)
     x--;
   save_mline(&curr->w_mlines[y], cols);
-  MScrollH(curr, n, y, x, curr->w_width - 1);
-  LScrollH(&curr->w_layer, n, y, x, curr->w_width - 1, &mline_old);
+  MScrollH(curr, n, y, x, curr->w_width - 1, CURR_BCE);
+  LScrollH(&curr->w_layer, n, y, x, curr->w_width - 1, CURR_BCE, &mline_old);
   LGotoPos(&curr->w_layer, x, y);
 }
 
@@ -1660,8 +1768,8 @@ int n;
     return;
   if (n > curr->w_bot - curr->w_y + 1)
     n = curr->w_bot - curr->w_y + 1;
-  MScrollV(curr, n, curr->w_y, curr->w_bot);
-  LScrollV(&curr->w_layer, n, curr->w_y, curr->w_bot);
+  MScrollV(curr, n, curr->w_y, curr->w_bot, CURR_BCE);
+  LScrollV(&curr->w_layer, n, curr->w_y, curr->w_bot, CURR_BCE);
   LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
 }
 
@@ -1673,8 +1781,8 @@ int n;
     return;
   if (n > curr->w_bot - curr->w_y + 1)
     n = curr->w_bot - curr->w_y + 1;
-  MScrollV(curr, -n, curr->w_y, curr->w_bot);
-  LScrollV(&curr->w_layer, -n, curr->w_y, curr->w_bot);
+  MScrollV(curr, -n, curr->w_y, curr->w_bot, CURR_BCE);
+  LScrollV(&curr->w_layer, -n, curr->w_y, curr->w_bot, CURR_BCE);
   LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
 }
 
@@ -1682,8 +1790,8 @@ static void
 ScrollRegion(n)
 int n;
 {
-  MScrollV(curr, n, curr->w_top, curr->w_bot);
-  LScrollV(&curr->w_layer, n, curr->w_top, curr->w_bot);
+  MScrollV(curr, n, curr->w_top, curr->w_bot, CURR_BCE);
+  LScrollV(&curr->w_layer, n, curr->w_top, curr->w_bot, CURR_BCE);
   LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
 }
 
@@ -1695,7 +1803,7 @@ ForwardTab()
 
   if (x == cols)
     {
-      LineFeed(2);
+      LineFeed(1);
       x = 0;
     }
   if (curr->w_tabs[x] && x < cols - 1)
@@ -1722,11 +1830,11 @@ BackwardTab()
 static void
 ClearScreen()
 {
-  LClear(&curr->w_layer, 0, 0, curr->w_width - 1, curr->w_height - 1, 1);
+  LClearArea(&curr->w_layer, 0, 0, curr->w_width - 1, curr->w_height - 1, CURR_BCE, 1);
 #ifdef COPY_PASTE
-  MScrollV(curr, curr->w_height, 0, curr->w_height - 1);
+  MScrollV(curr, curr->w_height, 0, curr->w_height - 1, CURR_BCE);
 #else
-  MClear(curr, 0, 0, curr->w_width - 1, curr->w_height - 1);
+  MClearArea(curr, 0, 0, curr->w_width - 1, curr->w_height - 1, CURR_BCE);
 #endif
 }
 
@@ -1735,8 +1843,8 @@ ClearFromBOS()
 {
   register int y = curr->w_y, x = curr->w_x;
 
-  LClear(&curr->w_layer, 0, 0, x, y, 1);
-  MClear(curr, 0, 0, x, y);
+  LClearArea(&curr->w_layer, 0, 0, x, y, CURR_BCE, 1);
+  MClearArea(curr, 0, 0, x, y, CURR_BCE);
   RestorePosRendition();
 }
 
@@ -1748,10 +1856,11 @@ ClearToEOS()
   if (x == 0 && y == 0)
     {
       ClearScreen();
+      RestorePosRendition();
       return;
     }
-  LClear(&curr->w_layer, x, y, cols - 1, rows - 1, 1);
-  MClear(curr, x, y, cols - 1, rows - 1);
+  LClearArea(&curr->w_layer, x, y, cols - 1, rows - 1, CURR_BCE, 1);
+  MClearArea(curr, x, y, cols - 1, rows - 1, CURR_BCE);
   RestorePosRendition();
 }
 
@@ -1760,8 +1869,8 @@ ClearLineRegion(from, to)
 int from, to;
 {
   register int y = curr->w_y;
-  LClear(&curr->w_layer, from, y, to, y, 1);
-  MClear(curr, from, y, to, y);
+  LClearArea(&curr->w_layer, from, y, to, y, CURR_BCE, 1);
+  MClearArea(curr, from, y, to, y, CURR_BCE);
   RestorePosRendition();
 }
 
@@ -1773,7 +1882,7 @@ register int n;
 
   if (x == cols)
     {
-      LineFeed(2);
+      LineFeed(1);
       x = 0;
     }
   if ((curr->w_x += n) >= cols)
@@ -1851,7 +1960,7 @@ int on;
 
 static char rendlist[] =
 {
-  (1 << NATTR), A_BD, A_DI, A_SO, A_US, A_BL, 0, A_RV, 0, 0,
+  ~((1 << NATTR) - 1), A_BD, A_DI, A_SO, A_US, A_BL, 0, A_RV, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, ~(A_BD|A_SO|A_DI), ~A_SO, ~A_US, ~A_BL, 0, ~A_RV
 };
@@ -1859,21 +1968,83 @@ static char rendlist[] =
 static void
 SelectRendition()
 {
-  register int j, i = 0, a = curr->w_rend.attr;
 #ifdef COLOR
-  register int c = curr->w_rend.color;
+  register int j, i = 0, a = curr->w_rend.attr, c = curr->w_rend.color;
+# ifdef COLORS256
+  int cx = curr->w_rend.colorx;
+# endif
+#else
+  register int j, i = 0, a = curr->w_rend.attr;
 #endif
 
   do
     {
       j = curr->w_args[i];
 #ifdef COLOR
-      if (j >= 30 && j <= 39)
-	c = (c & 0xf0) | (39 - j);
-      else if (j >= 40 && j <= 49)
-	c = (c & 0x0f) | ((49 - j) << 4);
+      if ((j == 38 || j == 48) && i + 2 < curr->w_NumArgs && curr->w_args[i + 1] == 5)
+	{
+	  int jj;
+
+	  i += 2;
+	  jj = curr->w_args[i];
+	  if (jj < 0 || jj > 255)
+	    continue;
+# ifdef COLORS256
+	  if (j == 38)
+	    {
+	      c = (c & 0xf0) | ((jj & 0x0f) ^ 9);
+	      a |= A_BFG;
+	      if (jj >= 8 && jj < 16)
+		c |= 0x08;
+	      else
+		a ^= A_BFG;
+	      a = (a & 0xbf) | (jj & 8 ? 0x40 : 0);
+	      cx = (cx & 0xf0) | (jj >> 4 & 0x0f);
+	    }
+	  else
+	    {
+	      c = (c & 0x0f) | ((jj & 0x0f) ^ 9) << 4;
+	      a |= A_BBG;
+	      if (jj >= 8 && jj < 16)
+		c |= 0x80;
+	      else
+		a ^= A_BBG;
+	      cx = (cx & 0x0f) | (jj & 0xf0);
+	    }
+	  continue;
+# else
+	  jj = color256to16(jj) + 30;
+	  if (jj >= 38)
+	    jj += 60 - 8;
+	  j = j == 38 ? jj : jj + 10;
+# endif
+	}
+# ifdef COLORS16
+      if (j == 0 || (j >= 30 && j <= 39 && j != 38))
+	a &= 0xbf;
+      if (j == 0 || (j >= 40 && j <= 49 && j != 48))
+	a &= 0x7f;
+      if (j >= 90 && j <= 97)
+	a |= 0x40;
+      if (j >= 100 && j <= 107)
+	a |= 0x80;
+# endif
+      if (j >= 90 && j <= 97)
+	j -= 60;
+      if (j >= 100 && j <= 107)
+	j -= 60;
+      if (j >= 30 && j <= 39 && j != 38)
+	c = (c & 0xf0) | ((j - 30) ^ 9);
+      else if (j >= 40 && j <= 49 && j != 48)
+	c = (c & 0x0f) | (((j - 40) ^ 9) << 4);
       if (j == 0)
 	c = 0;
+# ifdef COLORS256
+      if (j == 0 || (j >= 30 && j <= 39 && j != 38))
+	cx &= 0xf0;
+      if (j == 0 || (j >= 40 && j <= 49 && j != 48))
+	cx &= 0x0f;
+# endif
 #endif
       if (j < 0 || j >= (sizeof(rendlist)/sizeof(*rendlist)))
 	continue;
@@ -1887,6 +2058,9 @@ SelectRendition()
   curr->w_rend.attr = a;
 #ifdef COLOR
   curr->w_rend.color = c;
+# ifdef COLORS256
+  curr->w_rend.colorx = cx;
+# endif
 #endif
   LSetRendition(&curr->w_layer, &curr->w_rend);
 }
@@ -1895,9 +2069,9 @@ static void
 FillWithEs()
 {
   register int i;
-  register char *p, *ep;
+  register unsigned char *p, *ep;
 
-  ClearLayer(&curr->w_layer, 1);
+  LClearAll(&curr->w_layer, 1);
   curr->w_y = curr->w_x = 0;
   for (i = 0; i < rows; ++i)
     {
@@ -1907,7 +2081,7 @@ FillWithEs()
       while (p < ep)
 	*p++ = 'E';
     }
-  RedisplayLayer(&curr->w_layer, 1);
+  LRefreshAll(&curr->w_layer, 1);
 }
 
 
@@ -1939,7 +2113,7 @@ int l;
 static void
 FindAKA()
 {
-  register char *cp, *line;
+  register unsigned char *cp, *line;
   register struct win *wp = curr;
   register int len = strlen(wp->w_akabuf);
   int y;
@@ -1958,7 +2132,7 @@ FindAKA()
 		goto try_line;
 	      return;
 	    }
-	  if (strncmp(cp, wp->w_akabuf, len) == 0)
+	  if (strncmp((char *)cp, wp->w_akabuf, len) == 0)
 	    break;
 	  cp++;
 	}
@@ -1979,7 +2153,7 @@ FindAKA()
 	    line = cp;
 	  len--;
 	}
-      ChangeAKA(wp, line, cp - line);
+      ChangeAKA(wp, (char *)line, cp - line);
     }
   else
     wp->w_autoaka = 0;
@@ -2033,18 +2207,18 @@ struct mchar *mc;
   struct mline *ml = &p->w_mlines[y];
   if (mc->attr && ml->attr == null)
     {
-      if ((ml->attr = (char *)malloc(p->w_width + 1)) == 0)
+      if ((ml->attr = (unsigned char *)malloc(p->w_width + 1)) == 0)
 	{
 	  ml->attr = null;
 	  mc->attr = p->w_rend.attr = 0;
 	  WMsg(p, 0, "Warning: no space for attr - turned off");
 	}
-      bzero(ml->attr, p->w_width + 1);
+      bzero((char *)ml->attr, p->w_width + 1);
     }
 #ifdef FONT
   if (mc->font && ml->font == null)
     {
-      if ((ml->font = (char *)malloc(p->w_width + 1)) == 0)
+      if ((ml->font = (unsigned char *)malloc(p->w_width + 1)) == 0)
 	{
 	  ml->font = null;
 	  p->w_FontL = p->w_charsets[p->w_ss ? p->w_ss : p->w_Charset] = 0;
@@ -2052,62 +2226,109 @@ struct mchar *mc;
 	  mc->font = p->w_rend.font  = 0;
 	  WMsg(p, 0, "Warning: no space for font - turned off");
 	}
-      bzero(ml->font, p->w_width + 1);
+      bzero((char *)ml->font, p->w_width + 1);
     }
 #endif
 #ifdef COLOR
   if (mc->color && ml->color == null)
     {
-      if ((ml->color = (char *)malloc(p->w_width + 1)) == 0)
+      if ((ml->color = (unsigned char *)malloc(p->w_width + 1)) == 0)
 	{
 	  ml->color = null;
 	  mc->color = p->w_rend.color = 0;
 	  WMsg(p, 0, "Warning: no space for color - turned off");
 	}
-      bzero(ml->color, p->w_width + 1);
+      bzero((char *)ml->color, p->w_width + 1);
     }
+# ifdef COLORS256
+  if (mc->colorx && ml->colorx == null)
+    {
+      if ((ml->colorx = (unsigned char *)malloc(p->w_width + 1)) == 0)
+	{
+	  ml->colorx = null;
+	  mc->colorx = p->w_rend.colorx = 0;
+	  WMsg(p, 0, "Warning: no space for extended colors - turned off");
+	}
+      bzero((char *)ml->colorx, p->w_width + 1);
+    }
+# endif
 #endif
 }
 
 /*****************************************************************/
 
+#ifdef DW_CHARS
+# define MKillDwRight(p, ml, x)					\
+  if (dw_right(ml, x, p->w_encoding))				\
+    {								\
+      if (x > 0)						\
+	copy_mchar2mline(&mchar_blank, ml, x - 1);		\
+      copy_mchar2mline(&mchar_blank, ml, x);			\
+    }
+
+# define MKillDwLeft(p, ml, x)					\
+  if (dw_left(ml, x, p->w_encoding))				\
+    {								\
+      copy_mchar2mline(&mchar_blank, ml, x);			\
+      copy_mchar2mline(&mchar_blank, ml, x + 1);		\
+    }
+#else
+# define MKillDwRight(p, ml, x) ;
+# define MKillDwLeft(p, ml, x) ;
+#endif
+
 static void
-MScrollH(p, n, y, xs, xe)
+MScrollH(p, n, y, xs, xe, bce)
 struct win *p;
-int n, y, xs, xe;
+int n, y, xs, xe, bce;
 {
   struct mline *ml;
 
   if (n == 0)
     return;
   ml = &p->w_mlines[y];
+  MKillDwRight(p, ml, xs);
+  MKillDwLeft(p, ml, xe);
   if (n > 0)
     {
       if (xe - xs + 1 > n)
-	bcopy_mline(ml, xs + n, xs, xe + 1 - xs - n);
+	{
+	  MKillDwRight(p, ml, xs + n);
+	  bcopy_mline(ml, xs + n, xs, xe + 1 - xs - n);
+	}
       else
 	n = xe - xs + 1;
       clear_mline(ml, xe + 1 - n, n);
+#ifdef COLOR
+      if (bce)
+        MBceLine(p, y, xe + 1 - n, n, bce);
+#endif
     }
   else
     {
       n = -n;
       if (xe - xs + 1 > n)
-	bcopy_mline(ml, xs, xs + n, xe + 1 - xs - n);
+	{
+	  MKillDwLeft(p, ml, xe - n);
+	  bcopy_mline(ml, xs, xs + n, xe + 1 - xs - n);
+	}
       else
 	n = xe - xs + 1;
       clear_mline(ml, xs, n);
+#ifdef COLOR
+      if (bce)
+        MBceLine(p, y, xs, n, bce);
+#endif
     }
 }
 
 static void
-MScrollV(p, n, ys, ye)
+MScrollV(p, n, ys, ye, bce)
 struct win *p;
-int n;
-int ys, ye;
+int n, ys, ye, bce;
 {
   int i, cnt1, cnt2;
-  struct mline *tmp[256];
+  struct mline tmp[256];
   struct mline *ml;
 
   if (n == 0)
@@ -2116,7 +2337,7 @@ int ys, ye;
     {
       if (n > 256)
 	{
-	  MScrollV(p, n - 256, ys, ye);
+	  MScrollV(p, n - 256, ys, ye, bce);
 	  n = 256;
 	}
       if (ye - ys + 1 < n)
@@ -2137,7 +2358,7 @@ int ys, ye;
 	{
 #ifdef COPY_PASTE
 	  if (ys == p->w_top)
-	    AddLineToHist(p, ml);
+	    WAddLineToHist(p, ml);
 #endif
 	  if (ml->attr != null)
 	    free(ml->attr);
@@ -2151,8 +2372,17 @@ int ys, ye;
 	  if (ml->color != null)
 	    free(ml->color);
 	  ml->color = null;
+# ifdef COLORS256
+	  if (ml->colorx != null)
+	    free(ml->colorx);
+	  ml->colorx = null;
+# endif
 #endif
-	  bclear(ml->image, p->w_width + 1);
+	  bclear((char *)ml->image, p->w_width + 1);
+#ifdef COLOR
+	  if (bce)
+	    MBceLine(p, i, 0, p->w_width, bce);
+#endif
 	}
       /* switch 'em over */
       cnt1 = n * sizeof(struct mline);
@@ -2164,7 +2394,7 @@ int ys, ye;
     {
       if (n < -256)
 	{
-	  MScrollV(p, n + 256, ys, ye);
+	  MScrollV(p, n + 256, ys, ye, bce);
 	  n = -256;
 	}
       n = -n;
@@ -2187,8 +2417,17 @@ int ys, ye;
 	  if (ml->color != null)
 	    free(ml->color);
 	  ml->color = null;
+# ifdef COLORS256
+	  if (ml->colorx != null)
+	    free(ml->colorx);
+	  ml->colorx = null;
+# endif
 #endif
-	  bclear(ml->image, p->w_width + 1);
+	  bclear((char *)ml->image, p->w_width + 1);
+#ifdef COLOR
+	  if (bce)
+	    MBceLine(p, i, 0, p->w_width, bce);
+#endif
 	}
       cnt1 = n * sizeof(struct mline);
       cnt2 = (ye - ys + 1 - n) * sizeof(struct mline);
@@ -2219,9 +2458,9 @@ int cnt1, cnt2;
 }
 
 static void
-MClear(p, xs, ys, xe, ye)
+MClearArea(p, xs, ys, xe, ye, bce)
 struct win *p;
-int xs, ys, xe, ye;
+int xs, ys, xe, ye, bce;
 {
   int n, y;
   int xxe;
@@ -2233,6 +2472,9 @@ int xs, ys, xe, ye;
   if (xe >= p->w_width)
     xe = p->w_width - 1;
 
+  MKillDwRight(p, p->w_mlines + ys, xs);
+  MKillDwLeft(p, p->w_mlines + ye, xe);
+
   ml = p->w_mlines + ys;
   for (y = ys; y <= ye; y++, ml++)
     {
@@ -2240,6 +2482,10 @@ int xs, ys, xe, ye;
       n = xxe - xs + 1;
       if (n > 0)
 	clear_mline(ml, xs, n);
+#ifdef COLOR
+      if (n > 0 && bce)
+	MBceLine(p, y, xs, xs + n - 1, bce);
+#endif
       xs = 0;
     }
 }
@@ -2257,9 +2503,33 @@ int x, y;
   MFixLine(p, y, c);
   ml = p->w_mlines + y;
   n = p->w_width - x - 1;
+  MKillDwRight(p, ml, x);
   if (n > 0)
-    bcopy_mline(ml, x, x + 1, n);
+    {
+      MKillDwRight(p, ml, p->w_width - 1);
+      bcopy_mline(ml, x, x + 1, n);
+    }
   copy_mchar2mline(c, ml, x);
+#ifdef DW_CHARS
+  if (c->mbcs)
+    {
+      if (--n > 0)
+        {
+          MKillDwRight(p, ml, p->w_width - 1);
+	  bcopy_mline(ml, x + 1, x + 2, n);
+	}
+      copy_mchar2mline(c, ml, x + 1);
+      ml->image[x + 1] = c->mbcs;
+# ifdef UTF8
+      if (p->w_encoding != UTF8)
+	ml->font[x + 1] |= 0x80;
+      else if (p->w_encoding == UTF8 && c->mbcs)
+	ml->font[x + 1] = c->mbcs;
+# else
+      ml->font[x + 1] |= 0x80;
+# endif
+    }
+#endif
 }
 
 static void
@@ -2272,7 +2542,24 @@ int x, y;
 
   MFixLine(p, y, c);
   ml = &p->w_mlines[y];
+  MKillDwRight(p, ml, x);
   copy_mchar2mline(c, ml, x);
+#ifdef DW_CHARS
+  if (c->mbcs)
+    {
+      MKillDwLeft(p, ml, x + 1);
+      copy_mchar2mline(c, ml, x + 1);
+      ml->image[x + 1] = c->mbcs;
+# ifdef UTF8
+      if (p->w_encoding != UTF8)
+	ml->font[x + 1] |= 0x80;
+      else if (p->w_encoding == UTF8 && c->mbcs)
+	ml->font[x + 1] = c->mbcs;
+# else
+      ml->font[x + 1] |= 0x80;
+# endif
+    }
+#endif
 }
 
 
@@ -2284,28 +2571,103 @@ int y, top, bot;
 int ins;
 {
   struct mline *ml;
+  int bce;
 
+#ifdef COLOR
+  bce = rend_getbg(c);
+#else
+  bce = 0;
+#endif
   MFixLine(p, y, c);
   ml = &p->w_mlines[y];
   copy_mchar2mline(&mchar_null, ml, p->w_width);
   if (y == bot)
-    MScrollV(p, 1, top, bot);
+    MScrollV(p, 1, top, bot, bce);
   else if (y < p->w_height - 1)
     y++;
-  MFixLine(p, y, c);
-  ml = &p->w_mlines[y];
-  if (ins && p->w_width > 1)
-    bcopy_mline(ml, 0, 1, p->w_width - 1);
-  copy_mchar2mline(c, ml, 0);
+  if (ins)
+    MInsChar(p, c, 0, y);
+  else
+    MPutChar(p, c, 0, y);
 }
+
+static void
+MPutStr(p, s, n, r, x, y)
+struct win *p;
+char *s;
+int n;
+struct mchar *r;
+int x, y;
+{
+  struct mline *ml;
+  int i;
+  unsigned char *b;
+
+  if (n <= 0)
+    return;
+  MFixLine(p, y, r);
+  ml = &p->w_mlines[y];
+  MKillDwRight(p, ml, x);
+  MKillDwLeft(p, ml, x + n - 1);
+  bcopy(s, (char *)ml->image + x, n);
+  b = ml->attr + x;
+  for (i = n; i-- > 0;)
+    *b++ = r->attr;
+#ifdef FONT
+  b = ml->font + x;
+  for (i = n; i-- > 0;)
+    *b++ = r->font;
+#endif
+#ifdef COLOR
+  b = ml->color + x;
+  for (i = n; i-- > 0;)
+    *b++ = r->color;
+# ifdef COLORS256
+  b = ml->colorx + x;
+  for (i = n; i-- > 0;)
+    *b++ = r->colorx;
+# endif
+#endif
+}
+
+#ifdef COLOR
+static void
+MBceLine(p, y, xs, xe, bce)
+struct win *p;
+int y, xs, xe, bce;
+{
+  struct mchar mc;
+  struct mline *ml;
+  int x;
+
+  mc = mchar_null;
+  rend_setbg(&mc, bce);
+  MFixLine(p, y, &mc);
+  ml = p->w_mlines + y;
+# ifdef COLORS16
+  if (mc.attr)
+    for (x = xs; x <= xe; x++)
+      ml->attr[x] = mc.attr;
+# endif
+  if (mc.color)
+    for (x = xs; x <= xe; x++)
+      ml->color[x] = mc.color;
+# ifdef COLORS256
+  if (mc.colorx)
+    for (x = xs; x <= xe; x++)
+      ml->colorx[x] = mc.colorx;
+# endif
+}
+#endif
+
 
 #ifdef COPY_PASTE
 static void
-AddLineToHist(wp, ml)
+WAddLineToHist(wp, ml)
 struct win *wp;
 struct mline *ml;
 {
-  register char *q, *o;
+  register unsigned char *q, *o;
   struct mline *hml;
 
   if (wp->w_histheight == 0)
@@ -2327,6 +2689,11 @@ struct mline *ml;
   q = ml->color; o = hml->color; hml->color = q; ml->color = null;
   if (o != null)
     free(o);
+# ifdef COLORS256
+  q = ml->colorx; o = hml->colorx; hml->colorx = q; ml->colorx = null;
+  if (o != null)
+    free(o);
+# endif
 #endif
 
   if (++wp->w_histidx >= wp->w_histheight)
@@ -2352,6 +2719,10 @@ int ys, ye;
 #ifdef COLOR
       if (ml->color != null && bcmp((char*)ml->color, null, p->w_width))
 	break;
+# ifdef COLORS256
+      if (ml->colorx != null && bcmp((char*)ml->colorx, null, p->w_width))
+	break;
+# endif
 #endif
     }
   debug1("MFindUsedLine returning  %d\n", y);
@@ -2366,7 +2737,7 @@ int ys, ye;
 
 /*
  * Tricky: send only one bell even if the window is displayed
- * more than one times.
+ * more than once.
  */
 void
 WBell(p, visual)
@@ -2380,9 +2751,9 @@ int visual;
 	if (cv->c_layer->l_bottom == &p->w_layer)
 	  break;
       if (cv && !visual)
-	PutStr(D_BL);
+	AddCStr(D_BL);
       else if (cv && D_VB)
-	PutStr(D_VB);
+	AddCStr(D_VB);
       else
         p->w_bell = visual ? BELL_VISUAL : BELL_FOUND;
     }
@@ -2410,7 +2781,7 @@ int on;
       if (!on && p->w_revvid && !D_CVR)
 	{
 	  if (D_VB)
-	    PutStr(D_VB);
+	    AddCStr(D_VB);
 	  else
 	    p->w_bell = BELL_VISUAL;
 	}
@@ -2485,15 +2856,22 @@ int what;
 int *hp;
 {
   int h = 0;
+  int l;
   while(*s)
     {
-      if (*s++ != '%')
+      if (*s++ != (hp ? '%' : '\005'))
 	continue;
+      l = 0;
       while (*s >= '0' && *s <= '9')
 	s++;
+      if (*s == 'L')
+	{
+	  s++;
+	  l = 0x100;
+	}
       if (*s == 'h')
 	h = 1;
-      if (*s == what || what == 'd')
+      if (*s == what || ((*s | l) == what) || what == 'd')
 	break;
       if (*s)
 	s++;
@@ -2508,16 +2886,31 @@ WindowChanged(p, what)
 struct win *p;
 int what;
 {
-  int inwstr, inhstr;
-  int inwstrh, inhstrh;
+  int inwstr, inhstr, inlstr;
+  int inwstrh = 0, inhstrh = 0, inlstrh = 0;
   int got, ox, oy;
   struct display *olddisplay = display;
   struct canvas *cv;
 
   inwstr = inhstr = 0;
 
-  inwstr = WindowChangedCheck(captionstring, what, &inwstrh);
-  inhstr = WindowChangedCheck(hstatusstring, what, &inhstrh);
+  if (what == 'f')
+    {
+      WindowChanged((struct win *)0, 'w'|0x100);
+      WindowChanged((struct win *)0, 'W'|0x100);
+    }
+
+  if (what)
+    {
+      inwstr = WindowChangedCheck(captionstring, what, &inwstrh);
+      inhstr = WindowChangedCheck(hstatusstring, what, &inhstrh);
+      inlstr = WindowChangedCheck(wliststr, what, &inlstrh);
+    }
+  else
+    {
+      inwstr = inhstr = 0;
+      inlstr = 1;
+    }
 
   if (p == 0)
     {
@@ -2527,6 +2920,8 @@ int what;
 	  oy = D_y;
 	  for (cv = D_cvlist; cv; cv = cv->c_next)
 	    {
+	      if (inlstr || (inlstrh && p && p->w_hstatus && *p->w_hstatus && WindowChangedCheck(p->w_hstatus, what, (int *)0)))
+		WListUpdatecv(cv, (struct win *)0);
 	      p = Layer2Window(cv->c_layer);
 	      if (inwstr || (inwstrh && p && p->w_hstatus && *p->w_hstatus && WindowChangedCheck(p->w_hstatus, what, (int *)0)))
 	        if (cv->c_ye + 1 < D_height)
@@ -2542,12 +2937,13 @@ int what;
       return;
     }
 
-  if (p->w_hstatus && *p->w_hstatus && (inwstrh || inhstrh) && WindowChangedCheck(p->w_hstatus, what, (int *)0))
+  if (p->w_hstatus && *p->w_hstatus && (inwstrh || inhstrh || inlstrh) && WindowChangedCheck(p->w_hstatus, what, (int *)0))
     {
       inwstr |= inwstrh;
       inhstr |= inhstrh;
+      inlstr |= inlstrh;
     }
-  if (!inwstr && !inhstr)
+  if (!inwstr && !inhstr && !inlstr)
     return;
   for (display = displays; display; display = display->d_next)
     {
@@ -2556,6 +2952,8 @@ int what;
       oy = D_y;
       for (cv = D_cvlist; cv; cv = cv->c_next)
 	{
+	  if (inlstr)
+	    WListUpdatecv(cv, p);
 	  if (Layer2Window(cv->c_layer) != p)
 	    continue;
 	  got = 1;

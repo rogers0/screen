@@ -25,6 +25,8 @@
  * $Id: braille.h,v 1.1 1995/09/06 15:51:18 jnweiger Exp jnweiger $ FAU
  */
 
+#ifdef HAVE_BRAILLE
+
 extern void StartBraille __P((void));
 
 struct braille_display
@@ -78,3 +80,4 @@ extern struct braille_display bd;
 
 #define BD_FORE bd.bd_dpy->d_fore
 
+#endif

@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -35,6 +35,7 @@ RCS_ID("$Id: attacher.c,v 1.8 1994/05/31 12:31:32 mlschroe Exp $ FAU")
 
 #include <pwd.h>
 
+static int WriteMessage __P((int, struct msg *));
 static sigret_t AttacherSigInt __P(SIGPROTOARG);
 #if defined(SIGWINCH) && defined(TIOCGWINSZ)
 static sigret_t AttacherWinch __P(SIGPROTOARG);
@@ -58,6 +59,7 @@ extern struct passwd *ppp;
 extern char *attach_tty, *attach_term, *LoginName, *preselect;
 extern int xflag, dflag, rflag, quietflag, adaptflag;
 extern struct mode attach_Mode;
+extern struct NewWindow nwin_options;
 extern int MasterPid;
 
 #ifdef MULTIUSER
@@ -89,6 +91,26 @@ AttachSigCont SIGDEFARG
  *  Understands  MSG_ATTACH, MSG_DETACH, MSG_POW_DETACH
  *               MSG_CONT, MSG_WINCH and nothing else!
  */
+
+static int
+WriteMessage(s, m)
+int s;
+struct msg *m;
+{
+  int r, l = sizeof(*m);
+
+  while(l > 0)
+    {
+      r = write(s, (char *)m + (sizeof(*m) - l), l);
+      if (r == -1 && errno == EINTR)
+	continue;
+      if (r == -1 || r == 0)
+	return -1;
+      l -= r;
+    }
+  return 0;
+}
+
 
 int
 Attach(how)
@@ -141,8 +163,8 @@ int how;
 	  if (ret == SIG_POWER_BYE)
 	    {
 	      int ppid;
-	      setuid(real_uid);
 	      setgid(real_gid);
+	      setuid(real_uid);
 	      if ((ppid = getppid()) > 1)
 		Kill(ppid, SIGHUP);
 	      exit(0);
@@ -184,7 +206,7 @@ int how;
     {
       if ((lasts = MakeClientSocket(0)) >= 0)
 	{
-          write(lasts, (char *)&m, sizeof(m));
+	  WriteMessage(lasts, &m);
           close(lasts);
 	}
       return 0;
@@ -285,8 +307,8 @@ int how;
       else
 # endif
 	m.type = MSG_DETACH;
-      if (write(lasts, (char *) &m, sizeof(m)) != sizeof(m))
-	Panic(errno, "write");
+      if (WriteMessage(lasts, &m))
+	Panic(errno, "WriteMessage");
       close(lasts);
       if (how != MSG_ATTACH)
 	return 0;	/* we detached it. jw. */
@@ -314,6 +336,7 @@ int how;
     m.m.attach.lines = atoi(s);
   if ((s = getenv("COLUMNS")))
     m.m.attach.columns = atoi(s);
+  m.m.attach.encoding = nwin_options.encoding > 0 ? nwin_options.encoding + 1 : 0;
 
 #ifdef MULTIUSER
   /* setup CONT signal handler to repair the terminal mode */
@@ -321,8 +344,8 @@ int how;
     signal(SIGCONT, AttachSigCont);
 #endif
 
-  if (write(lasts, (char *) &m, sizeof(m)) != sizeof(m))
-    Panic(errno, "write");
+  if (WriteMessage(lasts, &m))
+    Panic(errno, "WriteMessage");
   close(lasts);
   debug1("Attach(%d): sent\n", m.type);
 #ifdef MULTIUSER
@@ -350,14 +373,14 @@ int how;
 
 
 #if defined(DEBUG) || !defined(DO_NOT_POLL_MASTER)
-static int AttacherPanic;
+static int AttacherPanic = 0;
 #endif
 
 #ifdef DEBUG
 static sigret_t
 AttacherChld SIGDEFARG
 {
-  AttacherPanic=1;
+  AttacherPanic = 1;
   SIGRETURN;
 }
 #endif
@@ -387,7 +410,7 @@ AttacherSigInt SIGDEFARG
 
 /*
  * Unfortunatelly this is also the SIGHUP handler, so we have to
- * check, if the backend is already detached.
+ * check if the backend is already detached.
  */
 
 sigret_t
@@ -412,7 +435,7 @@ AttacherFinit SIGDEFARG
       m.protocol_revision = MSG_REVISION;
       if ((s = MakeClientSocket(0)) >= 0)
 	{
-	  write(s, (char *)&m, sizeof(m));
+          WriteMessage(s, &m);
 	  close(s);
 	}
     }
@@ -437,12 +460,12 @@ AttacherFinitBye SIGDEFARG
   if (multiattach)
     exit(SIG_POWER_BYE);
 #endif
+  setgid(real_gid);
 #ifdef MULTIUSER
   setuid(own_uid);
 #else
   setuid(real_uid);
 #endif
-  setgid(real_gid);
   /* we don't want to disturb init (even if we were root), eh? jw */
   if ((ppid = getppid()) > 1)
     Kill(ppid, SIGHUP);		/* carefully say good bye. jw. */
@@ -557,14 +580,10 @@ Attacher()
 #if defined(DEBUG) || !defined(DO_NOT_POLL_MASTER)
       if (AttacherPanic)
         {
-# ifdef FORKDEBUG
-	  exit(0);
-# else
 	  fcntl(0, F_SETFL, 0);
 	  SetTTY(0, &attach_Mode);
 	  printf("\nSuddenly the Dungeon collapses!! - You die...\n");
 	  eexit(1);
-# endif
         }
 #endif
 #ifdef BSDJOBS
@@ -622,12 +641,12 @@ static sigret_t
 LockHup SIGDEFARG
 {
   int ppid = getppid();
+  setgid(real_gid);
 #ifdef MULTIUSER
   setuid(own_uid);
 #else
   setuid(real_uid);
 #endif
-  setgid(real_gid);
   if (ppid > 1)
     Kill(ppid, SIGHUP);
   exit(0);
@@ -653,12 +672,12 @@ LockTerminal()
       if ((pid = fork()) == 0)
         {
           /* Child */
+          setgid(real_gid);
 #ifdef MULTIUSER
           setuid(own_uid);
 #else
           setuid(real_uid);	/* this should be done already */
 #endif
-          setgid(real_gid);
           closeallfiles(0);	/* important: /etc/shadow may be open */
           execl(prg, "SCREEN-LOCK", NULL);
           exit(errno);
@@ -722,13 +741,79 @@ LockTerminal()
     }
 }				/* LockTerminal */
 
+#ifdef USE_PAM
+
+/*
+ *  PAM support by Pablo Averbuj <pablo@averbuj.com>
+ */
+
+#include <security/pam_appl.h>
+
+static int PAM_conv __P((int, const struct pam_message **, struct pam_response **, void *));
+
+static int
+PAM_conv(num_msg, msg, resp, appdata_ptr)
+int num_msg;
+const struct pam_message **msg;
+struct pam_response **resp;
+void *appdata_ptr;
+{
+  int replies = 0;
+  struct pam_response *reply = NULL;
+
+  reply = malloc(sizeof(struct pam_response)*num_msg);
+  if (!reply)
+    return PAM_CONV_ERR;
+  #define COPY_STRING(s) (s) ? strdup(s) : NULL
+
+  for (replies = 0; replies < num_msg; replies++)
+    {
+      switch (msg[replies]->msg_style)
+        {
+	case PAM_PROMPT_ECHO_OFF:
+	  /* wants password */
+	  reply[replies].resp_retcode = PAM_SUCCESS;
+	  reply[replies].resp = appdata_ptr ? strdup((char *)appdata_ptr) : 0;
+	  break;
+	case PAM_TEXT_INFO:
+	  /* ignore the informational mesage */
+	  /* but first clear out any drek left by malloc */
+	  reply[replies].resp = NULL;
+	  break;
+	case PAM_PROMPT_ECHO_ON:
+	  /* user name given to PAM already */
+	  /* fall through */
+	default:
+	  /* unknown or PAM_ERROR_MSG */
+	  free(reply);
+	  return PAM_CONV_ERR;
+	}
+    }
+  *resp = reply;
+  return PAM_SUCCESS;
+}
+
+static struct pam_conv PAM_conversation = {
+    &PAM_conv,
+    NULL
+};
+
+
+#endif
+
 /* -- original copyright by Luigi Cannelloni 1985 (luigi@faui70.UUCP) -- */
 static void
 screen_builtin_lck()
 {
   char fullname[100], *cp1, message[100 + 100];
+#ifdef USE_PAM
+  pam_handle_t *pamh = 0;
+  int pam_error;
+#else
   char *pass, mypass[9];
+#endif
 
+#ifndef USE_PAM
   pass = ppp->pw_passwd;
   if (pass == 0 || *pass == 0)
     {
@@ -756,6 +841,7 @@ screen_builtin_lck()
         }
       pass = 0;
     }
+#endif
 
   debug("screen_builtin_lck looking in gcos field\n");
   strncpy(fullname, ppp->pw_gecos, sizeof(fullname) - 9);
@@ -784,6 +870,17 @@ screen_builtin_lck()
           AttacherFinit(SIGARG);
           /* NOTREACHED */
         }
+#ifdef USE_PAM
+      PAM_conversation.appdata_ptr = cp1;
+      pam_error = pam_start("screen", ppp->pw_name, &PAM_conversation, &pamh);
+      if (pam_error != PAM_SUCCESS)
+	AttacherFinit(SIGARG);		/* goodbye */
+      pam_error = pam_authenticate(pamh, 0);
+      pam_end(pamh, pam_error);
+      PAM_conversation.appdata_ptr = 0;
+      if (pam_error == PAM_SUCCESS)
+	break;
+#else
       if (pass)
         {
           if (!strncmp(crypt(cp1, pass), pass, strlen(pass)))
@@ -794,9 +891,75 @@ screen_builtin_lck()
           if (!strcmp(cp1, mypass))
             break;
         }
+#endif
       debug("screen_builtin_lck: NO!!!!!\n");
+      bzero(cp1, strlen(cp1));
     }
+  bzero(cp1, strlen(cp1));
   debug("password ok.\n");
 }
 
 #endif	/* LOCK */
+
+
+void
+SendCmdMessage(sty, match, av)
+char *sty;
+char *match;
+char **av;
+{
+  int i, s;
+  struct msg m;
+  char *p;
+  int len, n;
+
+  if (sty == 0)
+    {
+      i = FindSocket(&s, (int *)0, (int *)0, match);
+      if (i == 0)
+	Panic(0, "No screen session found.");
+      if (i != 1)
+	Panic(0, "Use -S to specify a session.");
+    }
+  else
+    {
+#ifdef NAME_MAX
+      if (strlen(sty) > NAME_MAX)
+	sty[NAME_MAX] = 0;
+#endif
+      if (strlen(sty) > 2 * MAXSTR - 1)
+	sty[2 * MAXSTR - 1] = 0;
+      sprintf(SockPath + strlen(SockPath), "/%s", sty);
+      if ((s = MakeClientSocket(1)) == -1)
+	exit(1);
+    }
+  bzero((char *)&m, sizeof(m));
+  m.type = MSG_COMMAND;
+  if (attach_tty)
+    {
+      strncpy(m.m_tty, attach_tty, sizeof(m.m_tty) - 1);
+      m.m_tty[sizeof(m.m_tty) - 1] = 0;
+    }
+  p = m.m.command.cmd;
+  n = 0;
+  for (; *av && n < MAXARGS - 1; ++av, ++n)
+    {
+      len = strlen(*av) + 1;
+      if (p + len >= m.m.command.cmd + sizeof(m.m.command.cmd) - 1)
+	break;
+      strcpy(p, *av);
+      p += len;
+    }
+  *p = 0;
+  m.m.command.nargs = n;
+  strncpy(m.m.attach.auser, LoginName, sizeof(m.m.attach.auser) - 1);
+  m.m.command.auser[sizeof(m.m.command.auser) - 1] = 0;
+  m.protocol_revision = MSG_REVISION;
+  strncpy(m.m.command.preselect, preselect ? preselect : "", sizeof(m.m.command.preselect) - 1);
+  m.m.command.preselect[sizeof(m.m.command.preselect) - 1] = 0;
+  m.m.command.apid = getpid();
+  debug1("SendCommandMsg writing '%s'\n", m.m.command.cmd);
+  if (WriteMessage(s, &m))
+    Msg(errno, "write");
+  close(s);
+}

@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -72,14 +72,14 @@ char  *realloc __P((char *, int));
 void   free __P((char *));
 int    sprintf __P((char *, char *, ...));
 
-#define EXTRASIZE 5        /* increment to add to env. size */
+#define EXTRASIZE 5		/* increment to add to env. size */
 
-static int  envsize = -1;    /* current size of environment */
-extern char **environ;        /* the global which is your env. */
+static int  envsize = -1;	/* current size of environment */
+extern char **environ;		/* the global which is your env. */
 
-static int  findenv();        /* look for a name in the env. */
-static int  newenv();        /* copy env. from stack to heap */
-static int  moreenv();        /* incr. size of env. */
+static int  findenv __P((char *));  /* look for a name in the env. */
+static int  newenv __P((void));     /* copy env. from stack to heap */
+static int  moreenv __P((void));    /* incr. size of env. */
 
 int
 unsetenv(name)

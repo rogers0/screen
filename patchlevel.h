@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -124,7 +124,7 @@
  * 22.07.93 -- 3.05.00 Fixed SVR4, some multiuser bugs, -- DISTRIBUTED
  * 05.08.93 -- 3.05.01 ${srcdir} feature added. Shellprog bug fixed.
  *                     Motorola reattach bug fixed. Writelock bug fixed.
- *                     Copybuffer moved into struct user. Configure.in
+ *                     Copybuffer moved into struct acluser. Configure.in
  *                     uglified for Autoconf1.5. Paste may now have an
  *                     argument. Interactive setenv. Right margin bug
  *                     fixed. IRIX 5 patches. -- DISTRIBUTED
@@ -423,8 +423,9 @@
  *                     SCO-5 Fixes (Brian L. Gentry).
  * 25.11.98 -- 3.07.06 resize code now handles tabs correctly.
  *                     -- DISTRIBUTED
- *          -- 3.09.00 loads'o'bugs fixed, 3.8 merged with 3.7, new region
- *                     clip code. Many new features (see NEWS file).
+ *          -- 3.09.00 loads'o'bugs fixed, 3.8 merged with 3.7.
+ *                     new region clip code.
+ *                     Many new features (see NEWS file).
  *  3.08.99 -- 3.09.02 -- DISTRIBUTED
  * 11.08.99 -- 3.09.04 small utmp fix, BSD chflags fix, tty mode fix
  *                     -- DISTRIBUTED
@@ -434,11 +435,64 @@
  *                     console grabbing with SRIOCSREDIR.
  *                     linux utmp workaround added. Some KANJI bugs
  *                     fixed. Stupid StuffKey() bug fixed.
+ *                     -- DISTRIBUTED
+ * 24.07.00 -- 3.09.06 kanji fixes. lock escape char fix.
+ *                     removed delayed message hack.
+ *                     resize command & focus subcomands by joze.
+ *                     fix for solaris' utmp_helper bug.
+ *                     linux tty handling fix.
+ *                     mousetracking, rxvt osc sequences.
+ *                     background color erase support.
+ *                     don't log user in after hangup.
+ *                     hstatus escape update bug fixed.
+ *  1.09.00 -- 3.09.08 -- DISTRIBUTED
+ * 25.05.01 -- 3.09.09 use $DESTDIR in Makefiles.
+ *                     renamed struct user to acluser to fix hpux
+ *                     problem for good. utf8 support. 16 color
+ *                     support. New -X option and escape sequence
+ *                     to send screen commands.
+ *                     New commands: attrcolor, defutf8, dinfo, utf8.
+ *                     Extended commands: width, height, readbuf,
+ *                     writebuf. Better nlist64 detection.
+ *                     New config.h option SOCKDIR_IS_LOCAL_TO_HOST.
+ *                     Don't call tputs with an empty string.
+ *                     New string escape %{ for attr/color changes.
+ *                     LRefreshAll bug fixed (0 instead of -1 as bce).
+ *                     New quote handling in Parse(). Workaround for
+ *                     some bad termcap/info entries added. Set BE
+ *                     for all xtermish emulators. Added '0x' and
+ *                     'U+' prefix in digraph command. LOADAV_TYPE
+ *                     detection fixed.
+ *                     -- DISTRIBUTED
+ *  4.09.01 -- 3.09.10 '-R' security fix. Fixed array in MScrollV().
+ *                     -- DISTRIBUTED
+ *                     Reset charset after 'me'.
+ * 14.02.02 -- 3.09.11 Support for other encodings. Double width
+ *                     utf-8 chars. 'L' modifier for %D, %M, %w
+ *                     and %W. New %= (hfill), %H (hostname),
+ *                     %f (flags), %F (focus) escapes. New commands
+ *                     source, windowlist, deflog. Command key classes.
+ *                     New login state: always. Time format
+ *                     changeable. 256 color support.
+ *                     Updated digraph table. Ignorecase.
+ *                     Windowlist resizeable on blank window.
+ *                     Added encoding to paste buffers.
+ *                     Hpux loadtype detection fixed.
+ *                     Disabled im/ic warning. Fixed a bug that
+ *                     could cause window lockups in rare
+ *                     circumstances. Made hangup signal to the
+ *                     backend process detach all displays.
+ *                     New escapes %< %>, + and - flag for %w.
+ *                     Added eval command, added -h option to detach.
+ *                     Also set flayer when processing -X commands.
+ *                     use getpt() on linux systems. doc patches from
+ *                     Adam Lazur. tty flow/intr cleanup.
+ *                     -- DISTRIBUTED
  */
 
 #define ORIGIN "FAU"
 #define REV 3
 #define VERS 9
-#define PATCHLEVEL 5
-#define DATE "1-Sep-99"
+#define PATCHLEVEL 11
+#define DATE "14-Feb-02"
 #define STATE "" 

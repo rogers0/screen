@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -29,30 +29,9 @@ RCS_ID("$Id: logfile.c,v 1.4 1994/05/31 12:32:12 jnweiger Exp $ FAU")
 #include <fcntl.h>		/* O_WRONLY for logfile_reopen */
 
 
-#if 1
 #include "config.h"
 #include "screen.h"
 #include "extern.h"
-#define strdup SaveStr
-#else
-extern void *malloc();
-extern void free(); 
-extern int fwrite();
-extern int fflush();
-extern void fclose();
-extern char *strdup();
-# define debug(a)
-# define debug1(a)
-# define debug2(a)
-# ifndef __P
-#  if defined(__STDC__)
-#   define __P(a) a
-#  else
-#   define __P(a) ()
-#  endif
-# endif
-#endif
-
 #include "logfile.h"
 
 static void changed_logfile __P((struct logfile *));
@@ -217,7 +196,7 @@ FILE *fp;
       return NULL;
     }
 
-  if (!(l->name = strdup(name)))
+  if (!(l->name = SaveStr(name)))
     {
       free((char *)l->st);
       free((char *)l);

@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -32,6 +32,7 @@ extern int   main __P((int, char **));
 extern sigret_t SigHup __P(SIGPROTOARG);
 extern void  eexit __P((int));
 extern void  Detach __P((int));
+extern void  Hangup __P((void));
 extern void  Kill __P((int, int));
 #ifdef USEVARARGS
 extern void  Msg __P((int, char *, ...)) __attribute__((format(printf, 2, 3)));
@@ -40,11 +41,12 @@ extern void  Panic __P((int, char *, ...)) __attribute__((format(printf, 2, 3)))
 extern void  Msg __P(());
 extern void  Panic __P(());
 #endif
-extern void  DisplaySleep __P((int));
+extern void  DisplaySleep __P((int, int));
 extern void  Finit __P((int));
 extern void  MakeNewEnv __P((void));
 extern char *MakeWinMsg __P((char *, struct win *, int));
-extern char *MakeWinMsgEv __P((char *, struct win *, int, struct event *));
+extern char *MakeWinMsgEv __P((char *, struct win *, int, int, struct event *));
+extern int   PutWinMsg __P((char *, int, int));
 extern void  WindowDied __P((struct win *));
 
 /* ansi.c */
@@ -52,11 +54,11 @@ extern void  ResetAnsiState __P((struct win *));
 extern void  ResetWindow __P((struct win *));
 extern void  ResetCharsets __P((struct win *));
 extern void  WriteString __P((struct win *, char *, int));
-extern void  NewAutoFlow __P((struct win *, int));
-extern void  WBell __P((struct win *, int));
 extern void  ChangeAKA __P((struct win *, char *, int));
 extern void  SetCharsets __P((struct win *, char *));
 extern int   GetAnsiStatus __P((struct win *, char *));
+extern void  WNewAutoFlow __P((struct win *, int));
+extern void  WBell __P((struct win *, int));
 extern void  WMsg __P((struct win *, int, char *));
 extern void  WChangeSize __P((struct win *, int, int));
 extern void  WindowChanged __P((struct win *, int));
@@ -68,10 +70,11 @@ extern void  FinishRc __P((char *));
 extern void  RcLine __P((char *));
 extern FILE *secfopen __P((char *, char *));
 extern int   secopen __P((char *, int, int));
-extern void  WriteFile __P((int));
+extern void  WriteFile __P((struct acluser *, char *, int));
 extern char *ReadFile __P((char *, int *));
 extern void  KillBuffers __P((void));
 extern int   printpipe __P((struct win *, char *));
+extern void  do_source __P((char *));
 
 /* tty.c */
 extern int   OpenTTY __P((char *, char *));
@@ -113,10 +116,13 @@ extern int   InInput __P((void));
 
 /* help.c */
 extern void  exit_with_usage __P((char *, char *, char *));
-extern void  display_help __P((void));
+extern void  display_help __P((char *, struct action *));
 extern void  display_copyright __P((void));
 extern void  display_displays __P((void));
 extern void  display_bindkey __P((char *, struct action *));
+extern void  display_wlist __P((int));
+extern int   InWList __P((void));
+extern void  WListUpdatecv __P((struct canvas *, struct win *));
 
 /* window.c */
 extern int   MakeWindow __P((struct NewWindow *));
@@ -131,7 +137,6 @@ extern int   DoStartLog __P((struct win *, char *, int));
 extern int   ReleaseAutoWritelock __P((struct display *, struct win *));
 extern int   ObtainAutoWritelock __P((struct display *, struct win *));
 extern void  CloseDevice __P((struct win *));
-extern void  paste_rethink __P((struct win *));
 
 
 /* utmp.c */
@@ -177,17 +182,27 @@ extern void  Activate __P((int));
 extern void  KillWindow __P((struct win *));
 extern void  SetForeWindow __P((struct win *));
 extern int   Parse __P((char *, char **));
-extern int   ParseEscape __P((struct user *, char *));
+extern int   ParseEscape __P((struct acluser *, char *));
 extern void  DoScreen __P((char *, char **));
 extern int   IsNumColon __P((char *, int, char *, int));
 extern void  ShowWindows __P((int));
 extern char *AddWindows __P((char *, int, int, int));
+extern char *AddWindowFlags __P((char *, int, struct win *));
 extern char *AddOtherUsers __P((char *, int, struct win *));
 extern int   WindowByNoN __P((char *));
 extern struct win *FindNiceWindow __P((struct win *, char *));
 #ifdef COPY_PASTE
 extern int   CompileKeys __P((char *, unsigned char *));
 #endif
+#ifdef RXVT_OSC
+extern void  RefreshXtermOSC __P((void));
+#endif
+extern int   ParseSaveStr __P((struct action *act, char **));
+extern int   ParseNum __P((struct action *act, int *));
+extern int   ParseSwitch __P((struct action *, int *));
+extern int   ParseAttrColor __P((char *, char *, int));
+extern void  ApplyAttrColor __P((int, struct mchar *));
+extern void  SwitchWindow __P((int));
 
 /* termcap.c */
 extern int   InitTermcap __P((int, int));
@@ -204,35 +219,39 @@ extern void  FreeTransTable __P((void));
 extern int   Attach __P((int));
 extern void  Attacher __P((void));
 extern sigret_t AttacherFinit __P(SIGPROTOARG);
+extern void  SendCmdMessage __P((char *, char *, char **));
 
 /* display.c */
 extern struct display *MakeDisplay __P((char *, char *, char *, int, int, struct mode *));
 extern void  FreeDisplay __P((void));
 extern void  DefProcess __P((char **, int *));
 extern void  DefRedisplayLine __P((int, int, int, int));
-extern void  DefClearLine __P((int, int, int));
+extern void  DefClearLine __P((int, int, int, int));
 extern int   DefRewrite __P((int, int, int, struct mchar *, int));
 extern int   DefResize __P((int, int));
 extern void  DefRestore __P((void));
-extern void  PutStr __P((char *));
-extern void  CPutStr __P((char *, int));
+extern void  AddCStr __P((char *));
+extern void  AddCStr2 __P((char *, int));
 extern void  InitTerm __P((int));
 extern void  FinitTerm __P((void));
 extern void  PUTCHAR __P((int));
 extern void  PUTCHARLP __P((int));
-extern void  ClearDisplay __P((void));
-extern void  Clear __P((int, int, int, int, int, int, int));
-extern void  Redisplay __P((int));
-extern void  RedisplayDisplays __P((int));
+extern void  ClearAll __P((void));
+extern void  ClearArea __P((int, int, int, int, int, int, int, int));
+extern void  ClearLine __P((struct mline *, int, int, int, int));
+extern void  RefreshAll __P((int));
 extern void  RefreshArea __P((int, int, int, int, int));
 extern void  RefreshLine __P((int, int, int, int));
+extern void  Redisplay __P((int));
+extern void  RedisplayDisplays __P((int));
 extern void  ShowHStatus __P((char *));
 extern void  RefreshHStatus __P((void));
 extern void  DisplayLine __P((struct mline *, struct mline *, int, int, int));
 extern void  GotoPos __P((int, int));
 extern int   CalcCost __P((char *));
-extern void  ScrollH __P((int, int, int, int, struct mline *));
-extern void  ScrollV __P((int, int, int, int, int));
+extern void  ScrollH __P((int, int, int, int, int, struct mline *));
+extern void  ScrollV __P((int, int, int, int, int, int));
+extern void  PutChar __P((struct mchar *, int, int));
 extern void  InsChar __P((struct mchar *, int, int, int, struct mline *));
 extern void  WrapChar __P((struct mchar *, int, int, int, int, int, int, int));
 extern void  ChangeScrollRegion __P((int, int));
@@ -241,9 +260,10 @@ extern void  KeypadMode __P((int));
 extern void  CursorkeysMode __P((int));
 extern void  ReverseVideo __P((int));
 extern void  CursorVisibility __P((int));
+extern void  MouseMode __P((int));
 extern void  SetFont __P((int));
 extern void  SetAttr __P((int));
-extern void  SetColor __P((int));
+extern void  SetColor __P((int, int));
 extern void  SetRendition __P((struct mchar *));
 extern void  SetRenditionMline __P((struct mline *, int));
 extern void  MakeStatus __P((char *));
@@ -257,9 +277,6 @@ extern void  Resize_obuf __P((void));
 #ifdef AUTO_NUKE
 extern void  NukePending __P((void));
 #endif
-#ifdef KANJI
-extern int   badkanji __P((char *, int));
-#endif
 extern void  SetCanvasWindow __P((struct canvas *, struct win *));
 extern int   MakeDefaultCanvas __P((void));
 extern int   AddCanvas __P((void));
@@ -267,12 +284,21 @@ extern void  RemCanvas __P((void));
 extern void  OneCanvas __P((void));
 extern int   RethinkDisplayViewports __P((void));
 extern void  RethinkViewportOffsets __P((struct canvas *));
+#ifdef RXVT_OSC
+extern void  ClearAllXtermOSC __P((void));
+extern void  SetXtermOSC __P((int, char *));
+#endif
+#ifdef COLOR
+extern int   color256to16 __P((int));
+# ifdef COLORS256
+extern int   color256to88 __P((int));
+# endif
+#endif
 
 /* resize.c */
 extern int   ChangeWindowSize __P((struct win *, int, int, int));
 extern void  ChangeScreenSize __P((int, int, int));
 extern void  CheckScreenSize __P((int));
-extern void  DoResize __P((int, int));
 extern char *xrealloc __P((char *, int));
 extern void  ResizeLayersToCanvases __P((void));
 extern void  ResizeLayer __P((struct layer *, int, int, struct display *));
@@ -341,29 +367,25 @@ extern int   xsnprintf __P(());
 
 /* acl.c */
 #ifdef MULTIUSER
-extern int   AclInit __P((char *));
-extern int   AclSetPass __P((char *, char *));
-extern int   AclDelUser __P((char *));
-extern int   AclCheckPermWin __P((struct user *, int, struct win *));
-extern int   AclCheckPermCmd __P((struct user *, int, struct comm *));
-extern int   AclSetPerm __P((struct user *, struct user *, char *, char *));
-extern int   AclUmask __P((struct user *, char *, char **));
-extern int   UsersAcl __P((struct user *, int, char **));
+extern int   AclCheckPermWin __P((struct acluser *, int, struct win *));
+extern int   AclCheckPermCmd __P((struct acluser *, int, struct comm *));
+extern int   AclSetPerm __P((struct acluser *, struct acluser *, char *, char *));
+extern int   AclUmask __P((struct acluser *, char *, char **));
+extern int   UsersAcl __P((struct acluser *, int, char **));
 extern void  AclWinSwap __P((int, int));
-extern int   NewWindowAcl __P((struct win *, struct user *));
+extern int   NewWindowAcl __P((struct win *, struct acluser *));
 extern void  FreeWindowAcl __P((struct win *));
-extern char *DoSu __P((struct user **, char *, char *, char *));
+extern char *DoSu __P((struct acluser **, char *, char *, char *));
 extern int   AclLinkUser __P((char *, char *));
 #endif /* MULTIUSER */
-extern int   UserFreeCopyBuffer __P((struct user *));
-extern struct user **FindUserPtr __P((char *));
-extern int   UserAdd __P((char *, char *, struct user **));
-extern int   UserDel __P((char *, struct user **));
+extern int   UserFreeCopyBuffer __P((struct acluser *));
+extern struct acluser **FindUserPtr __P((char *));
+extern int   UserAdd __P((char *, char *, struct acluser **));
+extern int   UserDel __P((char *, struct acluser **));
 
 
-
-
-
+/* braile.c */
+#ifdef HAVE_BRAILLE
 extern void  InitBraille __P((void));
 extern void  RefreshBraille __P((void));
 extern void  DoBrailleAction __P((struct action *, int));
@@ -371,11 +393,9 @@ extern void  BGotoPos __P((struct layer *, int, int));
 extern void  BPutChar __P((struct layer *, struct mchar *, int, int));
 extern void  BPutStr __P((struct layer *, char *, int, struct mchar *, int, int));
 extern void  BCDisplayLine __P((struct layer *, struct mline *, int, int, int, int));
+#endif
 
 
-extern int   ParseSaveStr __P((struct action *act, char **));
-extern int   ParseNum __P((struct action *act, int *));
-extern int   ParseSwitch __P((struct action *, int *));
 
 
 /* layer.c */
@@ -383,30 +403,33 @@ extern void  LGotoPos __P((struct layer *, int, int));
 extern void  LPutChar __P((struct layer *, struct mchar *, int, int));
 extern void  LInsChar __P((struct layer *, struct mchar *, int, int, struct mline *));
 extern void  LPutStr __P((struct layer *, char *, int, struct mchar *, int, int));
-extern void  LScrollH __P((struct layer *, int, int, int, int, struct mline *));
-extern void  LScrollV __P((struct layer *, int, int, int));
-extern void  LClear __P((struct layer *, int, int, int, int, int));
-extern void  LClearLine __P((struct layer *, int, int, int, struct mline *));
+extern void  LPutWinMsg __P((struct layer *, char *, int, struct mchar *, int, int));
+extern void  LScrollH __P((struct layer *, int, int, int, int, int, struct mline *));
+extern void  LScrollV __P((struct layer *, int, int, int, int));
+extern void  LClearAll __P((struct layer *, int));
+extern void  LClearArea __P((struct layer *, int, int, int, int, int, int));
+extern void  LClearLine __P((struct layer *, int, int, int, int, struct mline *));
+extern void  LRefreshAll __P((struct layer *, int));
 extern void  LCDisplayLine __P((struct layer *, struct mline *, int, int, int, int));
+extern void  LCDisplayLineWrap __P((struct layer *, struct mline *, int, int, int, int));
 extern void  LSetRendition __P((struct layer *, struct mchar *));
 extern void  LWrapChar  __P((struct layer *, struct mchar *, int, int, int, int));
 extern void  LCursorVisibility __P((struct layer *, int));
 extern void  LSetFlow __P((struct layer *, int));
 extern void  LKeypadMode __P((struct layer *, int));
 extern void  LCursorkeysMode __P((struct layer *, int));
-
+extern void  LMouseMode __P((struct layer *, int));
 #ifdef USEVARARGS
 extern void  LMsg __P((int, char *, ...)) __attribute__((format(printf, 2, 3)));
 #else
 extern void  LMsg __P(());
 #endif
-extern void  ClearLayer __P((struct layer *, int));
-extern void  RedisplayLayer __P((struct layer *, int));
 extern void  KillLayerChain __P((struct layer *));
 extern int   InitOverlayPage __P((int, struct LayFuncs *, int));
 extern void  ExitOverlayPage __P((void));
 
 /* teln.c */
+#ifdef BUILTIN_TELNET
 extern int   TelOpen __P((char **));
 extern int   TelConnect __P((struct win *));
 extern int   TelIsline __P((struct win *p));
@@ -416,6 +439,41 @@ extern int   TelIn __P((struct win *, char *, int, int));
 extern void  TelBreak __P((struct win *));
 extern void  TelWindowSize __P((struct win *));
 extern void  TelStatus __P((struct win *, char *, int));
+#endif
 
 /* nethack.c */
 extern char *DoNLS __P((char *));
+
+/* encoding.c */
+#ifdef ENCODINGS
+# ifdef UTF8
+extern void  InitBuiltinTabs __P((void));
+extern int   recode_char __P((int, int, int));
+extern int   recode_char_to_encoding __P((int, int));
+#  ifdef DW_CHARS
+extern int   recode_char_dw __P((int, int *, int, int));
+extern int   recode_char_dw_to_encoding __P((int, int *, int));
+#  endif
+extern struct mchar *recode_mchar __P((struct mchar *, int, int));
+extern struct mline *recode_mline __P((struct mline *, int, int, int));
+extern int   FromUtf8 __P((int, int *));
+extern void  AddUtf8 __P((int));
+extern int   ToUtf8 __P((char *, int));
+extern int   utf8_isdouble __P((int));
+extern int   ContainsSpecialDeffont __P((struct mline *, int, int, int));
+extern int   LoadFontTranslation __P((int, char *));
+extern void  LoadFontTranslationsForEncoding __P((int));
+# endif	/* UTF8 */
+extern void  WinSwitchEncoding __P((struct win *, int));
+extern int   FindEncoding __P((char *));
+extern char *EncodingName __P((int));
+extern int   EncodingDefFont __P((int));
+extern void  ResetEncoding __P((struct win *));
+extern int   CanEncodeFont __P((int, int));
+extern int   DecodeChar __P((int, int, int *));
+extern int   RecodeBuf __P((unsigned char *, int, int, int, unsigned char *));
+# ifdef DW_CHARS
+extern int   PrepareEncodedChar __P((int));
+# endif
+#endif
+extern int   EncodeChar __P((char *, int, int, int *));

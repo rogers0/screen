@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -121,19 +121,19 @@ int f;
 }
 
 void
-InitPty(f)
+InitPTY(f)
 int f;
 {
   if (f < 0)
     return;
 #if defined(I_PUSH) && defined(HAVE_SVR4_PTYS) && !defined(sgi) && !defined(linux) && !defined(__osf__) && !defined(M_UNIX)
   if (ioctl(f, I_PUSH, "ptem"))
-    Panic(errno, "InitPty: cannot I_PUSH ptem");
+    Panic(errno, "InitPTY: cannot I_PUSH ptem");
   if (ioctl(f, I_PUSH, "ldterm"))
-    Panic(errno, "InitPty: cannot I_PUSH ldterm");
+    Panic(errno, "InitPTY: cannot I_PUSH ldterm");
 # ifdef sun
   if (ioctl(f, I_PUSH, "ttcompat"))
-    Panic(errno, "InitPty: cannot I_PUSH ttcompat");
+    Panic(errno, "InitPTY: cannot I_PUSH ttcompat");
 # endif
 #endif
 }
@@ -152,6 +152,7 @@ char **ttyn;
   initmaster(f);
   *ttyn = TtyName;
   return f;
+}
 #endif
 
 /***************************************************************/
@@ -243,10 +244,17 @@ char **ttyn;
   register int f;
   char *m, *ptsname();
   int unlockpt __P((int)), grantpt __P((int));
+#if defined(HAVE_GETPT) && defined(linux)
+  int getpt __P((void));
+#endif
   sigret_t (*sigcld)__P(SIGPROTOARG);
 
   strcpy(PtyName, "/dev/ptmx");
+#if defined(HAVE_GETPT) && defined(linux)
+  if ((f = getpt()) == -1)
+#else
   if ((f = open(PtyName, O_RDWR | O_NOCTTY)) == -1)
+#endif
     return -1;
 
   /*

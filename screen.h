@@ -1,4 +1,4 @@
-/* Copyright (c) 1993
+/* Copyright (c) 1993-2002
  *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
  *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
  * Copyright (c) 1987 Oliver Laumann
@@ -131,11 +131,11 @@ struct mode
   int m_ldisc;
   int m_lmode;
 # endif /* TERMIO */
+#endif /* POSIX */
 #if defined(KANJI) && defined(TIOCKSET)
   struct jtchars m_jtchars;
   int m_knjmode;
-# endif
-#endif /* POSIX */
+#endif
 };
 
 
@@ -153,6 +153,7 @@ struct mode
 #define D_POWER 	3
 #define D_REMOTE_POWER	4
 #define D_LOCK		5
+#define D_HANGUP	6
 
 /*
  * Here are the messages the attacher sends to the backend
@@ -165,6 +166,7 @@ struct mode
 #define MSG_POW_DETACH	5
 #define MSG_WINCH	6
 #define MSG_HANGUP	7
+#define MSG_COMMAND	8
 
 /*
  * versions of struct msg:
@@ -201,6 +203,7 @@ struct msg
 	  int esc;		/* his new escape character unless -1 */
 	  int meta_esc;		/* his new meta esc character unless -1 */
 	  char envterm[20 + 1];	/* terminal type */
+	  int encoding;		/* encoding of display */
 	}
       attach;
       struct 
@@ -209,6 +212,15 @@ struct msg
 	  int dpid;		/* pid of frontend */
 	}
       detach;
+      struct 
+	{
+	  char auser[20 + 1];	/* username */
+	  int nargs;
+	  char cmd[MAXPATHLEN];	/* command */
+	  int apid;		/* pid of frontend */
+	  char preselect[20];
+	}
+      command;
       char message[MAXPATHLEN * 2];
     } m;
 };
@@ -242,6 +254,7 @@ struct msg
 #define DUMP_TERMCAP	0 /* WriteFile() options */
 #define DUMP_HARDCOPY	1
 #define DUMP_EXCHANGE	2
+#define DUMP_SCROLLBACK 3
 
 #define SILENCE_OFF	0
 #define SILENCE_ON	1
@@ -267,11 +280,6 @@ struct acl
 
 /* register list */
 #define MAX_PLOP_DEFS 256
-struct plop
-{
-  char *buf;
-  int len;
-};
 
 struct baud_values
 {

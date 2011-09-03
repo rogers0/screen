@@ -1,3 +1,30 @@
+/* Copyright (c) 1993-2002
+ *      Juergen Weigert (jnweiger@immd4.informatik.uni-erlangen.de)
+ *      Michael Schroeder (mlschroe@immd4.informatik.uni-erlangen.de)
+ * Copyright (c) 1987 Oliver Laumann
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program (see the file COPYING); if not, write to the
+ * Free Software Foundation, Inc.,
+ * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
+ *
+ ****************************************************************
+ */
+
+#include "rcs.h"
+RCS_ID("$Id: sched.c,v 1.24 1994/09/06 17:00:20 mlschroe Exp $ FAU")
+
+
 #include <sys/types.h>
 #if !defined(sun) && !defined(B43) && !defined(ISC) && !defined(pyr) && !defined(_CX_UX)
 # include <time.h>
@@ -189,7 +216,6 @@ sched()
        * Sequents select emulation counts a descriptor which is
        * readable and writeable only as one hit. Waaaaa.
        */
-      debug2("nsel %d, was %d; ", nsel ? 2 * FD_SETSIZE : nsel, nsel);
       if (nsel)
         nsel = 2 * FD_SETSIZE;
 #endif
@@ -252,7 +278,7 @@ static int sgihack()
 	{
 	  if (errno == EINTR)
 	    continue;
-	  SigHup(SIGARG);	/* goodbye display */
+	  Hangup();	/* goodbye display */
 	  return 1;
 	}
       display = display->d_next;
