@@ -21,9 +21,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: nethack.c,v 1.01 1999/07/26 19:35:25 mlschroe Exp $ FAU")
-
 #include "config.h"
 #include "screen.h"
 

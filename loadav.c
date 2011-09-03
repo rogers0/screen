@@ -21,9 +21,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: loadav.c,v 1.5 1994/09/06 17:00:00 mlschroe Exp $ FAU")
-
 #include <sys/types.h>
 #include <fcntl.h>
 #ifdef ultrix
@@ -310,9 +307,11 @@ InitLoadav()
       close(kmemf);
       return;
     }
-# ifdef sgi
+# if 0		/* no longer needed (Al.Smith@aeschi.ch.eu.org) */
+#  ifdef sgi
   nl[0].n_value &= (unsigned long)-1 >> 1;	/* clear upper bit */
-# endif /* sgi */
+#  endif /* sgi */
+# endif
   debug1("AvenrunSym found (0x%lx)!!\n", nl[0].n_value);
   loadok = 1;
 }

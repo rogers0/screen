@@ -20,8 +20,6 @@
  *
  ****************************************************************
  */
-#include "rcs.h"
-RCS_ID("$Id: acls.c,v 1.12 1994/05/31 12:31:21 mlschroe Exp $ FAU")
 
 #include <sys/types.h>
 

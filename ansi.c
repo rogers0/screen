@@ -21,9 +21,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: ansi.c,v 1.22 1994/05/31 12:31:25 mlschroe Exp $ FAU")
-
 #include <sys/types.h>
 #include <fcntl.h>
 #ifndef sun	/* we want to know about TIOCPKT. */
@@ -37,6 +34,8 @@ RCS_ID("$Id: ansi.c,v 1.22 1994/05/31 12:31:25 mlschroe Exp $ FAU")
 #include "logfile.h"
 
 extern struct display *display, *displays;
+extern struct win *fore;	/* for 83 escape */
+extern struct layer *flayer;	/* for 83 escape */
 
 extern struct NewWindow nwin_default;	/* for ResetWindow() */
 extern int  nversion;		/* numerical version of screen */
@@ -61,6 +60,7 @@ static int rows, cols;		/* window size of the curr window */
 int visual_bell = 0;
 int use_hardstatus = 1;		/* display status line in hs */
 char *printcmd = 0;
+int use_altscreen = 0;		/* enable alternate screen support? */
 
 unsigned char *blank;		/* line filled with spaces */
 unsigned char *null;		/* line filled with '\0' */
@@ -283,10 +283,6 @@ char *s;
  *  - record program output in window scrollback
  *  - translate program output for the display and put it into the obuf.
  *
- * Output is only supressed, where obuf is beyond maximum and the flag
- * nonblock is set. Then we set nonblock from 1 to 2 and output a '~'
- * character instead. nonblock should be reset to 1 by a successfull
- * write.  Where nonblock isn't set, the obufmax is ignored.
  */
 void
 WriteString(wp, buf, len)
@@ -309,23 +305,6 @@ register int len;
   curr = wp;
   cols = curr->w_width;
   rows = curr->w_height;
-
-  /* The status should be already gone, so this is "Just in Case" */
-  for (cv = wp->w_layer.l_cvlist; cv; cv = cv->c_lnext)
-    {
-      display = cv->c_display;
-#if 0	/* done by new status code */
-      if (D_status == STATUS_ON_WIN)
-	RemoveStatus();
-#endif
-      if (D_nonblock == 1 && (D_obufp - D_obuf > D_obufmax))
-	{
-	  /* one last surprising '~' means: lost data */
-	  AddChar('~');
-	  /* private flag that prevents more output */
-	  D_nonblock = 2;
-	}
-    }
 
   if (curr->w_silence)
     SetTimeout(&curr->w_silenceev, curr->w_silencewait * 1000);
@@ -589,14 +568,16 @@ register int len;
 	      break;
 	    case ';':
 	    case ':':
-	      curr->w_NumArgs++;
+	      if (curr->w_NumArgs < MAXARGS)
+	        curr->w_NumArgs++;
 	      break;
 	    default:
 	      if (Special(c))
 		break;
 	      if (c >= '@' && c <= '~')
 		{
-		  curr->w_NumArgs++;
+		  if (curr->w_NumArgs < MAXARGS)
+		    curr->w_NumArgs++;
 		  DoCSI(c, curr->w_intermediate);
 		  if (curr->w_state != PRIN)
 		    curr->w_state = LIT;
@@ -669,15 +650,74 @@ register int len;
 #ifdef FONT
 # ifdef DW_CHARS
 	  if (!curr->w_mbcs)
+	    {
 # endif
-	    curr->w_rend.font = (c >= 0x80 ? curr->w_FontR : curr->w_FontL);
+	      if (c < 0x80 || curr->w_gr == 0)
+	        curr->w_rend.font = curr->w_FontL;
+# ifdef ENCODINGS
+	      else if (curr->w_gr == 2 && !curr->w_ss)
+	        curr->w_rend.font = curr->w_FontE;
+# endif
+	      else
+	        curr->w_rend.font = curr->w_FontR;
+# ifdef DW_CHARS
+	    }
+# endif
 # ifdef UTF8
 	  if (curr->w_encoding == UTF8)
-	    curr->w_rend.font = 0;
+	    {
+	      if (curr->w_rend.font == '0')
+		{
+		  struct mchar mc, *mcp;
+
+		  debug1("SPECIAL %x\n", c);
+		  mc.image = c;
+		  mc.mbcs = 0;
+		  mc.font = '0';
+		  mcp = recode_mchar(&mc, 0, UTF8);
+		  debug2("%02x %02x\n", mcp->image, mcp->font);
+		  c = mcp->image | mcp->font << 8;
+		}
+	      curr->w_rend.font = 0;
+	    }
 #  ifdef DW_CHARS
-	  if (curr->w_encoding == UTF8 && utf8_isdouble(c))
+	  if (curr->w_encoding == UTF8 && c >= 0x1100 && utf8_isdouble(c))
 	    curr->w_mbcs = 0xff;
 #  endif
+	  if (curr->w_encoding == UTF8 && c >= 0x0300 && utf8_iscomb(c))
+	    {
+	      int ox, oy;
+	      struct mchar omc;
+
+	      ox = curr->w_x - 1;
+	      oy = curr->w_y;
+	      if (ox < 0)
+		{
+		  ox = curr->w_width - 1;
+	          oy--;
+		}
+	      if (oy < 0)
+		oy = 0;
+	      copy_mline2mchar(&omc, &curr->w_mlines[oy], ox);
+	      if (omc.image == 0xff && omc.font == 0xff)
+		{
+		  ox--;
+		  if (ox >= 0)
+		    {
+	              copy_mline2mchar(&omc, &curr->w_mlines[oy], ox);
+		      omc.mbcs = 0xff;
+		    }
+		}
+	      if (ox >= 0)
+		{
+		  utf8_handle_comb(c, &omc);
+		  MFixLine(curr, oy, &omc);
+		  copy_mchar2mline(&omc, &curr->w_mlines[oy], ox);
+		  LPutChar(&curr->w_layer, &omc, ox, oy);
+		  LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
+		}
+	      break;
+	    }
 	  font = curr->w_rend.font;
 # endif
 # ifdef DW_CHARS
@@ -694,6 +734,8 @@ register int len;
 		}
 	    }
 #  endif
+	  if (font == 031 && c == 0x80 && !curr->w_mbcs)
+	    font = curr->w_rend.font = 0;
 	  if (is_dw_font(font) && c == ' ')
 	    font = curr->w_rend.font = 0;
 	  if (is_dw_font(font) || curr->w_mbcs)
@@ -746,7 +788,7 @@ register int len;
 		      debug2("SJIS after %x %x\n", c, t);
 		    }
 #  endif
-		  if (t && curr->w_gr && font != 030)
+		  if (t && curr->w_gr && font != 030 && font != 031)
 		    {
 		      t &= 0x7f;
 		      if (t < ' ')
@@ -769,9 +811,18 @@ register int len;
 	  else if (curr->w_gr)
 # endif
 	    {
+#ifdef ENCODINGS
+	      if (c == 0x80 && font == 0 && curr->w_encoding == GBK)
+		c = 0xa4;
+	      else
+	        c &= 0x7f;
+	      if (c < ' ' && font != 031)
+		goto tryagain;
+#else
 	      c &= 0x7f;
 	      if (c < ' ')	/* this is ugly but kanji support */
 		goto tryagain;	/* prevents nicer programming */
+#endif
 	    }
 #endif /* FONT */
 	  if (c == '\177')
@@ -1181,6 +1232,8 @@ int c, intermediate;
 	    a1 = curr->w_width;
 	  if (a2 < 1)
 	    a2 = curr->w_height;
+	  if (a1 > 10000 || a2 > 10000)
+	    break;
 	  WChangeSize(curr, a1, a2);
 	  cols = curr->w_width;
 	  rows = curr->w_height;
@@ -1334,10 +1387,28 @@ int c, intermediate;
 	 /* case 40:	         132 col enable */
 	 /* case 42:	   NRCM: 7bit NRC character mode */
 	 /* case 44:	         margin bell enable */
+	    case 47:    /*       xterm-like alternate screen */
+	    case 1047:  /*       xterm-like alternate screen */
+	    case 1049:  /*       xterm-like alternate screen */
+	      if (use_altscreen)
+		{
+		  if (i)
+		    EnterAltScreen(curr);
+		  else
+		    LeaveAltScreen(curr);
+		  if (a1 == 47 && !i)
+		    curr->w_saved = 0;
+		  LRefreshAll(&curr->w_layer, 0);
+		  LGotoPos(&curr->w_layer, curr->w_x, curr->w_y);
+		}
+	      break;
 	 /* case 66:	   NKM:  Numeric keypad appl mode */
 	 /* case 68:	   KBUM: Keyboard usage mode (data process) */
 	    case 1000:	/* VT200 mouse tracking */
-	      curr->w_mouse = i ? 1000 : 0;
+	    case 1001:	/* VT200 highlight mouse */
+	    case 1002:	/* button event mouse*/
+	    case 1003:	/* any event mouse*/
+	      curr->w_mouse = i ? a1 : 0;
 	      LMouseMode(&curr->w_layer, curr->w_mouse);
 	      break;
 	    }
@@ -1400,19 +1471,26 @@ StringEnd()
 	{
 	  /* special execute commands sequence */
 	  char *args[MAXARGS];
+	  int argl[MAXARGS];
 	  struct acluser *windowuser;
 
 	  windowuser = *FindUserPtr(":window:");
-	  if (windowuser && Parse(p, args))
+	  if (windowuser && Parse(p, sizeof(curr->w_string) - (p - curr->w_string), args, argl))
 	    {
 	      for (display = displays; display; display = display->d_next)
 		if (D_forecv->c_layer->l_bottom == &curr->w_layer)
 		  break;	/* found it */
 	      if (display == 0 && curr->w_layer.l_cvlist)
 		display = curr->w_layer.l_cvlist->c_display;
+	      if (display == 0)
+		display = displays;
 	      EffectiveAclUser = windowuser;
-	      DoCommand(args);
+	      fore = curr;
+	      flayer = fore->w_savelayer ? fore->w_savelayer : &fore->w_layer;
+	      DoCommand(args, argl);
 	      EffectiveAclUser = 0;
+	      fore = 0;
+	      flayer = 0;
 	    }
 	  break;
 	}
@@ -1481,7 +1559,7 @@ StringEnd()
     case AKA:
       if (curr->w_title == curr->w_akabuf && !*curr->w_string)
 	break;
-      ChangeAKA(curr, curr->w_string, 20);
+      ChangeAKA(curr, curr->w_string, strlen(curr->w_string));
       if (!*curr->w_string)
 	curr->w_autoaka = curr->w_y + 1;
       break;
@@ -1497,9 +1575,11 @@ PrintStart()
   curr->w_pdisplay = 0;
 
   /* find us a nice display to print on, fore prefered */
-  for (display = displays; display; display = display->d_next)
-    if (curr == D_fore && (printcmd || D_PO))
-      break;
+  display = curr->w_lastdisp;
+  if (!(display && curr == D_fore && (printcmd || D_PO)))
+    for (display = displays; display; display = display->d_next)
+      if (curr == D_fore && (printcmd || D_PO))
+        break;
   if (!display)
     {
       struct canvas *cv;
@@ -2046,7 +2126,7 @@ SelectRendition()
 	cx &= 0x0f;
 # endif
 #endif
-      if (j < 0 || j >= (sizeof(rendlist)/sizeof(*rendlist)))
+      if (j < 0 || j >= (int)(sizeof(rendlist)/sizeof(*rendlist)))
 	continue;
       j = rendlist[j];
       if (j & (1 << NATTR))
@@ -2097,10 +2177,20 @@ struct win *p;
 char *s;
 int l;
 {
-  if (l > 20)
-    l = 20;
-  strncpy(p->w_akachange, s, l);
-  p->w_akachange[l] = 0;
+  int i, c;
+
+  for (i = 0; l > 0; l--)
+    {
+      if (p->w_akachange + i == p->w_akabuf + sizeof(p->w_akabuf) - 1)
+	break;
+      c = (unsigned char)*s++;
+      if (c == 0)
+	break;
+      if (c < 32 || c == 127 || (c >= 128 && c < 160 && p->w_c1))
+	continue;
+      p->w_akachange[i++] = c;
+    }
+  p->w_akachange[i] = 0;
   p->w_title = p->w_akachange;
   if (p->w_akachange != p->w_akabuf)
     if (p->w_akachange[0] == 0 || p->w_akachange[-1] == ':')
@@ -2543,6 +2633,7 @@ int x, y;
   MFixLine(p, y, c);
   ml = &p->w_mlines[y];
   MKillDwRight(p, ml, x);
+  MKillDwLeft(p, ml, x);
   copy_mchar2mline(c, ml, x);
 #ifdef DW_CHARS
   if (c->mbcs)
@@ -2967,3 +3058,4 @@ int what;
     }
   display = olddisplay;
 }
+

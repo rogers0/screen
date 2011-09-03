@@ -135,6 +135,7 @@ struct win
   struct pseudowin *w_pwin;	/* ptr to pseudo */
 #endif
   struct display *w_pdisplay;	/* display for printer relay */
+  struct display *w_lastdisp;	/* where the last input was made */
   int	 w_number;		/* window number */
   struct event w_readev;
   struct event w_writeev;
@@ -168,6 +169,9 @@ struct win
 #ifdef FONT
   char	 w_FontL;		/* character font GL */
   char	 w_FontR;		/* character font GR */
+# ifdef ENCODINGS
+  char	 w_FontE;		/* character font GR locked */
+# endif
   int	 w_Charset;		/* charset number GL */
   int	 w_CharsetR;		/* charset number GR */
   int	 w_charsets[4];		/* Font = charsets[Charset] */
@@ -245,6 +249,10 @@ struct win
 
   char	 w_tty[MAXSTR];
 
+  int    w_zauto;
+#ifdef ZMODEM
+  struct display *w_zdisplay;
+#endif
 #ifdef BUILTIN_TELNET
   struct sockaddr_in w_telsa;
   char   w_telbuf[IOSIZE];
@@ -255,6 +263,15 @@ struct win
   char   w_telsubbuf[128];
   int    w_telsubidx;
   struct event w_telconnev;
+#endif
+  struct mline *w_alt_mlines;
+  int    w_alt_width;
+  int    w_alt_height;
+  int    w_alt_histheight;
+  int    w_alt_x, w_alt_y;
+#ifdef COPY_PASTE
+  struct mline *w_alt_hlines;
+  int    w_alt_histidx;
 #endif
 };
 

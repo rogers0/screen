@@ -30,9 +30,6 @@
  ****************************************************************
  */
 
-#include "rcs.h"
-RCS_ID("$Id: comm.c,v 1.10 1993/11/30 19:28:07 mlschroe Exp $ FAU")
-
 #include "config.h"
 #include "acls.h"
 #include "comm.h"
@@ -55,6 +52,7 @@ struct comm comms[RC_LAST + 1] =
   { "addacl",		ARGS_1234 },
 #endif
   { "allpartial",	NEED_DISPLAY|ARGS_1 },
+  { "altscreen",	ARGS_01 },
   { "at",		NEED_DISPLAY|ARGS_2|ARGS_ORMORE },
 #ifdef COLOR
   { "attrcolor",	ARGS_12 },
@@ -63,6 +61,7 @@ struct comm comms[RC_LAST + 1] =
 #ifdef AUTO_NUKE
   { "autonuke",		NEED_DISPLAY|ARGS_1 },
 #endif
+  { "backtick",		ARGS_1|ARGS_ORMORE },
 #ifdef COLOR
   { "bce",		NEED_FORE|ARGS_01 },
 #endif
@@ -96,6 +95,10 @@ struct comm comms[RC_LAST + 1] =
   { "bind",		ARGS_1|ARGS_ORMORE },
 #ifdef MAPKEYS
   { "bindkey",		ARGS_0|ARGS_ORMORE },
+#endif
+  { "blanker",		NEED_DISPLAY|ARGS_0},
+#ifdef BLANKER_PRG
+  { "blankerprg",	ARGS_1|ARGS_ORMORE },
 #endif
   { "break",		NEED_FORE|ARGS_01 },
   { "breaktype",	NEED_FORE|ARGS_01 },
@@ -146,6 +149,9 @@ struct comm comms[RC_LAST + 1] =
 #endif
   { "defmode",		ARGS_1 },
   { "defmonitor",	ARGS_1 },
+#ifdef MULTI
+  { "defnonblock",	ARGS_1 },
+#endif
   { "defobuflimit",	ARGS_1 },
 #ifdef COPY_PASTE
   { "defscrollback",	ARGS_1 },
@@ -188,6 +194,7 @@ struct comm comms[RC_LAST + 1] =
   { "history",		NEED_DISPLAY|NEED_FORE|ARGS_0 },
 #endif
   { "hstatus",		NEED_FORE|ARGS_1 },
+  { "idle",		ARGS_0|ARGS_ORMORE },
   { "ignorecase",	ARGS_01 },
   { "info",		NEED_LAYER|ARGS_0 },
 #ifdef ENCODINGS
@@ -213,6 +220,7 @@ struct comm comms[RC_LAST + 1] =
 #ifdef COPY_PASTE
   { "markkeys",		ARGS_1 },
 #endif
+  { "maxwin",		ARGS_1 },
   { "meta",		NEED_LAYER|ARGS_0 },
   { "monitor",		NEED_FORE|ARGS_01 },
   { "msgminwait",	ARGS_1 },
@@ -312,5 +320,8 @@ struct comm comms[RC_LAST + 1] =
   { "writelock",	NEED_FORE|ARGS_01 },
   { "xoff",		NEED_LAYER|ARGS_0 },
   { "xon",		NEED_LAYER|ARGS_0 },
+#ifdef ZMODEM
+  { "zmodem",		ARGS_012 },
+#endif
   { "zombie",		ARGS_01 }
 };
