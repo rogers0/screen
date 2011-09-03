@@ -33,11 +33,16 @@ RCS_ID("$Id: pty.c,v 1.6 1994/05/31 12:32:44 mlschroe Exp $ FAU")
 #include "screen.h"
 
 #ifndef sun
-#include <sys/ioctl.h>
+# include <sys/ioctl.h>
+#endif
+
+/* for solaris 2.1, Unixware (SVR4.2) and possibly others */
+#ifdef HAVE_SVR4_PTYS
+# include <sys/stropts.h>
 #endif
 
 #if defined(sun) && defined(LOCKPTY) && !defined(TIOCEXCL)
-#include <sys/ttold.h>
+# include <sys/ttold.h>
 #endif
 
 #ifdef ISC
@@ -62,22 +67,32 @@ RCS_ID("$Id: pty.c,v 1.6 1994/05/31 12:32:44 mlschroe Exp $ FAU")
 # define PTYRANGE1 "0123456789abcdef"
 #endif
 
+/* SVR4 pseudo ttys don't seem to work with SCO-5 */
+#ifdef M_UNIX
+# undef HAVE_SVR4_PTYS
+#endif
+
 extern int eff_uid;
 
 /* used for opening a new pty-pair: */
 static char PtyName[32], TtyName[32];
 
-#if !(defined(sequent) || defined(_SEQUENT_) || defined(SVR4))
+#if !(defined(sequent) || defined(_SEQUENT_) || defined(HAVE_SVR4_PTYS))
 # ifdef hpux
 static char PtyProto[] = "/dev/ptym/ptyXY";
 static char TtyProto[] = "/dev/pty/ttyXY";
 # else
+#  ifdef M_UNIX
+static char PtyProto[] = "/dev/ptypXY";
+static char TtyProto[] = "/dev/ttypXY";
+#  else
 static char PtyProto[] = "/dev/ptyXY";
 static char TtyProto[] = "/dev/ttyXY";
+#  endif
 # endif /* hpux */
 #endif
 
-static void initpty __P((int));
+static void initmaster __P((int));
 
 /*
  *  Open all ptys with O_NOCTTY, just to be on the safe side
@@ -90,7 +105,7 @@ static void initpty __P((int));
 /***************************************************************/
 
 static void
-initpty(f)
+initmaster(f)
 int f;
 {
 #ifdef POSIX
@@ -105,6 +120,24 @@ int f;
 #endif
 }
 
+void
+InitPty(f)
+int f;
+{
+  if (f < 0)
+    return;
+#if defined(I_PUSH) && defined(HAVE_SVR4_PTYS) && !defined(sgi) && !defined(linux) && !defined(__osf__) && !defined(M_UNIX)
+  if (ioctl(f, I_PUSH, "ptem"))
+    Panic(errno, "InitPty: cannot I_PUSH ptem");
+  if (ioctl(f, I_PUSH, "ldterm"))
+    Panic(errno, "InitPty: cannot I_PUSH ldterm");
+# ifdef sun
+  if (ioctl(f, I_PUSH, "ttcompat"))
+    Panic(errno, "InitPty: cannot I_PUSH ttcompat");
+# endif
+#endif
+}
+
 /***************************************************************/
 
 #if defined(OSX) && !defined(PTY_DONE)
@@ -116,7 +149,7 @@ char **ttyn;
   register int f;
   if ((f = open_controlling_pty(TtyName)) < 0)
     return -1;
-  initpty(f);
+  initmaster(f);
   *ttyn = TtyName;
   return f;
 #endif
@@ -139,7 +172,7 @@ char **ttyn;
 #endif
   strncpy(PtyName, m, sizeof(PtyName));
   strncpy(TtyName, s, sizeof(TtyName));
-  initpty(f);
+  initmaster(f);
   *ttyn = TtyName;
   return f;
 }
@@ -154,7 +187,7 @@ OpenPTY(ttyn)
 char **ttyn;
 {
   int f;
-  char *name; 
+  char *name, *_getpty(); 
   sigret_t (*sigcld)__P(SIGPROTOARG);
 
   /*
@@ -167,7 +200,7 @@ char **ttyn;
 
   if (name == 0)
     return -1;
-  initpty(f);
+  initmaster(f);
   *ttyn = name;
   return f;
 }
@@ -193,7 +226,7 @@ char **ttyn;
       return -1;
     }
   sprintf(TtyName, "/dev/ttyq%d", minor(buf.st_rdev));
-  initpty(f);
+  initmaster(f);
   *ttyn = TtyName;
   return f;
 }
@@ -201,7 +234,7 @@ char **ttyn;
 
 /***************************************************************/
 
-#if defined(SVR4) && !defined(PTY_DONE)
+#if defined(HAVE_SVR4_PTYS) && !defined(PTY_DONE)
 #define PTY_DONE
 int
 OpenPTY(ttyn)
@@ -229,7 +262,7 @@ char **ttyn;
     } 
   signal(SIGCHLD, sigcld);
   strncpy(TtyName, m, sizeof(TtyName));
-  initpty(f);
+  initmaster(f);
   *ttyn = TtyName;
   return f;
 }
@@ -260,7 +293,7 @@ char **ttyn;
       close(f);
       return -1;
     }
-  initpty(f);
+  initmaster(f);
 # ifdef _IBMR2
   if (aixhack >= 0)
     close(aixhack);
@@ -321,7 +354,7 @@ char **ttyn;
 		}
 	    }
 #endif
-	  initpty(f);
+	  initmaster(f);
 	  *ttyn = TtyName;
 	  return f;
 	}
@@ -329,3 +362,4 @@ char **ttyn;
   return -1;
 }
 #endif
+

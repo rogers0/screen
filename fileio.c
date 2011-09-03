@@ -37,11 +37,7 @@ RCS_ID("$Id: fileio.c,v 1.10 1994/05/31 12:32:01 mlschroe Exp $ FAU")
 #include "screen.h"
 #include "extern.h"
 
-#ifdef NETHACK
-extern nethackflag;
-#endif
-
-extern struct display *display;
+extern struct display *display, *displays;
 extern struct win *fore;
 extern int real_uid, eff_uid;
 extern int real_gid, eff_gid;
@@ -55,6 +51,7 @@ extern int hardcopy_append;
 extern char *hardcopydir;
 
 static char *CatExtra __P((char *, char *));
+static char *findrcfile __P((char *));
 
 
 static FILE *fp = NULL;
@@ -108,14 +105,9 @@ char *rcfile;
   else
     {
       debug("findrcfile: you specified nothing...\n");
-      if ((p = getenv("ISCREENRC")) != NULL && *p != '\0')
+      if ((p = getenv("SCREENRC")) != NULL && *p != '\0')
 	{
-	  debug1("  ... but $ISCREENRC has: '%s'\n", p);
-	  rc = SaveStr(p);
-	}
-      else if ((p = getenv("SCREENRC")) != NULL && *p != '\0')
-	{
-	  debug1("  ... but $SCREENRC has: '%s'\n", p);
+	  debug1("  $SCREENRC has: '%s'\n", p);
 	  rc = SaveStr(p);
 	}
       else
@@ -123,9 +115,7 @@ char *rcfile;
 	  debug("  ...nothing in $SCREENRC, defaulting $HOME/.screenrc\n");
 	  if (strlen(home) > sizeof(buf) - 12)
 	    Panic(0, "Rc: home too large");
-	  sprintf(buf, "%s/.iscreenrc", home);
-          if (access(buf, R_OK))
-	    sprintf(buf, "%s/.screenrc", home);
+	  sprintf(buf, "%s/.screenrc", home);
 	  rc = SaveStr(buf);
 	}
     }
@@ -143,12 +133,13 @@ char *rcfilename;
 {
   register int argc, len;
   register char *p, *cp;
-  char buf[256];
+  char buf[2048];
   char *args[MAXARGS];
 
+  /* always fix termcap/info capabilities */
+  extra_incap = CatExtra("TF", extra_incap);
 
   /* Special settings for vt100 and others */
-
   if (display && (!strncmp(D_termname, "vt", 2) || !strncmp(D_termname, "xterm", 5)))
     extra_incap = CatExtra("xn:f0=\033Op:f1=\033Oq:f2=\033Or:f3=\033Os:f4=\033Ot:f5=\033Ou:f6=\033Ov:f7=\033Ow:f8=\033Ox:f9=\033Oy:f.=\033On:f,=\033Ol:fe=\033OM:f+=\033Ok:f-=\033Om:f*=\033Oj:f/=\033Oo:fq=\033OX", extra_incap);
 
@@ -248,7 +239,7 @@ void
 FinishRc(rcfilename)
 char *rcfilename;
 {
-  char buf[256];
+  char buf[2048];
 
   rc_name = findrcfile(rcfilename);
 
@@ -279,18 +270,44 @@ char *rcfilename;
   rc_name = "";
 }
 
+/*
+ * Running a Command Line in the environment determined by the display.
+ * The fore window is taken from the display as well as the user.
+ * This is bad when we run detached.
+ */
 void
 RcLine(ubuf)
 char *ubuf;
 {
   char *args[MAXARGS], *buf;
+#ifdef MULTIUSER
+  extern struct user *EffectiveAclUser;	/* acl.c */
+  extern struct user *users;		/* acl.c */
+#endif
 
-  buf = expand_vars(ubuf, display); 
+  if (display)
+    fore = D_fore;
+  buf = expand_vars(ubuf, display);
   if (Parse(buf, args) <= 0)
     return;
+#ifdef MULTIUSER
+  if (!display)
+    {
+      /* the session owner does it, when there is no display here */
+      EffectiveAclUser = users;        
+      debug1("RcLine: WARNING, no display no user! Session owner does: %s",
+             ubuf);
+    }
+#endif
   DoCommand(args);
+#ifdef MULTIUSER
+  EffectiveAclUser = 0;
+#endif
 }
 
+/*
+ * needs display for copybuffer access and termcap dumping
+ */
 void
 WriteFile(dump)
 int dump;
@@ -306,6 +323,18 @@ int dump;
   register FILE *f;
   char fn[1024];
   char *mode = "w";
+#ifdef COPY_PASTE
+  int public = 0;
+# ifdef _MODE_T
+  mode_t old_umask;
+# else
+  int old_umask;
+# endif
+# ifdef HAVE_LSTAT
+  struct stat stb, stb2;
+  int fd, exists = 0;
+# endif
+#endif
 
   switch (dump)
     {
@@ -328,7 +357,15 @@ int dump;
     case DUMP_EXCHANGE:
       strncpy(fn, BufferFile, sizeof(fn) - 1);
       fn[sizeof(fn) - 1] = 0;
-      umask(0);
+      public = !strcmp(fn, DEFAULT_BUFFERFILE);
+# ifdef HAVE_LSTAT
+      exists = !lstat(fn, &stb);
+      if (public && exists && (S_ISLNK(stb.st_mode) || stb.st_nlink > 1))
+	{
+	  Msg(0, "No write to links, please.");
+	  return;
+	}
+# endif
       break;
 #endif
     }
@@ -337,7 +374,36 @@ int dump;
   if (UserContext() > 0)
     {
       debug("Writefile: usercontext\n");
-      if ((f = fopen(fn, mode)) == NULL)
+#ifdef COPY_PASTE
+      if (dump == DUMP_EXCHANGE && public)
+	{
+          old_umask = umask(0);
+# ifdef HAVE_LSTAT
+	  if (exists)
+	    {
+	      if ((fd = open(fn, O_WRONLY, 0666)) >= 0)
+		{
+		  if (fstat(fd, &stb2) == 0 && stb.st_dev == stb2.st_dev && stb.st_ino == stb2.st_ino)
+		    ftruncate(fd, 0);
+		  else
+		    {
+		      close(fd);
+		      fd = -1;
+		    }
+		}
+	    }
+	  else
+	    fd = open(fn, O_WRONLY|O_CREAT|O_EXCL, 0666);
+	  f = fd >= 0 ? fdopen(fd, mode) : 0;
+# else
+          f = fopen(fn, mode);
+# endif
+          umask(old_umask);
+	}
+      else
+#endif /* COPY_PASTE */
+        f = fopen(fn, mode);
+      if (f == NULL)
 	{
 	  debug2("WriteFile: fopen(%s,\"%s\") failed\n", fn, mode);
 	  UserReturn(0);
@@ -448,11 +514,6 @@ int *lenp;
     {
       if (l < 0) 
         l = 0;
-#ifdef NETHACK
-      if (nethackflag)
-        Msg(errno, "You choke on your food: %d bytes from %s", l, fn);
-      else
-#endif
       Msg(errno, "Got only %d bytes from %s", l, fn);
       close(i);
     }
@@ -613,4 +674,41 @@ int mode;
   debug1("secopen ok - returning %d\n", fd);
   return fd;
 #endif
+}
+
+
+int
+printpipe(p, cmd)
+struct win *p;
+char *cmd;
+{
+  int pi[2];
+  if (pipe(pi))
+    {
+      WMsg(p, errno, "printing pipe");
+      return -1;
+    }
+  switch (fork())
+    {
+    case -1:
+      WMsg(p, errno, "printing fork");
+      return -1;
+    case 0:
+      display = p->w_pdisplay;
+      displays = 0;
+      close(0);
+      dup(pi[0]);
+      closeallfiles(0);
+      if (setgid(real_gid) || setuid(real_uid))
+        Panic(errno, "printpipe setuid");
+#ifdef SIGPIPE
+      signal(SIGPIPE, SIG_DFL);
+#endif
+      execl("/bin/sh", "sh", "-c", cmd, 0);
+      Panic(errno, "/bin/sh");
+    default:
+      break;
+    }
+  close(pi[0]);
+  return pi[1];
 }

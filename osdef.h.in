@@ -15,7 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program (see the file COPYING); if not, write to the
- * Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * Free Software Foundation, Inc.,
+ * 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA
  *
  ****************************************************************
  * $Id: osdef.h.in,v 1.2 1994/05/31 12:32:25 mlschroe Exp $ FAU
@@ -30,9 +31,20 @@
 extern int   printf __P((char *, ...));
 extern int   fprintf __P((FILE *, char *, ...));
 extern int   sprintf __P((char *, char *, ...));
+#ifdef USEVARARGS
+extern int   vsprintf __P((char *, char *, char *));
+#endif
+
+#ifdef LOG_NOTICE
+extern int   openlog __P((char *, int, int));
+extern int   syslog __P((int, char *, ... ));
+extern int   closelog __P((void));
+#endif
+
 #if defined(sun) || defined(_SEQUENT_)
 extern int   _flsbuf __P((int, FILE *));
 #endif
+
 #ifdef SYSV
 extern char *strchr __P((char *, int));
 extern char *strrchr __P((char *, int));
@@ -88,9 +100,10 @@ extern char *crypt __P((char *, char *));
 extern int   putenv __P((char *));
 
 extern int   tgetent __P((char *, char *));
+extern char *tgetstr __P((char *, char **));
 extern int   tgetnum __P((char *));
 extern int   tgetflag __P((char *));
-extern void  tputs __P((char *, int, void (*)(int)));
+extern void  tputs __P((char *, int, int (*)(int)));
 extern char *tgoto __P((char *, int, int));
 
 #ifdef POSIX
@@ -156,12 +169,11 @@ extern int   fvhangup __P((char *));
 #endif
 #endif
 
-#ifdef USEVARARGS
-extern int   vsprintf __P((char *, char *, va_list));
-#endif
 struct timeval;		/* for select __P */
 extern int   select __P((int, fd_set *, fd_set *, fd_set *, struct timeval *));
+#ifdef HAVE_UTIMES
 extern int   utimes __P((char *, struct timeval *));
+#endif
 
 extern void  unsetenv __P((char *));
 
@@ -180,4 +192,6 @@ struct stat;
 extern int stat __P((char *, struct stat *));
 extern int lstat __P((char *, struct stat *));
 extern int fstat __P((int, struct stat *));
+extern int fchmod __P((int, int));
+extern int fchown __P((int, int, int));
 
