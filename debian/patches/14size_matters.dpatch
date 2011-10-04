@@ -27,9 +27,9 @@ diff -Naur screen-4.0.3.orig/input.c screen-4.0.3/input.c
    int  inpstringlen;	/* length of the prompt */
    int  inpmode;		/* INP_NOECHO, INP_RAW, INP_EVERY */
 @@ -120,8 +120,8 @@
-   int maxlen;
-   struct inpdata *inpdata;
-   
+   if (!flayer)
+     return;
+
 -  if (len > 100)
 -    len = 100;
 +  if (len > MAXSTR)
@@ -44,8 +44,8 @@ diff -Naur screen-4.0.3.orig/process.c screen-4.0.3/process.c
  	ChangeAKA(fore, *args, strlen(*args));
        break;
      case RC_COLON:
--      Input(":", 100, INP_COOKED, Colonfin, NULL, 0);
-+      Input(":", MAXSTR, INP_COOKED, Colonfin, NULL, 0);
+-      Input(":", 100, INP_EVERY, Colonfin, NULL, 0);
++      Input(":", MAXSTR, INP_EVERY, Colonfin, NULL, 0);
        if (*args && **args)
  	{
  	  s = *args;
@@ -56,7 +56,7 @@ diff -Naur screen-4.0.3.orig/screen.h screen-4.0.3/screen.h
  
  #define Ctrl(c) ((c)&037)
  
--#define MAXSTR		256
+-#define MAXSTR		512
 +#define MAXSTR		768
  #define MAXARGS 	64
  #define MSGWAIT 	5

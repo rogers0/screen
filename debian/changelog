@@ -1,3 +1,37 @@
+screen (4.1.0~20101110git066b098) unstable; urgency=low
+
+  * New upstream snapshot based on 4.1.0 prerelease 20101110git066b098 as
+    packaged by Fedora 15 (Closes: #641867)
+  * Removed the following patches which have been applied upstream or are
+    otherwise no more necessary:
+    - 01CVS
+    - 02configure_use_ncursesw
+    - 03fully_expand_screenencodings
+    - 09CHERRY_*
+    - 15manpage_typos
+    - 16fix_gcc_warnings_II
+    - 18manpage_maxwin_limit
+    - 19flowcontrol_lockup
+    - 20defmonitor
+    - 21manpage_nethack_activation
+    - 25allow_symlink_sockdir
+    - 27doc_sty_noenvpassing
+    - 28blankerprg_callsemantics
+    - 29infodoc_version
+    - 31upstream_cherries
+    - 33increase_max_winmsg_renditions
+    - 35screen_invoked_with_a_command
+    - 40cjk_eastasian
+    - 50EXP_tilde_expansion
+  * Refreshed the following patches:
+    - 10norootpassword
+    - 14size_matters
+    - 26source_encoding
+  * Use upstream supplied autogen.ch
+    - Remove configure and config.h.in in clean target
+
+ -- Brian P Kroth <bpkroth@radegast.cae.wisc.edu>  Fri, 16 Sep 2011 17:14:10 -0500
+
 screen (4.0.3-14+hurd.1) unreleased; urgency=low
 
   * Fix #522689.

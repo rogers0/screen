@@ -10,7 +10,7 @@ diff -Naur screen-4.0.3.orig/process.c screen-4.0.3/process.c
 @@ -223,177 +223,177 @@
  
  /* digraph table taken from old vim and rfc1345 */
- static const unsigned char digraphs[][3] = {
+ static struct digraph digraphs[MAX_DIGRAPH + 1] = {
 -    {' ', ' ', 160},	/*   */
 -    {'N', 'S', 160},	/*   */
 -    {'~', '!', 161},	/* ¡ */
