@@ -28,6 +28,9 @@ screen (4.1.0~20110819git450e8f3) UNRELEASED; urgency=low
     - 10norootpassword
     - 14size_matters
     - 26source_encoding
+  * Added patches from Fedora:
+    - 02screen-cc: Additional assertions to improve stability
+    - 03screen-ipv6: IPv6 support for built-in telnet
 
   [ Axel Beckert ]
   * Add myself as Uploader.

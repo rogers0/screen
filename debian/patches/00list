@@ -9,6 +9,9 @@
 #03fully_expand_screenencodings
 # Don't think we need this one.
 #04AUTOCONF
+# However, we do want to include the redhat fixes.
+02screen-cc
+03screen-ipv6
 05fix_osdef_include
 # 09   : Cherry-picked upstream commits
 # These should already be in the git version.
