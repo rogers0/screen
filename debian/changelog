@@ -38,6 +38,9 @@ screen (4.1.0~20110819git450e8f3) UNRELEASED; urgency=low
   * Remove Adam Lazur from Uploaders on his request.
   * New upstream snapshot based on 4.1.0 prerelease, commit 450e8f3 of
     2011-Aug-19.
+  * Remove the patches which have been applied upstream or are
+    otherwise no more necessary:
+    - 30fix_fsf_address
   * Use dh_autoreconf
     - Build-Depend on dh-autoreconf
 
