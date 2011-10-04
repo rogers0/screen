@@ -28,12 +28,12 @@ screen (4.1.0~20101110git066b098) unstable; urgency=low
     - 10norootpassword
     - 14size_matters
     - 26source_encoding
-  * Use upstream supplied autogen.ch
-    - Remove configure and config.h.in in clean target
 
   [ Axel Beckert ]
   * Add myself as Uploader.
   * Remove Adam Lazur from Uploaders on his request.
+  * Use dh_autoreconf
+    - Build-Depend on dh-autoreconf
 
  -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
 

@@ -27,13 +27,13 @@ clean: unpatch
 	test ! -s doc/Makefile || $(MAKE) -C doc realclean
 	test ! -s Makefile || ! grep -q clean Makefile || $(MAKE) realclean
 	rm -f config.log config.status Makefile
-	rm -f configure config.h.in
+	dh_autoreconf_clean
 	dh_clean
 
 configure: configure-stamp
 configure-stamp: patch-stamp
 	dh_testdir
-	./autogen.sh
+	dh_autoreconf
 	./configure --prefix=/usr \
 		    --infodir='$$(prefix)/share/info' \
 		    --mandir='$$(prefix)/share/man' \
