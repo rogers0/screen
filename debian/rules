@@ -43,7 +43,10 @@ configure-stamp: patch-stamp
 		    --with-pty-group=${TTYGROUP} \
 		    --enable-rxvt_osc \
 		    --with-sys-screenrc=/etc/screenrc \
-		    --enable-colors256
+		    --enable-colors256 \
+		    --enable-telnet \
+		    --enable-use-locale
+
 	# Assert the use of fifos instead of sockets
 	grep -q "define.*NAMEDPIPE.*1" config.h || echo "#define NAMEDPIPE 1" >> config.h
 	touch $@
