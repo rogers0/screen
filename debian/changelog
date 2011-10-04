@@ -1,4 +1,4 @@
-screen (4.1.0~20101110git066b098) unstable; urgency=low
+screen (4.1.0~20110819git450e8f3) UNRELEASED; urgency=low
 
   [ Brian P Kroth ]
   * New upstream snapshot based on 4.1.0 prerelease 20101110git066b098 as
@@ -32,6 +32,8 @@ screen (4.1.0~20101110git066b098) unstable; urgency=low
   [ Axel Beckert ]
   * Add myself as Uploader.
   * Remove Adam Lazur from Uploaders on his request.
+  * New upstream snapshot based on 4.1.0 prerelease, commit 450e8f3 of
+    2011-Aug-19.
   * Use dh_autoreconf
     - Build-Depend on dh-autoreconf
 
