@@ -1,5 +1,6 @@
 screen (4.1.0~20101110git066b098) unstable; urgency=low
 
+  [ Brian P Kroth ]
   * New upstream snapshot based on 4.1.0 prerelease 20101110git066b098 as
     packaged by Fedora 15 (Closes: #641867)
   * Removed the following patches which have been applied upstream or are
@@ -30,7 +31,11 @@ screen (4.1.0~20101110git066b098) unstable; urgency=low
   * Use upstream supplied autogen.ch
     - Remove configure and config.h.in in clean target
 
- -- Brian P Kroth <bpkroth@radegast.cae.wisc.edu>  Fri, 16 Sep 2011 17:14:10 -0500
+  [ Axel Beckert ]
+  * Add myself as Uploader.
+  * Remove Adam Lazur from Uploaders on his request.
+
+ -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
 
 screen (4.0.3-14+hurd.1) unreleased; urgency=low
 

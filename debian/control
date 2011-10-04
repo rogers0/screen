@@ -2,7 +2,7 @@ Source: screen
 Section: misc
 Priority: optional
 Maintainer: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
-Uploaders: Adam Lazur <zal@debian.org>
+Uploaders: Axel Beckert <abe@debian.org>
 Standards-Version: 3.8.2
 Build-Depends: libncursesw5-dev, texinfo, libpam0g-dev, debhelper (>> 7), dpatch
 Homepage: http://savannah.gnu.org/projects/screen
