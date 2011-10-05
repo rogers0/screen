@@ -57,6 +57,8 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
   * Fix lintian warning debian-rules-missing-recommended-target
   * Add lintian override for
     possibly-insecure-handling-of-tmp-files-in-maintainer-script
+  * /etc/init.d/screen-cleanup: check for existence of screen binary
+    (Closes: #612990)
 
  -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
 
