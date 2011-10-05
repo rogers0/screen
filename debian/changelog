@@ -37,11 +37,12 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
   * Add myself as Uploader.
   * Remove Adam Lazur from Uploaders. (Closes: #603009)
   * New upstream snapshot based on 4.1.0 prerelease, commit 450e8f3 of
-    2011-Aug-19.
+    2011-Aug-19. (LP: #183849)
     - Fixes a crash when attaching to a layout that was created while
-      detached. (Closes: #591624)
+      detached. (Closes: #591624, LP: #786292, #788670)
     - Raises MAXWIN to 100 (Closes: #450421)
-    - No more segfaults if resized to 1 line tall (Closes: #532240)
+    - No more segfaults if resized to 0 or 1 line tall (Closes: #532240,
+      LP: #315237)
     - screen -d -m no more segfaults on setenv without value (Closes: #496750)
     - Now has tsl, fsl and dsl terminfo caps (Closes: #152961)
     - Windows created with "-d -m" no more ignore "-X exec" (Closes: #481411)
