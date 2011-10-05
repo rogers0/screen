@@ -40,6 +40,12 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     2011-Aug-19.
     - Fixes a crash when attaching to a layout that was created while
       detached. (Closes: #591624)
+    - Raises MAXWIN to 100 (Closes: #450421)
+    - No more segfaults if resized to 1 line tall (Closes: #532240)
+    - screen -d -m no more segfaults on setenv without value (Closes: #496750)
+    - Now has tsl, fsl and dsl terminfo caps (Closes: #152961)
+    - Windows created with "-d -m" no more ignore "-X exec" (Closes: #481411)
+    - Now has a session name string escape (Closes: #488619)
   * Remove the patches which have been applied upstream or are
     otherwise no more necessary:
     - 17manpage_sessionname_warning
@@ -61,6 +67,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     possibly-insecure-handling-of-tmp-files-in-maintainer-script
   * /etc/init.d/screen-cleanup: check for existence of screen binary
     (Closes: #612990)
+  * Add Vcs-* headers
 
  -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
 
