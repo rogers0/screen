@@ -1,23 +1,18 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## 11replace_doc_paths.dpatch by  <hesso@pool.math.tu-berlin.de>
-##
-## DP: Fix the references to configuration and pipe paths to match the
-## DP: locations Debian uses.
-
-@DPATCH@
-diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
---- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:39:48.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2008-06-01 23:40:25.000000000 +0200
-@@ -99,7 +99,7 @@
- The above example would start the emacs editor (editing prog.c) and switch
- to its window.
+Author: <hesso@pool.math.tu-berlin.de>
+Description: Fix the references to configuration and pipe paths to match the
+locations Debian uses.
+--- a/doc/screen.1
++++ b/doc/screen.1
+@@ -101,7 +101,7 @@
+ the invoking shell to the application (emacs in this case), because it is
+ forked from the parent screen process, not from the invoking shell.
  .PP
 -If \*Q/etc/utmp\*U is writable by
 +If \*Q/var/run/utmp\*U is writable by
  .IR screen ,
  an appropriate record will be written to this file for each window, and
  removed when the window is terminated.
-@@ -228,7 +228,7 @@
+@@ -230,7 +230,7 @@
  The use of this option is discouraged.
  .TP 5
  .BR \-l " and " \-ln
@@ -25,8 +20,8 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
 +turns login mode on or off (for /var/run/utmp updating).
  This can also be defined through the \*Qdeflogin\*U .screenrc command.
  .TP 5
- .BR \-ls " and " \-list
-@@ -588,7 +588,7 @@
+ .BR \-ls " [" \fImatch ]
+@@ -626,7 +626,7 @@
  
  .SH CUSTOMIZATION
  The \*Qsocket directory\*U defaults either to $HOME/.screen or simply to
@@ -35,7 +30,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  .I screen
  is installed setuid-root, then the administrator
  should compile
-@@ -601,7 +601,7 @@
+@@ -639,7 +639,7 @@
  When
  .I screen
  is invoked, it executes initialization commands from the files
@@ -44,7 +39,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  \*Q.screenrc\*U in the user's home directory. These are the \*Qprogrammer's
  defaults\*U that can be overridden in the following ways: for the
  global screenrc file 
-@@ -1676,7 +1676,7 @@
+@@ -1841,7 +1841,7 @@
  The echo command may be used to annoy 
  .I screen
  users with a 'message of the
@@ -53,7 +48,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  The option \*Q-n\*U may be used to suppress the line feed.
  See also \*Qsleep\*U.
  Echo is also useful for online checking of environment variables.
-@@ -4429,14 +4429,14 @@
+@@ -4848,14 +4848,14 @@
  .I screen
  distribution package for private and global initialization files.
  .IP $SYSSCREENRC 
@@ -71,7 +66,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  Socket directories (default)
  .IP /usr/tmp/screens/S-<login>
  Alternate socket directories.
-@@ -4455,7 +4455,7 @@
+@@ -4874,7 +4874,7 @@
  or
  .IP /etc/termcap
  Terminal capability databases
@@ -80,7 +75,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  Login records
  .IP $LOCKPRG
  Program that locks a terminal.
-@@ -4568,9 +4568,9 @@
+@@ -4996,9 +4996,9 @@
  must be installed as set-uid with owner root on most systems in order
  to be able to correctly change the owner of the tty device file for
  each window.
@@ -92,19 +87,18 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  .I screen
  is killed with SIGKILL.
  This will cause some programs (like "w" or "rwho")
-diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
---- screen-4.0.3.orig/doc/screen.texinfo	2008-06-01 23:39:48.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:40:25.000000000 +0200
-@@ -176,7 +176,7 @@
- variable) who will use it to create the new window.  The above example would 
- start the @code{emacs} editor (editing @file{prog.c}) and switch to its window.
+--- a/doc/screen.texinfo
++++ b/doc/screen.texinfo
+@@ -182,7 +182,7 @@
+ the invoking shell to the application (emacs in this case), because it is
+ forked from the parent screen process, not from the invoking shell.
  
 -If @file{/etc/utmp} is writable by @code{screen}, an appropriate record
 +If @file{/var/run/utmp} is writable by @code{screen}, an appropriate record
  will be written to this file for each window, and removed when the
  window is closed.  This is useful for working with @code{talk},
  @code{script}, @code{shutdown}, @code{rsend}, @code{sccs} and other
-@@ -305,7 +305,7 @@
+@@ -311,7 +311,7 @@
  
  @item -l
  @itemx -ln
@@ -113,7 +107,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  is equivalent to the @code{deflogin} command (@pxref{Login}).
  
  @item -ls [@var{match}]
-@@ -450,7 +450,7 @@
+@@ -485,7 +485,7 @@
  @cindex screenrc
  When @code{screen} is invoked, it executes initialization commands from
  the files @file{.screenrc} in the user's home directory and
@@ -122,7 +116,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  following ways:
  For the global screenrc file @code{screen} searches for the environment
  variable @code{$SYSSCREENRC} (this override feature may be disabled at
-@@ -1000,7 +1000,7 @@
+@@ -1069,7 +1069,7 @@
  @item logfile @var{filename}
  Place where to collect logfiles.  @xref{Log}.
  @item login [@var{state}]
@@ -131,16 +125,16 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  @item logtstamp [@var{state}]
  Configure logfile time-stamps.  @xref{Log}.
  @item mapdefault
-@@ -1903,7 +1903,7 @@
+@@ -2318,7 +2318,7 @@
  * Naming Windows::		Control the name of the window
  * Console::			See the host's console messages
  * Kill::                        Destroy an unwanted window
 -* Login::                       Control @file{/etc/utmp} logging
 +* Login::                       Control @file{/var/run/utmp} logging
  * Mode::                        Control the file mode of the pty
- * Monitor::                     Watch for activity in a window
+ * Monitor::                     Watch for activity or inactivity in a window
  * Windows::			List the active windows
-@@ -2112,7 +2112,7 @@
+@@ -2527,7 +2527,7 @@
  @kindex L
  @deffn Command login [state]
  (@kbd{C-a L})@*
@@ -149,7 +143,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  This controls whether or not the window is @dfn{logged in}.  In addition
  to this toggle, it is convenient to have ``log in'' and ``log out''
  keys.  For instance, @code{bind I login on} and @code{bind O 
-@@ -4970,17 +4970,17 @@
+@@ -5668,17 +5668,17 @@
  global initialization files.
  
  @item @code{$SYSSCREENRC}
@@ -170,7 +164,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  Socket directories (default)
  
  @item /usr/tmp/screens/S-@var{login}
-@@ -5003,7 +5003,7 @@
+@@ -5701,7 +5701,7 @@
  @itemx /etc/termcap
  Terminal capability databases
  
@@ -179,7 +173,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  Login records
  
  @item @code{$LOCKPRG}
-@@ -5108,10 +5108,10 @@
+@@ -5807,10 +5807,10 @@
  in order to be able to
  correctly change the owner of the tty device file for each window.
  Special permission may also be required to write the file
@@ -192,7 +186,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  with SIGKILL.  This will cause some programs (like "w" or "rwho") to
  advertise that a user is logged on who really isn't.
  
-@@ -5192,7 +5192,7 @@
+@@ -5891,7 +5891,7 @@
  @cindex socket directory
  
  The socket directory defaults either to @file{$HOME/.screen} or simply to 

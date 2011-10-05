@@ -1,12 +1,8 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## 12kfreebsd_ctty.dpatch by  <hesso@pool.math.tu-berlin.de>
-##
-## DP: See inline documentation.
-
-@DPATCH@
---- screen-4.0.3.orig/tty.sh	2009-04-10 18:15:51.923805915 +0200
-+++ screen-4.0.3/tty.sh	2009-04-10 18:17:56.043804602 +0200
-@@ -801,18 +801,11 @@
+Author: <hesso@pool.math.tu-berlin.de>
+Description: See inline documentation.
+--- a/tty.sh
++++ b/tty.sh
+@@ -809,18 +809,11 @@
  
    mypid = getpid();
  

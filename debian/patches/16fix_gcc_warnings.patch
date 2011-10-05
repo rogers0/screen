@@ -1,0 +1,46 @@
+Author: <hesso@pool.math.tu-berlin.de>
+Description: Get rid of several minor gcc warnings.
+--- a/attacher.c
++++ b/attacher.c
+@@ -863,7 +863,7 @@
+   int pam_error;
+   char *tty_name;
+ #endif
+-  char *pass, mypass[16 + 1], salt[3];
++  char *pass = 0, mypass[16 + 1], salt[3];
+   int using_pam = 1;
+ 
+ #ifdef USE_PAM
+--- a/layer.c
++++ b/layer.c
+@@ -492,7 +492,7 @@
+ void
+ LClearLine(l, y, xs, xe, bce, ol)
+ struct layer *l;
+-int xs, xe, bce;
++int y, xs, xe, bce;
+ struct mline *ol;
+ {
+   struct canvas *cv;
+--- a/process.c
++++ b/process.c
+@@ -3302,7 +3302,7 @@
+           int newnr, fl = 0, kf = 0, af = 0, df = 0, mf = 0;
+ 	  struct display *odisp = display;
+ 	  int used = 0;
+-          struct kmap_ext *kme;
++          struct kmap_ext *kme = 0;
+ 
+ 	  for (; *args && **args == '-'; args++, argl++)
+ 	    {
+--- a/screen.c
++++ b/screen.c
+@@ -2534,7 +2534,7 @@
+   int truncpos = -1;
+   int truncper = 0;
+   int trunclong = 0;
+-  struct backtick *bt;
++  struct backtick *bt = 0;
+  
+   if (winmsg_numrend >= 0)
+     winmsg_numrend = 0;

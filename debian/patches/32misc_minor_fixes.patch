@@ -1,0 +1,13 @@
+Author: <hesso@pool.math.tu-berlin.de>
+Description: Remove an unconditional nethack message. (# 512299)
+--- a/attacher.c
++++ b/attacher.c
+@@ -629,7 +629,7 @@
+         {
+ 	  fcntl(0, F_SETFL, 0);
+ 	  SetTTY(0, &attach_Mode);
+-	  printf("\nSuddenly the Dungeon collapses!! - You die...\n");
++	  printf("\nError: Cannot find master process to attach to!\n");
+ 	  eexit(1);
+         }
+ #ifdef BSDJOBS

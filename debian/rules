@@ -7,8 +7,6 @@
 # Uncomment me to turn on debugging
 #export DH_VERBOSE=1
 
-include /usr/share/dpatch/dpatch.make
-
 package := screen
 ROOT := $(CURDIR)/debian/$(package)
 # statically define this... sucko
@@ -20,7 +18,7 @@ else
 CC_OPTFLAGS := -O2 -g
 endif
 
-clean: unpatch
+clean:
 	dh_testdir
 	dh_testroot
 	rm -f configure-stamp build-stamp install-stamp
@@ -31,7 +29,7 @@ clean: unpatch
 	dh_clean
 
 configure: configure-stamp
-configure-stamp: patch-stamp
+configure-stamp:
 	dh_testdir
 	dh_autoreconf
 	./configure --prefix=/usr \
@@ -101,4 +99,4 @@ binary-arch: install
 	dh_md5sums
 	dh_builddeb
 
-.PHONY: patch configure build clean binary-indep binary-arch binary install
+.PHONY: configure build clean binary-indep binary-arch binary install

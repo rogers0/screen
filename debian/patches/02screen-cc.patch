@@ -1,14 +1,26 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## screen-cc.dpatch by <bpkroth@gmail.com>
-##
-## DP: Some patches stolen from the fedora package for better error checking and tty security.
-
-@DPATCH@
-diff --git a/utmp.c b/utmp.c
-index aae1948..fa8b87b 100644
+Author: <bpkroth@gmail.com>
+Description: Some patches stolen from the fedora package for better error checking and tty security.
 --- a/utmp.c
 +++ b/utmp.c
-@@ -575,7 +575,7 @@ struct win *wi;
+@@ -361,7 +361,7 @@
+       char *tty;
+       debug("couln't zap slot -> do mesg n\n");
+       D_loginttymode = 0;
+-      if ((tty = ttyname(D_userfd)) && stat(tty, &stb) == 0 && (int)stb.st_uid == real_uid && ((int)stb.st_mode & 0777) != 0666)
++      if ((tty = ttyname(D_userfd)) && stat(tty, &stb) == 0 && (int)stb.st_uid == real_uid && !CheckTtyname(tty) && ((int)stb.st_mode & 0777) != 0666)
+ 	{
+ 	  D_loginttymode = (int)stb.st_mode & 0777;
+ 	  chmod(D_usertty, stb.st_mode & 0600);
+@@ -387,7 +387,7 @@
+     }
+   UT_CLOSE;
+   D_loginslot = (slot_t)0;
+-  if (D_loginttymode && (tty = ttyname(D_userfd)))
++  if (D_loginttymode && (tty = ttyname(D_userfd)) && !CheckTtyname(tty))
+     chmod(tty, D_loginttymode);
+ }
+ 
+@@ -575,7 +575,7 @@
      return ut_delete_user(slot, u.ut_pid, 0, 0) != 0;
  #endif
  #ifdef HAVE_UTEMPTER
@@ -17,18 +29,18 @@ index aae1948..fa8b87b 100644
      {
        /* sigh, linux hackers made the helper functions void */
        if (SLOT_USED(u))
-
-commit 4ebd6db10c712eb56d4e61f1a8d4a41d0465ed89
-Author: Miroslav Lichvar <mlichvar@redhat.com>
-Date:   Thu Jan 13 17:36:06 2011 +0100
-
-    Add more tty checks.
-
-diff --git a/extern.h b/extern.h
-index 2b9722e..c787d99 100644
+@@ -853,7 +853,7 @@
+ 
+   for (fd = 0; fd <= 2 && (tty = ttyname(fd)) == NULL; fd++)
+     ;
+-  if ((tty == NULL) || ((fd = open(UTMP_FILE, O_RDONLY)) < 0))
++  if ((tty == NULL) || CheckTtyname(tty) || ((fd = open(UTMP_FILE, O_RDONLY)) < 0))
+     return NULL;
+   tty = stripdev(tty);
+   retbuf[0] = '\0';
 --- a/extern.h
 +++ b/extern.h
-@@ -110,6 +110,7 @@ extern void  brktty __P((int));
+@@ -110,6 +110,7 @@
  extern struct baud_values *lookup_baud __P((int bps));
  extern int   SetBaud __P((struct mode *, int, int));
  extern int   SttyMode __P((struct mode *, char *));
@@ -36,11 +48,9 @@ index 2b9722e..c787d99 100644
  
  
  /* mark.c */
-diff --git a/screen.c b/screen.c
-index 3dde3b4..cc8f565 100644
 --- a/screen.c
 +++ b/screen.c
-@@ -970,8 +970,13 @@ char **av;
+@@ -970,8 +970,13 @@
  	else \
  	  attach_tty = ""; \
        } \
@@ -56,11 +66,9 @@ index 3dde3b4..cc8f565 100644
      if (strlen(attach_tty) >= MAXPATHLEN) \
        Panic(0, "TtyName too long - sorry."); \
    } while (0)
-diff --git a/tty.sh b/tty.sh
-index f2afd54..e264796 100644
 --- a/tty.sh
 +++ b/tty.sh
-@@ -60,6 +60,7 @@ exit 0
+@@ -60,6 +60,7 @@
  #include <sys/types.h>
  #include <signal.h>
  #include <fcntl.h>
@@ -68,7 +76,7 @@ index f2afd54..e264796 100644
  #ifndef sgi
  # include <sys/file.h>
  #endif
-@@ -1506,6 +1507,19 @@ int ibaud, obaud;
+@@ -1506,6 +1507,19 @@
    return 0;
  }
  
@@ -88,49 +96,9 @@ index f2afd54..e264796 100644
  /*
   *  Write out the mode struct in a readable form
   */
-diff --git a/utmp.c b/utmp.c
-index afa0948..aae1948 100644
---- a/utmp.c
-+++ b/utmp.c
-@@ -361,7 +361,7 @@ RemoveLoginSlot()
-       char *tty;
-       debug("couln't zap slot -> do mesg n\n");
-       D_loginttymode = 0;
--      if ((tty = ttyname(D_userfd)) && stat(tty, &stb) == 0 && (int)stb.st_uid == real_uid && ((int)stb.st_mode & 0777) != 0666)
-+      if ((tty = ttyname(D_userfd)) && stat(tty, &stb) == 0 && (int)stb.st_uid == real_uid && !CheckTtyname(tty) && ((int)stb.st_mode & 0777) != 0666)
- 	{
- 	  D_loginttymode = (int)stb.st_mode & 0777;
- 	  chmod(D_usertty, stb.st_mode & 0600);
-@@ -387,7 +387,7 @@ RestoreLoginSlot()
-     }
-   UT_CLOSE;
-   D_loginslot = (slot_t)0;
--  if (D_loginttymode && (tty = ttyname(D_userfd)))
-+  if (D_loginttymode && (tty = ttyname(D_userfd)) && !CheckTtyname(tty))
-     chmod(tty, D_loginttymode);
- }
- 
-@@ -853,7 +853,7 @@ getlogin()
- 
-   for (fd = 0; fd <= 2 && (tty = ttyname(fd)) == NULL; fd++)
-     ;
--  if ((tty == NULL) || ((fd = open(UTMP_FILE, O_RDONLY)) < 0))
-+  if ((tty == NULL) || CheckTtyname(tty) || ((fd = open(UTMP_FILE, O_RDONLY)) < 0))
-     return NULL;
-   tty = stripdev(tty);
-   retbuf[0] = '\0';
-
-commit 8e7fcb821dc7204a27d88707284e259444671c12
-Author: Miroslav Lichvar <mlichvar@redhat.com>
-Date:   Thu Jan 13 17:31:16 2011 +0100
-
-    Don't assign address of auto variable to outer scope symbol.
-
-diff --git a/socket.c b/socket.c
-index 940034d..7507d75 100644
 --- a/socket.c
 +++ b/socket.c
-@@ -722,6 +722,7 @@ struct msg *mp;
+@@ -722,6 +722,7 @@
    char *args[MAXARGS];
    register int n;
    register char **pp = args, *p = mp->m.create.line;
@@ -138,7 +106,7 @@ index 940034d..7507d75 100644
  
    nwin = nwin_undef;
    n = mp->m.create.nargs;
-@@ -731,7 +732,6 @@ struct msg *mp;
+@@ -731,7 +732,6 @@
    if (n)
      {
        int l, num;
@@ -146,18 +114,9 @@ index 940034d..7507d75 100644
  
        l = strlen(p);
        if (IsNumColon(p, 10, buf, sizeof(buf)))
-
-commit 2a0e0dc7e05b36f374a074f6627efece3695f8c7
-Author: Miroslav Lichvar <mlichvar@redhat.com>
-Date:   Thu Jan 13 17:24:04 2011 +0100
-
-    Remove redundant if statements.
-
-diff --git a/braille_tsi.c b/braille_tsi.c
-index 6768291..6f84913 100644
 --- a/braille_tsi.c
 +++ b/braille_tsi.c
-@@ -127,7 +127,6 @@ display_status_tsi()
+@@ -127,7 +127,6 @@
    r = read(bd.bd_fd,ibuf,1);
    if (r != 1)
      return -1;
@@ -165,11 +124,9 @@ index 6768291..6f84913 100644
    if (ibuf[0] == 'V')
      r = read(bd.bd_fd, ibuf, 3);
    else
-diff --git a/fileio.c b/fileio.c
-index 88fbf64..bd29011 100644
 --- a/fileio.c
 +++ b/fileio.c
-@@ -80,8 +80,6 @@ register char *str1, *str2;
+@@ -80,8 +80,6 @@
      }
    else
      {
@@ -178,53 +135,9 @@ index 88fbf64..bd29011 100644
        if ((cp = malloc((unsigned) len1 + add_colon + 1)) == NULL)
  	Panic(0, "%s", strnomem);
        cp[len1 + add_colon] = '\0';
-
-commit e75e7a0cf5319e10aae0c45e17ce70d86ef2aee8
-Author: Miroslav Lichvar <mlichvar@redhat.com>
-Date:   Thu Jan 13 17:18:59 2011 +0100
-
-    Set PAM_TTY item.
-
-diff --git a/attacher.c b/attacher.c
-index 1fab5b2..460f1ea 100644
 --- a/attacher.c
 +++ b/attacher.c
-@@ -861,6 +861,7 @@ screen_builtin_lck()
- #ifdef USE_PAM
-   pam_handle_t *pamh = 0;
-   int pam_error;
-+  char *tty_name;
- #else
-   char *pass, mypass[16 + 1], salt[3];
- #endif
-@@ -932,6 +933,15 @@ screen_builtin_lck()
-       pam_error = pam_start("screen", ppp->pw_name, &PAM_conversation, &pamh);
-       if (pam_error != PAM_SUCCESS)
- 	AttacherFinit(SIGARG);		/* goodbye */
-+
-+      if (strncmp(attach_tty, "/dev/", 5) == 0)
-+	tty_name = attach_tty + 5;
-+      else
-+	tty_name = attach_tty;
-+      pam_error = pam_set_item(pamh, PAM_TTY, tty_name);
-+      if (pam_error != PAM_SUCCESS)
-+	AttacherFinit(SIGARG);		/* goodbye */
-+
-       pam_error = pam_authenticate(pamh, 0);
-       pam_end(pamh, pam_error);
-       PAM_conversation.appdata_ptr = 0;
-
-commit eb2e13f633f9615e9b60f19e1649f46bd07b2802
-Author: Miroslav Lichvar <mlichvar@redhat.com>
-Date:   Thu Jan 13 17:16:59 2011 +0100
-
-    Check return code from setgid/setuid.
-
-diff --git a/attacher.c b/attacher.c
-index 370d594..1fab5b2 100644
---- a/attacher.c
-+++ b/attacher.c
-@@ -185,8 +185,8 @@ int how;
+@@ -185,8 +185,8 @@
  	  if (ret == SIG_POWER_BYE)
  	    {
  	      int ppid;
@@ -235,7 +148,7 @@ index 370d594..1fab5b2 100644
  	      if ((ppid = getppid()) > 1)
  		Kill(ppid, SIGHUP);
  	      exit(0);
-@@ -282,7 +282,10 @@ int how;
+@@ -282,7 +282,10 @@
  #ifdef MULTIUSER
    if (!multiattach)
  #endif
@@ -247,7 +160,7 @@ index 370d594..1fab5b2 100644
  #if defined(MULTIUSER) && defined(USE_SETEUID)
    else
      {
-@@ -290,7 +293,8 @@ int how;
+@@ -290,7 +293,8 @@
        xseteuid(real_uid); /* multi_uid, allow backend to send signals */
      }
  #endif
@@ -257,7 +170,7 @@ index 370d594..1fab5b2 100644
    eff_uid = real_uid;
    eff_gid = real_gid;
  
-@@ -486,7 +490,8 @@ AttacherFinit SIGDEFARG
+@@ -486,7 +490,8 @@
  #ifdef MULTIUSER
    if (tty_oldmode >= 0)
      {
@@ -267,7 +180,7 @@ index 370d594..1fab5b2 100644
        chmod(attach_tty, tty_oldmode);
      }
  #endif
-@@ -504,11 +509,14 @@ AttacherFinitBye SIGDEFARG
+@@ -504,11 +509,14 @@
    if (multiattach)
      exit(SIG_POWER_BYE);
  #endif
@@ -285,7 +198,7 @@ index 370d594..1fab5b2 100644
  #endif
    /* we don't want to disturb init (even if we were root), eh? jw */
    if ((ppid = getppid()) > 1)
-@@ -679,11 +687,14 @@ static sigret_t
+@@ -679,11 +687,14 @@
  LockHup SIGDEFARG
  {
    int ppid = getppid();
@@ -303,7 +216,7 @@ index 370d594..1fab5b2 100644
  #endif
    if (ppid > 1)
      Kill(ppid, SIGHUP);
-@@ -710,11 +721,14 @@ LockTerminal()
+@@ -710,11 +721,14 @@
        if ((pid = fork()) == 0)
          {
            /* Child */
@@ -321,3 +234,27 @@ index 370d594..1fab5b2 100644
  #endif
            closeallfiles(0);	/* important: /etc/shadow may be open */
            execl(prg, "SCREEN-LOCK", NULL);
+@@ -847,6 +861,7 @@
+ #ifdef USE_PAM
+   pam_handle_t *pamh = 0;
+   int pam_error;
++  char *tty_name;
+ #else
+   char *pass, mypass[16 + 1], salt[3];
+ #endif
+@@ -918,6 +933,15 @@
+       pam_error = pam_start("screen", ppp->pw_name, &PAM_conversation, &pamh);
+       if (pam_error != PAM_SUCCESS)
+ 	AttacherFinit(SIGARG);		/* goodbye */
++
++      if (strncmp(attach_tty, "/dev/", 5) == 0)
++	tty_name = attach_tty + 5;
++      else
++	tty_name = attach_tty;
++      pam_error = pam_set_item(pamh, PAM_TTY, tty_name);
++      if (pam_error != PAM_SUCCESS)
++	AttacherFinit(SIGARG);		/* goodbye */
++
+       pam_error = pam_authenticate(pamh, 0);
+       pam_end(pamh, pam_error);
+       PAM_conversation.appdata_ptr = 0;

@@ -1,13 +1,8 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## 26source_encoding.dpatch by Ben Finney <ben@benfinney.id.au>
-##
-## DP: Replace the composed characters with their respective description.
-
-@DPATCH@
-diff -Naur screen-4.0.3.orig/process.c screen-4.0.3/process.c
---- screen-4.0.3.orig/process.c	2008-06-01 23:44:58.000000000 +0200
-+++ screen-4.0.3/process.c	2008-06-01 23:45:00.000000000 +0200
-@@ -223,177 +223,177 @@
+Author: Ben Finney <ben@benfinney.id.au>
+Description: Replace the composed characters with their respective description.
+--- a/process.c
++++ b/process.c
+@@ -250,177 +250,177 @@
  
  /* digraph table taken from old vim and rfc1345 */
  static struct digraph digraphs[MAX_DIGRAPH + 1] = {

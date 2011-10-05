@@ -1,19 +1,14 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## 51EXP_session_creation_time.dpatch by  <hesso@pool.math.tu-berlin.de>
-##
-## DP: Add lookup code for the creation time of each session. Requires
-## DP: digging in /proc/$pid and /proc/uptime, though, so it's definitely
-## DP: no candidate for the Beautiful C contest.
-## DP: Affects screen's behaviour in the following situations:
-## DP: * 'screen -ls' lists available sessions sorted chronologically
-## DP: * 'screen -RR' now picks the youngest session instead of an
-## DP:   arbitrary one
-
-@DPATCH@
-diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
---- screen-4.0.3.orig/doc/screen.1	2008-06-01 23:45:00.000000000 +0200
-+++ screen-4.0.3/doc/screen.1	2008-06-01 23:45:02.000000000 +0200
-@@ -238,7 +238,7 @@
+Author: <hesso@pool.math.tu-berlin.de>
+Description: Add lookup code for the creation time of each session. Requires
+digging in /proc/$pid and /proc/uptime, though, so it's definitely
+no candidate for the Beautiful C contest.
+Affects screen's behaviour in the following situations:
+* 'screen -ls' lists available sessions sorted chronologically
+* 'screen -RR' now picks the youngest session instead of an
+arbitrary one
+--- a/doc/screen.1
++++ b/doc/screen.1
+@@ -242,7 +242,7 @@
  .IR screen ,
  but prints a list of
  .I pid.tty.host
@@ -22,7 +17,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  .I screen
  sessions.
  Sessions marked `detached' can be resumed with \*Qscreen -r\*U. Those marked
-@@ -317,7 +317,7 @@
+@@ -340,7 +340,7 @@
  sessions in another user's directory. This requires setuid-root.
  .TP 5
  .B \-R
@@ -31,19 +26,18 @@ diff -Naur screen-4.0.3.orig/doc/screen.1 screen-4.0.3/doc/screen.1
  .I screen
  session it finds.  If successful, all other command-line options are ignored.
  If no detached session exists, starts a new session using the specified
-@@ -327,6 +327,8 @@
+@@ -350,6 +350,8 @@
  .I screen
  is run as a login-shell (actually screen uses \*Q-xRR\*U in that case).
  For combinations with the \fB\-d\fP/\fB\-D\fP option see there.
 +.B Note:
 +Time-based session selection is a Debian addition.
  .TP 5
- .B \-s
+ .BI "\-s " program 
  sets the default shell to the program specified, instead of the value
-diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
---- screen-4.0.3.orig/doc/screen.texinfo	2008-06-01 23:45:00.000000000 +0200
-+++ screen-4.0.3/doc/screen.texinfo	2008-06-01 23:45:02.000000000 +0200
-@@ -315,7 +315,8 @@
+--- a/doc/screen.texinfo
++++ b/doc/screen.texinfo
+@@ -318,7 +318,8 @@
  @itemx -list [@var{match}]
  Do not start @code{screen}, but instead print a list of session
  identification strings (usually of the form @var{pid.tty.host};
@@ -53,7 +47,7 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  with @code{screen -r}.  Those marked @samp{attached} are running and
  have a controlling terminal.  If the session runs in multiuser mode,
  it is marked @samp{multi}.  Sessions marked as @samp{unreachable} either
-@@ -376,14 +377,15 @@
+@@ -404,14 +405,15 @@
  sessions in another user's directory. This requires setuid-root.
  
  @item -R
@@ -71,10 +65,9 @@ diff -Naur screen-4.0.3.orig/doc/screen.texinfo screen-4.0.3/doc/screen.texinfo
  
  @item -s @var{program}
  Set the default shell to be @var{program}.  By default, @code{screen}
-diff -Naur screen-4.0.3.orig/extern.h screen-4.0.3/extern.h
---- screen-4.0.3.orig/extern.h	2008-06-01 23:45:02.000000000 +0200
-+++ screen-4.0.3/extern.h	2008-06-01 23:45:02.000000000 +0200
-@@ -391,6 +391,8 @@
+--- a/extern.h
++++ b/extern.h
+@@ -389,6 +389,8 @@
  #else
  extern int   xsnprintf __P(());
  #endif
@@ -83,10 +76,9 @@ diff -Naur screen-4.0.3.orig/extern.h screen-4.0.3/extern.h
  
  
  /* acl.c */
-diff -Naur screen-4.0.3.orig/misc.c screen-4.0.3/misc.c
---- screen-4.0.3.orig/misc.c	2008-06-01 23:39:49.000000000 +0200
-+++ screen-4.0.3/misc.c	2008-06-01 23:45:02.000000000 +0200
-@@ -24,6 +24,7 @@
+--- a/misc.c
++++ b/misc.c
+@@ -29,6 +29,7 @@
  #include <sys/types.h>
  #include <sys/stat.h>	/* mkdir() declaration */
  #include <signal.h>
@@ -94,7 +86,7 @@ diff -Naur screen-4.0.3.orig/misc.c screen-4.0.3/misc.c
  
  #include "config.h"
  #include "screen.h"
-@@ -796,3 +797,40 @@
+@@ -769,3 +770,40 @@
  }
  
  #endif
@@ -135,10 +127,9 @@ diff -Naur screen-4.0.3.orig/misc.c screen-4.0.3/misc.c
 +  close(fd);
 +  return atol(uptimestr);
 +}
-diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
---- screen-4.0.3.orig/socket.c	2008-06-01 23:41:50.000000000 +0200
-+++ screen-4.0.3/socket.c	2008-06-01 23:45:02.000000000 +0200
-@@ -116,16 +116,18 @@
+--- a/socket.c
++++ b/socket.c
+@@ -125,16 +125,18 @@
    int sdirlen;
    int  matchlen = 0;
    char *name, *n;
@@ -160,15 +151,15 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
  
    if (match)
      {
-@@ -151,7 +153,6 @@
+@@ -161,7 +163,6 @@
      Panic(errno, "Cannot opendir %s", SockPath);
  
    slist = 0;
 -  slisttail = &slist;
    while ((dp = readdir(dirp)))
      {
-       name = dp->d_name;
-@@ -162,7 +163,7 @@
+       int cmatch = 0;
+@@ -173,7 +174,7 @@
  	{
  	  n = name;
  	  /* if we don't want to match digits. Skip them */
@@ -177,7 +168,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
  	    {
  	      while (*n >= '0' && *n <= '9')
  		n++;
-@@ -227,12 +228,24 @@
+@@ -252,12 +253,24 @@
        debug("  store it.\n");
        if ((sent = (struct sent *)malloc(sizeof(struct sent))) == 0)
  	continue;
@@ -204,7 +195,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
        sockfd = MakeClientSocket(0);
  #ifdef USE_SETEUID
        /* MakeClientSocket sets ids back to eff */
-@@ -291,26 +304,16 @@
+@@ -316,6 +329,7 @@
  	  (!dflag && !rflag && !xflag))
  	{
  	  close(sockfd);
@@ -212,7 +203,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
  	  debug("  no!\n");
  	  npriv++;		/* a good socket that was not for us */
  	  continue;
- 	}
+@@ -323,19 +337,8 @@
        ngood++;
        if (cmatch)
  	nperfect++;
@@ -234,7 +225,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
      }
    (void)closedir(dirp);
    if (!lsflag && nperfect == 1)
-@@ -325,34 +330,42 @@
+@@ -356,34 +359,42 @@
  	}
        for (sent = slist; sent; sent = sent->next)
  	{
@@ -285,7 +276,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
  	      break;
  	    }
  	}
-@@ -365,13 +378,37 @@
+@@ -396,13 +407,37 @@
        else
          Msg(0, m, ndead > 1 ? "s" : "", ndead > 1 ? "" : "es");	/* other args for nethack */
      }

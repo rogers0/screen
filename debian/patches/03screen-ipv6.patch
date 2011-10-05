@@ -1,13 +1,8 @@
-#! /bin/sh /usr/share/dpatch/dpatch-run
-## screen-ipv6.dpatch by <bpkroth@gmail.com>
-##
-## DP: Some patches stolen from the fedora package for better error checking and tty security.
-
-@DPATCH@
-diff -up screen/doc/screen.1.ipv6 screen/doc/screen.1
---- screen/doc/screen.1.ipv6	2010-11-11 03:47:46.000000000 +0100
-+++ screen/doc/screen.1	2011-02-03 16:05:35.957087079 +0100
-@@ -398,6 +398,12 @@ Send the specified command to a running 
+Author: <bpkroth@gmail.com>
+Description: Some patches stolen from the fedora package for better error checking and tty security.
+--- a/doc/screen.1
++++ b/doc/screen.1
+@@ -398,6 +398,12 @@
  the \fB-d\fP or \fB-r\fP option to tell screen to look only for
  attached or detached screen sessions. Note that this command doesn't
  work if the session is password protected.
@@ -20,10 +15,9 @@ diff -up screen/doc/screen.1.ipv6 screen/doc/screen.1
  
  .SH "DEFAULT KEY BINDINGS"
  .ta 12n 26n
-diff -up screen/extern.h.ipv6 screen/extern.h
---- screen/extern.h.ipv6	2010-11-11 03:47:46.000000000 +0100
-+++ screen/extern.h	2011-02-03 16:04:35.995743620 +0100
-@@ -455,8 +455,7 @@ extern void  ExitOverlayPage __P((void))
+--- a/extern.h
++++ b/extern.h
+@@ -456,8 +456,7 @@
  
  /* teln.c */
  #ifdef BUILTIN_TELNET
@@ -33,10 +27,9 @@ diff -up screen/extern.h.ipv6 screen/extern.h
  extern int   TelIsline __P((struct win *p));
  extern void  TelProcessLine __P((char **, int *));
  extern int   DoTelnet __P((char *, int *, int));
-diff -up screen/help.c.ipv6 screen/help.c
---- screen/help.c.ipv6	2010-11-11 03:47:46.000000000 +0100
-+++ screen/help.c	2011-02-03 16:04:35.992744154 +0100
-@@ -66,6 +66,10 @@ char *myname, *message, *arg;
+--- a/help.c
++++ b/help.c
+@@ -66,6 +66,10 @@
  {
    printf("Use: %s [-opts] [cmd [args]]\n", myname);
    printf(" or: %s -r [host.tty]\n\nOptions:\n", myname);
@@ -47,10 +40,9 @@ diff -up screen/help.c.ipv6 screen/help.c
    printf("-a            Force all capabilities into each window's termcap.\n");
    printf("-A -[r|R]     Adapt all windows to the new display width & height.\n");
    printf("-c file       Read configuration file instead of '.screenrc'.\n");
-diff -up screen/screen.c.ipv6 screen/screen.c
---- screen/screen.c.ipv6	2010-11-11 03:47:46.000000000 +0100
-+++ screen/screen.c	2011-02-03 16:04:35.994743798 +0100
-@@ -248,8 +248,9 @@ struct layer *flayer;
+--- a/screen.c
++++ b/screen.c
+@@ -248,8 +248,9 @@
  struct win *fore;
  struct win *windows;
  struct win *console_window;
@@ -62,7 +54,7 @@ diff -up screen/screen.c.ipv6 screen/screen.c
  
  /*
   * Do this last
-@@ -507,6 +508,9 @@ char **av;
+@@ -507,6 +508,9 @@
    nwin = nwin_undef;
    nwin_options = nwin_undef;
    strcpy(screenterm, "screen");
@@ -72,7 +64,7 @@ diff -up screen/screen.c.ipv6 screen/screen.c
  
    logreopen_register(lf_secreopen);
  
-@@ -541,6 +545,14 @@ char **av;
+@@ -541,6 +545,14 @@
  	    {
  	      switch (*ap)
  		{
@@ -87,9 +79,8 @@ diff -up screen/screen.c.ipv6 screen/screen.c
  		case 'a':
  		  nwin_options.aflag = 1;
  		  break;
-diff -up screen/teln.c.ipv6 screen/teln.c
---- screen/teln.c.ipv6	2010-11-11 03:47:46.000000000 +0100
-+++ screen/teln.c	2011-02-03 16:04:35.992744154 +0100
+--- a/teln.c
++++ b/teln.c
 @@ -30,6 +30,7 @@
  #include <sys/socket.h>
  #include <fcntl.h>
@@ -98,7 +89,7 @@ diff -up screen/teln.c.ipv6 screen/teln.c
  
  #include "config.h"
  
-@@ -42,12 +43,13 @@ extern struct win *fore;
+@@ -42,12 +43,13 @@
  extern struct layer *flayer;
  extern int visual_bell;
  extern char screenterm[];
@@ -114,7 +105,7 @@ diff -up screen/teln.c.ipv6 screen/teln.c
  #define TEL_CONNECTING	(-2)
  
  #define TC_IAC          255
-@@ -105,86 +107,78 @@ char *data;
+@@ -105,86 +107,78 @@
  }
  
  int
@@ -146,7 +137,8 @@ diff -up screen/teln.c.ipv6 screen/teln.c
    char buf[256];
  
 -  args = p->w_cmdargs + 1;
--
++  struct addrinfo hints, *res0, *res;
+ 
 -  if (!*args)
 -    {
 -      Msg(0, "Usage: screen //telnet host [port]");
@@ -169,39 +161,6 @@ diff -up screen/teln.c.ipv6 screen/teln.c
 -	}
 -      bcopy((char *)hp->h_addr,(char *)&p->w_telsa.sin_addr.s_addr, hp->h_length);
 -      p->w_telsa.sin_family = hp->h_addrtype;
--    }
--  p->w_telsa.sin_port = htons(port);
--  if (port != TEL_DEFPORT)
--    sprintf(buf, "Trying %s %d...", inet_ntoa(p->w_telsa.sin_addr), port);
--  else
--    sprintf(buf, "Trying %s...", inet_ntoa(p->w_telsa.sin_addr));
--  WriteString(p, buf, strlen(buf));
--  if (connect(p->w_ptyfd, (struct sockaddr *)&p->w_telsa, sizeof(p->w_telsa)))
--    {
--      if (errno == EINPROGRESS)
--        {
--	  p->w_telstate = TEL_CONNECTING;
--	  p->w_telconnev.fd = p->w_ptyfd;
--	  p->w_telconnev.handler = tel_connev_fn;
--	  p->w_telconnev.data = (char *)p;
--	  p->w_telconnev.type = EV_WRITE;
--	  p->w_telconnev.pri = 1;
--	  debug("telnet connect in progress...\n");
--	  evenq(&p->w_telconnev);
--	}
--      else
--        {
--	  Msg(errno, "TelOpen: connect");
--	  return -1;
--	}
--    }
--  else
--    WriteString(p, "connected.\r\n", 12);
--  if (port == TEL_DEFPORT)
--    TelReply(p, (char *)tn_init, sizeof(tn_init));
--  return 0;
-+  struct addrinfo hints, *res0, *res;
-+
 +  if (!(p->w_cmdargs[1])) {
 +    Msg(0, "Usage: screen //telnet host [port]");
 +    return -1;
@@ -226,7 +185,31 @@ diff -up screen/teln.c.ipv6 screen/teln.c
 +        freeaddrinfo(res0);
 +        return -1;
 +      }
-+    }
+     }
+-  p->w_telsa.sin_port = htons(port);
+-  if (port != TEL_DEFPORT)
+-    sprintf(buf, "Trying %s %d...", inet_ntoa(p->w_telsa.sin_addr), port);
+-  else
+-    sprintf(buf, "Trying %s...", inet_ntoa(p->w_telsa.sin_addr));
+-  WriteString(p, buf, strlen(buf));
+-  if (connect(p->w_ptyfd, (struct sockaddr *)&p->w_telsa, sizeof(p->w_telsa)))
+-    {
+-      if (errno == EINPROGRESS)
+-        {
+-	  p->w_telstate = TEL_CONNECTING;
+-	  p->w_telconnev.fd = p->w_ptyfd;
+-	  p->w_telconnev.handler = tel_connev_fn;
+-	  p->w_telconnev.data = (char *)p;
+-	  p->w_telconnev.type = EV_WRITE;
+-	  p->w_telconnev.pri = 1;
+-	  debug("telnet connect in progress...\n");
+-	  evenq(&p->w_telconnev);
+-	}
+-      else
+-        {
+-	  Msg(errno, "TelOpen: connect");
+-	  return -1;
+-	}
 +
 +    if (setsockopt(fd, SOL_SOCKET, SO_OOBINLINE, (char *)&on, sizeof(on)))
 +      Msg(errno, "TelOpenAndConnect: setsockopt SO_OOBINLINE");
@@ -257,7 +240,12 @@ diff -up screen/teln.c.ipv6 screen/teln.c
 +          return -1;
 +       }
 +      }
-+    }
+     }
+-  else
+-    WriteString(p, "connected.\r\n", 12);
+-  if (port == TEL_DEFPORT)
+-    TelReply(p, (char *)tn_init, sizeof(tn_init));
+-  return 0;
 +    else
 +      WriteString(p, "connected.\r\n", 12);
 +    if (!(p->w_cmdargs[2] && strcmp(p->w_cmdargs[2], TEL_DEFPORT)))
@@ -271,10 +259,9 @@ diff -up screen/teln.c.ipv6 screen/teln.c
  }
  
  int
-diff -up screen/window.c.ipv6 screen/window.c
---- screen/window.c.ipv6	2010-11-11 03:47:46.000000000 +0100
-+++ screen/window.c	2011-02-03 16:30:56.900750293 +0100
-@@ -605,6 +605,13 @@ struct NewWindow *newwin;
+--- a/window.c
++++ b/window.c
+@@ -605,6 +605,13 @@
    n = pp - wtab;
    debug1("Makewin creating %d\n", n);
  
@@ -288,7 +275,7 @@ diff -up screen/window.c.ipv6 screen/window.c
    if ((f = OpenDevice(nwin.args, nwin.lflag, &type, &TtyName)) < 0)
      return -1;
    if (type == W_TYPE_GROUP)
-@@ -766,7 +773,7 @@ struct NewWindow *newwin;
+@@ -766,7 +773,7 @@
  #ifdef BUILTIN_TELNET
    if (type == W_TYPE_TELNET)
      {
@@ -297,7 +284,7 @@ diff -up screen/window.c.ipv6 screen/window.c
  	{
  	  FreeWindow(p);
  	  return -1;
-@@ -878,6 +885,13 @@ struct win *p;
+@@ -878,6 +885,13 @@
    int lflag, f;
  
    lflag = nwin_default.lflag;
@@ -311,7 +298,7 @@ diff -up screen/window.c.ipv6 screen/window.c
    if ((f = OpenDevice(p->w_cmdargs, lflag, &p->w_type, &TtyName)) < 0)
      return -1;
  
-@@ -909,7 +923,7 @@ struct win *p;
+@@ -911,7 +925,7 @@
  #ifdef BUILTIN_TELNET
    if (p->w_type == W_TYPE_TELNET)
      {
@@ -320,7 +307,7 @@ diff -up screen/window.c.ipv6 screen/window.c
          return -1;
      }
    else
-@@ -1068,16 +1082,6 @@ char **namep;
+@@ -1070,16 +1084,6 @@
        *namep = "telnet";
        return 0;
      }
@@ -337,10 +324,9 @@ diff -up screen/window.c.ipv6 screen/window.c
    if (strncmp(arg, "//", 2) == 0)
      {
        Msg(0, "Invalid argument '%s'", arg);
-diff -up screen/window.h.ipv6 screen/window.h
---- screen/window.h.ipv6	2010-11-11 03:47:46.000000000 +0100
-+++ screen/window.h	2011-02-03 16:04:35.989744687 +0100
-@@ -268,7 +268,7 @@ struct win
+--- a/window.h
++++ b/window.h
+@@ -268,7 +268,7 @@
    struct display *w_zdisplay;
  #endif
  #ifdef BUILTIN_TELNET
