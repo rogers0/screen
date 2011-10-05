@@ -3,7 +3,7 @@ Section: misc
 Priority: optional
 Maintainer: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
 Uploaders: Axel Beckert <abe@debian.org>
-Standards-Version: 3.8.2
+Standards-Version: 3.9.2
 Build-Depends: libncursesw5-dev, texinfo, libpam0g-dev, debhelper (>> 7), dh-autoreconf
 Homepage: http://savannah.gnu.org/projects/screen
 
