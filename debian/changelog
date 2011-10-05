@@ -1,4 +1,4 @@
-screen (4.1.0~20110819git450e8f3) UNRELEASED; urgency=low
+screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
 
   [ Brian P Kroth ]
   * New upstream snapshot based on 4.1.0 prerelease 20101110git066b098 as
