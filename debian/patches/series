@@ -14,4 +14,5 @@
 26source_encoding.patch
 32misc_minor_fixes.patch
 45suppress_remap.patch
+46fix-keybinding-typo-in-manpage.patch
 51EXP_session_creation_time.patch
