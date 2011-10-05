@@ -49,7 +49,9 @@ configure-stamp:
 	grep -q "define.*NAMEDPIPE.*1" config.h || echo "#define NAMEDPIPE 1" >> config.h
 	touch $@
 
-build: build-stamp
+build: build-arch build-indep
+build-arch: build-stamp
+build-indep: build-stamp
 build-stamp: configure-stamp
 	dh_testdir
 	$(MAKE) CFLAGS+='$(CC_OPTFLAGS) -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
