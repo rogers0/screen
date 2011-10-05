@@ -51,6 +51,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
   * Bump Standards-Version to 3.9.2 (no changes)
   * Update debian/copyright
     - Upstream switched to GPLv3
+    - Update debian packaging information
 
  -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
 
