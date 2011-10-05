@@ -38,6 +38,8 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
   * Remove Adam Lazur from Uploaders on his request.
   * New upstream snapshot based on 4.1.0 prerelease, commit 450e8f3 of
     2011-Aug-19.
+    - Fixes a crash when attaching to a layout that was created while
+      detached. (Closes: #591624)
   * Remove the patches which have been applied upstream or are
     otherwise no more necessary:
     - 17manpage_sessionname_warning
