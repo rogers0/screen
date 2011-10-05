@@ -47,7 +47,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
   * Refreshed the following patches:
     - 51EXP_session_creation_time
   * Added patches:
-    - 46fix-keybinding-typo-in-manpage.patch (Closes: #630535)
+    - 46fix-keybinding-typo-in-manpage.patch (Closes: #630535, #541793)
   * Use dh_autoreconf
     - Build-Depend on dh-autoreconf
   * Convert to source format "3.0 (quilt)"
