@@ -138,7 +138,7 @@ diff -Naur screen-4.0.3.orig/misc.c screen-4.0.3/misc.c
 diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
 --- screen-4.0.3.orig/socket.c	2008-06-01 23:41:50.000000000 +0200
 +++ screen-4.0.3/socket.c	2008-06-01 23:45:02.000000000 +0200
-@@ -116,15 +116,17 @@
+@@ -116,16 +116,18 @@
    int sdirlen;
    int  matchlen = 0;
    char *name, *n;
@@ -146,6 +146,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
 -  char *firstn = NULL;
 +  int sockfd = -1;
    int nfound = 0, ngood = 0, ndead = 0, nwipe = 0, npriv = 0;
+   int nperfect = 0;
 +  time_t sysboot = time(NULL) - GetUptime();
    struct sent
      {
@@ -156,7 +157,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
 +      time_t created;
 +      int good;
 +    } *slist, **slisttail, *sent, *nsent, *schosen = NULL;
- 	  
+ 
    if (match)
      {
 @@ -151,7 +153,6 @@
@@ -203,7 +204,7 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
        sockfd = MakeClientSocket(0);
  #ifdef USE_SETEUID
        /* MakeClientSocket sets ids back to eff */
-@@ -291,22 +304,14 @@
+@@ -291,26 +304,16 @@
  	  (!dflag && !rflag && !xflag))
  	{
  	  close(sockfd);
@@ -213,8 +214,12 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
  	  continue;
  	}
        ngood++;
--      if (fdp && firsts == -1)
+       if (cmatch)
+ 	nperfect++;
+-      if (fdp && (firsts == -1 || (cmatch && nperfect == 1)))
 -	{
+-	  if (firsts != -1)
+-	    close(firsts);
 -	  firsts = sockfd;
 -	  firstn = sent->name;
 -	  debug("  taken.\n");
@@ -223,12 +228,12 @@ diff -Naur screen-4.0.3.orig/socket.c screen-4.0.3/socket.c
 -        {
 -	  debug("  discarded.\n");
 -	  close(sockfd);
--	} 
+-	}
 +      sent->good = 1;
 +      debug("  added to list.\n");
      }
    (void)closedir(dirp);
-   if (nfound && (lsflag || ngood != 1) && !quietflag)
+   if (!lsflag && nperfect == 1)
 @@ -325,34 +330,42 @@
  	}
        for (sent = slist; sent; sent = sent->next)

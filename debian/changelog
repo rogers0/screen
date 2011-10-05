@@ -42,6 +42,8 @@ screen (4.1.0~20110819git450e8f3) UNRELEASED; urgency=low
     otherwise no more necessary:
     - 17manpage_sessionname_warning
     - 30fix_fsf_address
+  * Refreshed the following patches:
+    - 51EXP_session_creation_time
   * Use dh_autoreconf
     - Build-Depend on dh-autoreconf
 
