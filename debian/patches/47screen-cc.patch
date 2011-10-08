@@ -1,7 +1,9 @@
 Author: <bpkroth@gmail.com>
 Description: Some patches stolen from the fedora package for better error checking and tty security.
---- a/utmp.c
-+++ b/utmp.c
+Index: screen/utmp.c
+===================================================================
+--- screen.orig/utmp.c	2011-10-08 19:54:17.000000000 +0200
++++ screen/utmp.c	2011-10-08 19:59:23.000000000 +0200
 @@ -361,7 +361,7 @@
        char *tty;
        debug("couln't zap slot -> do mesg n\n");
@@ -38,8 +40,10 @@ Description: Some patches stolen from the fedora package for better error checki
      return NULL;
    tty = stripdev(tty);
    retbuf[0] = '\0';
---- a/extern.h
-+++ b/extern.h
+Index: screen/extern.h
+===================================================================
+--- screen.orig/extern.h	2011-10-08 19:54:16.000000000 +0200
++++ screen/extern.h	2011-10-08 19:59:23.000000000 +0200
 @@ -110,6 +110,7 @@
  extern struct baud_values *lookup_baud __P((int bps));
  extern int   SetBaud __P((struct mode *, int, int));
@@ -48,9 +52,11 @@ Description: Some patches stolen from the fedora package for better error checki
  
  
  /* mark.c */
---- a/screen.c
-+++ b/screen.c
-@@ -970,8 +970,13 @@
+Index: screen/screen.c
+===================================================================
+--- screen.orig/screen.c	2011-10-08 19:58:56.000000000 +0200
++++ screen/screen.c	2011-10-08 19:59:23.000000000 +0200
+@@ -972,8 +972,13 @@
  	else \
  	  attach_tty = ""; \
        } \
@@ -66,8 +72,10 @@ Description: Some patches stolen from the fedora package for better error checki
      if (strlen(attach_tty) >= MAXPATHLEN) \
        Panic(0, "TtyName too long - sorry."); \
    } while (0)
---- a/tty.sh
-+++ b/tty.sh
+Index: screen/tty.sh
+===================================================================
+--- screen.orig/tty.sh	2011-10-08 19:58:28.000000000 +0200
++++ screen/tty.sh	2011-10-08 19:59:23.000000000 +0200
 @@ -60,6 +60,7 @@
  #include <sys/types.h>
  #include <signal.h>
@@ -76,7 +84,7 @@ Description: Some patches stolen from the fedora package for better error checki
  #ifndef sgi
  # include <sys/file.h>
  #endif
-@@ -1506,6 +1507,19 @@
+@@ -1499,6 +1500,19 @@
    return 0;
  }
  
@@ -96,8 +104,10 @@ Description: Some patches stolen from the fedora package for better error checki
  /*
   *  Write out the mode struct in a readable form
   */
---- a/socket.c
-+++ b/socket.c
+Index: screen/socket.c
+===================================================================
+--- screen.orig/socket.c	2011-10-08 19:54:17.000000000 +0200
++++ screen/socket.c	2011-10-08 19:59:23.000000000 +0200
 @@ -722,6 +722,7 @@
    char *args[MAXARGS];
    register int n;
@@ -114,8 +124,10 @@ Description: Some patches stolen from the fedora package for better error checki
  
        l = strlen(p);
        if (IsNumColon(p, 10, buf, sizeof(buf)))
---- a/braille_tsi.c
-+++ b/braille_tsi.c
+Index: screen/braille_tsi.c
+===================================================================
+--- screen.orig/braille_tsi.c	2011-10-08 19:54:17.000000000 +0200
++++ screen/braille_tsi.c	2011-10-08 19:59:23.000000000 +0200
 @@ -127,7 +127,6 @@
    r = read(bd.bd_fd,ibuf,1);
    if (r != 1)
@@ -124,8 +136,10 @@ Description: Some patches stolen from the fedora package for better error checki
    if (ibuf[0] == 'V')
      r = read(bd.bd_fd, ibuf, 3);
    else
---- a/fileio.c
-+++ b/fileio.c
+Index: screen/fileio.c
+===================================================================
+--- screen.orig/fileio.c	2011-10-08 19:58:46.000000000 +0200
++++ screen/fileio.c	2011-10-08 19:59:23.000000000 +0200
 @@ -80,8 +80,6 @@
      }
    else
@@ -135,8 +149,10 @@ Description: Some patches stolen from the fedora package for better error checki
        if ((cp = malloc((unsigned) len1 + add_colon + 1)) == NULL)
  	Panic(0, "%s", strnomem);
        cp[len1 + add_colon] = '\0';
---- a/attacher.c
-+++ b/attacher.c
+Index: screen/attacher.c
+===================================================================
+--- screen.orig/attacher.c	2011-10-08 19:59:12.000000000 +0200
++++ screen/attacher.c	2011-10-08 19:59:23.000000000 +0200
 @@ -185,8 +185,8 @@
  	  if (ret == SIG_POWER_BYE)
  	    {
@@ -240,9 +256,9 @@ Description: Some patches stolen from the fedora package for better error checki
    int pam_error;
 +  char *tty_name;
  #endif
-   char *pass, mypass[16 + 1], salt[3];
+   char *pass = 0, mypass[16 + 1], salt[3];
    int using_pam = 1;
-@@ -918,6 +933,15 @@
+@@ -926,6 +941,15 @@
        pam_error = pam_start("screen", ppp->pw_name, &PAM_conversation, &pamh);
        if (pam_error != PAM_SUCCESS)
  	AttacherFinit(SIGARG);		/* goodbye */

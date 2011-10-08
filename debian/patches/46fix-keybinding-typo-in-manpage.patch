@@ -6,9 +6,9 @@ backspace) (Closes: #541793)
 
 Index: screen/doc/screen.1
 ===================================================================
---- screen.orig/doc/screen.1	2011-10-05 03:03:23.000000000 +0200
-+++ screen/doc/screen.1	2011-10-05 03:04:58.000000000 +0200
-@@ -518,7 +518,7 @@
+--- screen.orig/doc/screen.1	2011-10-08 19:58:19.000000000 +0200
++++ screen/doc/screen.1	2011-10-08 19:59:19.000000000 +0200
+@@ -512,7 +512,7 @@
  Show the number (and title) of the current window.
  .IP "\fBC-a backspace\fP"
  .PD 0
@@ -17,7 +17,7 @@ Index: screen/doc/screen.1
  .IP "\fBC-a p\fP"
  .IP "\fBC-a C-p\fP	(prev)"
  .PD
-@@ -584,7 +584,7 @@
+@@ -578,7 +578,7 @@
  Write out a \*Q.termcap\*U file.
  .IP "\fBC-a ?\fP	(help)"
  Show key bindings.
@@ -28,8 +28,8 @@ Index: screen/doc/screen.1
  .IP "\fBC-a :\fP	(colon)"
 Index: screen/doc/screen.texinfo
 ===================================================================
---- screen.orig/doc/screen.texinfo	2011-10-05 03:03:23.000000000 +0200
-+++ screen/doc/screen.texinfo	2011-10-05 03:03:26.000000000 +0200
+--- screen.orig/doc/screen.texinfo	2011-10-08 19:58:19.000000000 +0200
++++ screen/doc/screen.texinfo	2011-10-08 19:59:19.000000000 +0200
 @@ -791,7 +791,7 @@
  (help)@*
  Show key bindings.  @xref{Help}.

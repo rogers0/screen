@@ -1,18 +1,22 @@
 Author: <hesso@pool.math.tu-berlin.de>
 Description: Get rid of several minor gcc warnings.
---- a/attacher.c
-+++ b/attacher.c
-@@ -863,7 +863,7 @@
+Index: screen/attacher.c
+===================================================================
+--- screen.orig/attacher.c	2011-10-08 19:58:12.000000000 +0200
++++ screen/attacher.c	2011-10-08 19:58:41.000000000 +0200
+@@ -848,7 +848,7 @@
+   pam_handle_t *pamh = 0;
    int pam_error;
-   char *tty_name;
  #endif
 -  char *pass, mypass[16 + 1], salt[3];
 +  char *pass = 0, mypass[16 + 1], salt[3];
    int using_pam = 1;
  
  #ifdef USE_PAM
---- a/layer.c
-+++ b/layer.c
+Index: screen/layer.c
+===================================================================
+--- screen.orig/layer.c	2011-10-08 19:54:20.000000000 +0200
++++ screen/layer.c	2011-10-08 19:58:41.000000000 +0200
 @@ -492,7 +492,7 @@
  void
  LClearLine(l, y, xs, xe, bce, ol)
@@ -22,8 +26,10 @@ Description: Get rid of several minor gcc warnings.
  struct mline *ol;
  {
    struct canvas *cv;
---- a/process.c
-+++ b/process.c
+Index: screen/process.c
+===================================================================
+--- screen.orig/process.c	2011-10-08 19:58:34.000000000 +0200
++++ screen/process.c	2011-10-08 19:58:41.000000000 +0200
 @@ -3302,7 +3302,7 @@
            int newnr, fl = 0, kf = 0, af = 0, df = 0, mf = 0;
  	  struct display *odisp = display;
@@ -33,9 +39,11 @@ Description: Get rid of several minor gcc warnings.
  
  	  for (; *args && **args == '-'; args++, argl++)
  	    {
---- a/screen.c
-+++ b/screen.c
-@@ -2534,7 +2534,7 @@
+Index: screen/screen.c
+===================================================================
+--- screen.orig/screen.c	2011-10-08 19:54:20.000000000 +0200
++++ screen/screen.c	2011-10-08 19:58:41.000000000 +0200
+@@ -2517,7 +2517,7 @@
    int truncpos = -1;
    int truncper = 0;
    int trunclong = 0;

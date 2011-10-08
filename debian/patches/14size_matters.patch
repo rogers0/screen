@@ -1,8 +1,10 @@
 Author: <hesso@pool.math.tu-berlin.de>
 Description: * Increase the MAXSTR macro to suit present-day needs.
 * Increase the maximum length of the input line buffer likewise.
---- a/input.c
-+++ b/input.c
+Index: screen/input.c
+===================================================================
+--- screen.orig/input.c	2011-10-08 19:54:21.000000000 +0200
++++ screen/input.c	2011-10-08 19:58:34.000000000 +0200
 @@ -43,7 +43,7 @@
  
  struct inpline
@@ -32,8 +34,10 @@ Description: * Increase the MAXSTR macro to suit present-day needs.
    if (!(mode & INP_NOECHO))
      {
        maxlen = flayer->l_width - 1 - strlen(istr);
---- a/process.c
-+++ b/process.c
+Index: screen/process.c
+===================================================================
+--- screen.orig/process.c	2011-10-08 19:54:21.000000000 +0200
++++ screen/process.c	2011-10-08 19:58:34.000000000 +0200
 @@ -2083,7 +2083,7 @@
  	ChangeAKA(fore, *args, strlen(*args));
        break;
@@ -43,8 +47,10 @@ Description: * Increase the MAXSTR macro to suit present-day needs.
        if (*args && **args)
  	{
  	  s = *args;
---- a/screen.h
-+++ b/screen.h
+Index: screen/screen.h
+===================================================================
+--- screen.orig/screen.h	2011-10-08 19:54:21.000000000 +0200
++++ screen/screen.h	2011-10-08 19:58:34.000000000 +0200
 @@ -91,7 +91,7 @@
  
  #define Ctrl(c) ((c)&037)
@@ -54,9 +60,11 @@ Description: * Increase the MAXSTR macro to suit present-day needs.
  #define MAXARGS 	64
  #define MSGWAIT 	5
  #define MSGMINWAIT 	1
---- a/window.c
-+++ b/window.c
-@@ -2235,7 +2235,7 @@
+Index: screen/window.c
+===================================================================
+--- screen.orig/window.c	2011-10-08 19:54:21.000000000 +0200
++++ screen/window.c	2011-10-08 19:58:34.000000000 +0200
+@@ -2231,7 +2231,7 @@
        return;
      }
    flayer = &p->w_layer;

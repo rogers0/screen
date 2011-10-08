@@ -1,8 +1,10 @@
 Author: <hesso@pool.math.tu-berlin.de>
 Description: See inline documentation.
---- a/tty.sh
-+++ b/tty.sh
-@@ -809,18 +809,11 @@
+Index: screen/tty.sh
+===================================================================
+--- screen.orig/tty.sh	2011-10-08 19:54:22.000000000 +0200
++++ screen/tty.sh	2011-10-08 19:58:28.000000000 +0200
+@@ -808,18 +808,11 @@
  
    mypid = getpid();
  
