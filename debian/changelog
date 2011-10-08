@@ -47,6 +47,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     - Now has tsl, fsl and dsl terminfo caps (Closes: #152961)
     - Windows created with "-d -m" no more ignore "-X exec" (Closes: #481411)
     - Now has a session name string escape (Closes: #488619)
+    - Re-optimize screen updates (Closes: #621704, LP: #588846)
   * Remove the patches which have been applied upstream or are
     otherwise no more necessary:
     - 17manpage_sessionname_warning
