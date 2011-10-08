@@ -18,5 +18,6 @@
 47screen-cc.patch
 48screen-ipv6.patch
 49long-usernames.patch
+50increase-max-TERM-length.patch
 # 80-99: experimental patches, new features etc.
 80EXP_session_creation_time.patch

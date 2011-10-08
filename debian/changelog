@@ -67,6 +67,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
   * Added patches:
     - 46fix-keybinding-typo-in-manpage (Closes: #630535, #541793)
     - 49long-usernames (Closes: #560231, LP: #582153)
+    - 50increase-max-TERM-length
   * Use dh_autoreconf
     - Build-Depend on dh-autoreconf
   * Convert to source format "3.0 (quilt)"
