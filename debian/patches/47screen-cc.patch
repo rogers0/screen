@@ -239,9 +239,9 @@ Description: Some patches stolen from the fedora package for better error checki
    pam_handle_t *pamh = 0;
    int pam_error;
 +  char *tty_name;
- #else
-   char *pass, mypass[16 + 1], salt[3];
  #endif
+   char *pass, mypass[16 + 1], salt[3];
+   int using_pam = 1;
 @@ -918,6 +933,15 @@
        pam_error = pam_start("screen", ppp->pw_name, &PAM_conversation, &pamh);
        if (pam_error != PAM_SUCCESS)

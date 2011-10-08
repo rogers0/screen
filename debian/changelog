@@ -29,8 +29,8 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     - 14size_matters
     - 26source_encoding
   * Added patches from Fedora:
-    - 02screen-cc: Additional assertions to improve stability
-    - 03screen-ipv6: IPv6 support for built-in telnet
+    - 47screen-cc: Additional assertions to improve stability
+    - 48screen-ipv6: IPv6 support for built-in telnet
   * Enable telnet (Closes: #353090) and localized day/month names
 
   [ Axel Beckert ]
