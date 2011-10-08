@@ -1,0 +1,105 @@
+Description: Patch to allow usernames longer than 20 characters.
+Source: http://www.mail-archive.com/screen-devel@gnu.org/msg00186.html
+Author: Steve Kemp
+Upstream-Bug: http://savannah.gnu.org/bugs/?21653
+Debian-Bug: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=560231
+Ubuntu-Bug: https://bugs.launchpad.net/ubuntu/+source/screen/+bug/582153
+
+diff --git a/acconfig.h b/acconfig.h
+index 2e46985..05ec534 100644
+--- a/acconfig.h
++++ b/acconfig.h
+@@ -39,6 +39,13 @@
+ #endif
+ 
+ /*
++ * Length of longest username.
++ */
++#ifndef MAX_USERNAME_LEN
++# define MAX_USERNAME_LEN 50
++#endif
++
++/*
+  * Define SOCKDIR to be the directory to contain the named sockets
+  * screen creates. This should be in a common subdirectory, such as
+  * /usr/local or /tmp. It makes things a little more secure if you
+diff --git a/acls.c b/acls.c
+index e728bb8..4d0c20f 100644
+--- a/acls.c
++++ b/acls.c
+@@ -182,7 +182,7 @@ struct acluser **up;
+ #endif
+   (*up)->u_Esc = DefaultEsc;
+   (*up)->u_MetaEsc = DefaultMetaEsc;
+-  strncpy((*up)->u_name, name, 20);
++  strncpy((*up)->u_name, name, MAX_USERNAME_LEN);
+   (*up)->u_password = NULL;
+   if (pass)
+     (*up)->u_password = SaveStr(pass);
+@@ -318,8 +318,8 @@ struct acluser **up;
+     return UserAdd(name, pass, up);
+   if (!strcmp(name, "nobody"))		/* he remains without password */
+     return -1;
+-  strncpy((*up)->u_password, pass ? pass : "", 20);
+-  (*up)->u_password[20] = '\0';
++  strncpy((*up)->u_password, pass ? pass : "", MAX_USERNAME_LEN);
++  (*up)->u_password[MAX_USERNAME_LEN] = '\0';
+   return 0;
+ }
+ #endif
+diff --git a/acls.h b/acls.h
+index 907e953..0f6a5e5 100644
+--- a/acls.h
++++ b/acls.h
+@@ -78,7 +78,7 @@ struct plop
+ typedef struct acluser
+ {
+   struct acluser *u_next;		/* continue the main user list */
+-  char u_name[20+1];		/* login name how he showed up */
++  char u_name[MAX_USERNAME_LEN+1];	/* login name how he showed up */
+   char *u_password;		/* his password (may be NullStr). */
+   int  u_checkpassword;		/* nonzero if this u_password is valid */
+   int  u_detachwin;		/* the window where he last detached */
+diff --git a/screen.c b/screen.c
+index 3dde3b4..91889f6 100644
+--- a/screen.c
++++ b/screen.c
+@@ -978,7 +978,7 @@ char **av;
+ 
+   if (home == 0 || *home == '\0')
+     home = ppp->pw_dir;
+-  if (strlen(LoginName) > 20)
++  if (strlen(LoginName) > MAX_USERNAME_LEN)
+     Panic(0, "LoginName too long - sorry.");
+ #ifdef MULTIUSER
+   if (multi && strlen(multi) > 20)
+diff --git a/screen.h b/screen.h
+index 5c93f32..73c17ba 100644
+--- a/screen.h
++++ b/screen.h
+@@ -207,7 +207,7 @@ struct msg
+       create;
+       struct
+ 	{
+-	  char auser[20 + 1];	/* username */
++	  char auser[MAX_USERNAME_LEN + 1];	/* username */
+ 	  int apid;		/* pid of frontend */
+ 	  int adaptflag;	/* adapt window size? */
+ 	  int lines, columns;	/* display size */
+@@ -221,13 +221,13 @@ struct msg
+       attach;
+       struct 
+ 	{
+-	  char duser[20 + 1];	/* username */
++	  char duser[MAX_USERNAME_LEN + 1];	/* username */
+ 	  int dpid;		/* pid of frontend */
+ 	}
+       detach;
+       struct 
+ 	{
+-	  char auser[20 + 1];	/* username */
++	  char auser[MAX_USERNAME_LEN + 1];	/* username */
+ 	  int nargs;
+ 	  char cmd[MAXPATHLEN];	/* command */
+ 	  int apid;		/* pid of frontend */
+
