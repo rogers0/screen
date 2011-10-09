@@ -94,6 +94,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
   * Add extend-diff-ignore=config\.h\.in to debian/source/options
   * Added a NEWS file stating problems to attach to a detached 4.0.3
     session with a 4.1.0 screen, e.g. during a dist-upgrade
+  * Suggest iselect, screenie or byobu (Closes: #176626)
 
  -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
 
