@@ -56,6 +56,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     - Fixes a bug with displaying blank spaces with bce on. (Closes: #578729,
       LP: #702094)
     - Fix using alternate screen buffers in some cases. (Closes: #558724)
+    - Several fixes for handling mouse events. (Closes: #223320)
   * Remove the patches which have been applied upstream or are
     otherwise no more necessary:
     - 17manpage_sessionname_warning
