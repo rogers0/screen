@@ -1,4 +1,4 @@
-screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
+screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
 
   [ Brian P Kroth ]
   * New upstream snapshot based on 4.1.0 prerelease 20101110git066b098 as
@@ -96,7 +96,7 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     session with a 4.1.0 screen, e.g. during a dist-upgrade
   * Suggest iselect, screenie or byobu (Closes: #176626)
 
- -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
+ -- Axel Beckert <abe@debian.org>  Sun, 09 Oct 2011 03:29:31 +0200
 
 screen (4.0.3-14+hurd.1) unreleased; urgency=low
 
