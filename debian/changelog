@@ -1,4 +1,4 @@
-screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
+screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
 
   [ Brian P Kroth ]
   * New upstream snapshot based on 4.1.0 prerelease 20101110git066b098 as
@@ -29,8 +29,8 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     - 14size_matters
     - 26source_encoding
   * Added patches from Fedora:
-    - 02screen-cc: Additional assertions to improve stability
-    - 03screen-ipv6: IPv6 support for built-in telnet
+    - 47screen-cc: Additional assertions to improve stability
+    - 48screen-ipv6: IPv6 support for built-in telnet
   * Enable telnet (Closes: #353090) and localized day/month names
 
   [ Axel Beckert ]
@@ -47,14 +47,36 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     - Now has tsl, fsl and dsl terminfo caps (Closes: #152961)
     - Windows created with "-d -m" no more ignore "-X exec" (Closes: #481411)
     - Now has a session name string escape (Closes: #488619)
-  * Remove patches which have been applied upstream or are otherwise no
-    more necessary:
+    - Re-optimize screen updates (Closes: #621704, LP: #588846)
+    - No more mishandles xterm control string to set window title (Closes:
+      #344759) Thanks to Thomas Dickey and Sadrul Habib Chowdhury.
+    - Fixes/Relaxes requirement for a controlling terminal (Closes: #461107)
+    - Uses fuzzy-matching for session names only if required (Closes: #361274)
+    - Has customizable digraphs (Closes: #25096, a wishlist bug from 1998! :-)
+    - Fixes a bug with displaying blank spaces with bce on. (Closes: #578729,
+      LP: #702094)
+    - Fix using alternate screen buffers in some cases. (Closes: #558724)
+    - Several fixes for handling mouse events. (Closes: #223320)
+  * Remove the patches which have been applied upstream or are
+    otherwise no more necessary:
     - 17manpage_sessionname_warning
     - 30fix_fsf_address
   * Refreshed the following patches:
-    - 51EXP_session_creation_time
+    - 10norootpassword
+    - 11replace_doc_paths
+    - 12kfreebsd_ctty
+    - 14size_matters
+    - 16fix_gcc_warnings
+    - 22exchange_file_mode
+    - 23exitcode_q_ls
+    - 24option_parser
+    - 32misc_minor_fixes
+  * Refreshed and renumbered the following patches:
+    - {51 => 80}EXP_session_creation_time
   * Added patches:
-    - 46fix-keybinding-typo-in-manpage.patch (Closes: #630535, #541793)
+    - 46fix-keybinding-typo-in-manpage (Closes: #630535, #541793)
+    - 49long-usernames (Closes: #560231, LP: #582153)
+    - 50increase-max-TERM-length
   * Use dh_autoreconf
     - Build-Depend on dh-autoreconf
   * Convert to source format "3.0 (quilt)"
@@ -70,8 +92,11 @@ screen (4.1.0~20110819git450e8f3-1) UNRELEASED; urgency=low
     (Closes: #612990)
   * Add Vcs-* headers
   * Add extend-diff-ignore=config\.h\.in to debian/source/options
+  * Added a NEWS file stating problems to attach to a detached 4.0.3
+    session with a 4.1.0 screen, e.g. during a dist-upgrade
+  * Suggest iselect, screenie or byobu (Closes: #176626)
 
- -- Axel Beckert <abe@debian.org>  Tue, 04 Oct 2011 23:30:57 +0200
+ -- Axel Beckert <abe@debian.org>  Sun, 09 Oct 2011 03:29:31 +0200
 
 screen (4.0.3-14+hurd.1) unreleased; urgency=low
 
