@@ -1,3 +1,10 @@
+screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
+
+  * Add patch fix-utf8-status-padding-bug by Kees Cook and Dustin Kirkland
+    (probably fixes #215955)
+
+ -- Axel Beckert <abe@debian.org>  Wed, 19 Oct 2011 23:53:28 +0200
+
 screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
 
   [ Brian P Kroth ]
