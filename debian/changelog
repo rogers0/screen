@@ -9,6 +9,7 @@ screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
     include /usr/share/dpkg/buildflags.mk
   * Add lintian override for init.d-script-does-not-implement-optional-option
     warning. A cleanup script does not need a status subcommand.
+  * Fix lintian warning init.d-script-missing-lsb-description.
 
   [ Moritz Muehlenhoff ]
   * Enable hardening build flags (Closes: #656513)

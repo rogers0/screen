@@ -11,6 +11,8 @@
 # Default-Start:     S
 # Default-Stop:
 # Short-Description: screen sessions cleaning
+# Description: Cleans up the screen session directory and fixes its
+#  permissions if needed.
 ### END INIT INFO
 
 set -e
