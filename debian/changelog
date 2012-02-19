@@ -1,6 +1,7 @@
 screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
 
   [ Axel Beckert ]
+  * Switch Maintainer and Uploaders.
   * Add patch fix-utf8-status-padding-bug by Kees Cook and Dustin Kirkland
     (probably fixes #215955)
   * Updated previous changelog entry to document further bugs which have
