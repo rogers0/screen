@@ -2,8 +2,10 @@ screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
 
   * Add patch fix-utf8-status-padding-bug by Kees Cook and Dustin Kirkland
     (probably fixes #215955)
+  * Updated previous changelog entry to document further bugs which have
+    been fixed by that upload.
 
- -- Axel Beckert <abe@debian.org>  Wed, 19 Oct 2011 23:53:28 +0200
+ -- Axel Beckert <abe@debian.org>  Sun, 19 Feb 2012 16:32:37 +0100
 
 screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
 
@@ -64,6 +66,10 @@ screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
       LP: #702094)
     - Fix using alternate screen buffers in some cases. (Closes: #558724)
     - Several fixes for handling mouse events. (Closes: #223320)
+    - Passes signals to programs running inside screen on kfreebsd.
+      (Closes: 522689)
+    - Documents vertical split in man-page. (Closes: #611453)
+    - Adds focus left/right commands. (Closes: #526002)
   * Remove the patches which have been applied upstream or are
     otherwise no more necessary:
     - 17manpage_sessionname_warning
@@ -83,7 +89,7 @@ screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
   * Added patches:
     - 46fix-keybinding-typo-in-manpage (Closes: #630535, #541793)
     - 49long-usernames (Closes: #560231, LP: #582153)
-    - 50increase-max-TERM-length
+    - 50increase-max-TERM-length (Closes: #621804, #630976)
   * Use dh_autoreconf
     - Build-Depend on dh-autoreconf
   * Convert to source format "3.0 (quilt)"
