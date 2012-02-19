@@ -1,11 +1,15 @@
 screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
 
+  [ Axel Beckert ]
   * Add patch fix-utf8-status-padding-bug by Kees Cook and Dustin Kirkland
     (probably fixes #215955)
   * Updated previous changelog entry to document further bugs which have
     been fixed by that upload.
 
- -- Axel Beckert <abe@debian.org>  Sun, 19 Feb 2012 16:32:37 +0100
+  [ Moritz Muehlenhoff ]
+  * Enable hardening build flags (Closes: #656513)
+
+ -- Axel Beckert <abe@debian.org>  Sun, 19 Feb 2012 19:59:51 +0100
 
 screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
 

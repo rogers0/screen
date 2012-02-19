@@ -12,6 +12,9 @@ ROOT := $(CURDIR)/debian/$(package)
 # statically define this... sucko
 TTYGROUP := 5
 
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/buildflags.mk
+
 ifeq ($(findstring noopt,$(DEB_BUILD_OPTIONS)),noopt)
 CC_OPTFLAGS := -O0 -g3
 else
@@ -33,6 +36,7 @@ configure-stamp:
 	dh_testdir
 	dh_autoreconf
 	./configure --prefix=/usr \
+		    $(shell dpkg-buildflags --export=configure) \
 		    --infodir='$$(prefix)/share/info' \
 		    --mandir='$$(prefix)/share/man' \
 		    --with-socket-dir=/var/run/screen \
