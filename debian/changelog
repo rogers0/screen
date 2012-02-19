@@ -5,6 +5,8 @@ screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
     (probably fixes #215955)
   * Updated previous changelog entry to document further bugs which have
     been fixed by that upload.
+  * Add build dependency on dpkg-dev (>= 1.16.1~) for being able to
+    include /usr/share/dpkg/buildflags.mk
 
   [ Moritz Muehlenhoff ]
   * Enable hardening build flags (Closes: #656513)
