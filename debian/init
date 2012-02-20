@@ -28,7 +28,7 @@ start)
         mkdir $SCREENDIR
         chown root:utmp $SCREENDIR
     fi
-    find $SCREENDIR -type p -print0 | xargs -0r rm -f --
+    find $SCREENDIR -type p -delete
 # If the local admin has used dpkg-statoverride to install the screen
 # binary with different set[ug]id bits, change the permissions of
 # $SCREENDIR accordingly

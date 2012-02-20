@@ -11,6 +11,9 @@ screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
   * Add lintian override for init.d-script-does-not-implement-optional-option
     warning. A cleanup script does not need a status subcommand.
   * Fix lintian warning init.d-script-missing-lsb-description.
+  * Changes taken from Ubuntu's screen package:
+    - debian/init: Use find -delete rather than find -print0 | xargs rm to
+      avoid starting two processes.
 
   [ Moritz Muehlenhoff ]
   * Enable hardening build flags (Closes: #656513)
