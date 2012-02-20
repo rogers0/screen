@@ -17,6 +17,8 @@ screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
     - debian/patches/58-show-encoding-hardstatus.patch (Closes: #533498;
       the remaining part of #533498 has been fixed upstream, see
       https://savannah.gnu.org/bugs/index.php?26401)
+  * Add patch 52fix_screen_utf8_nfd by Nobuhiro Iwamatsu to fix screen
+    outputing "ÿ" after a connected character. (Closes: #600246)
 
   [ Moritz Muehlenhoff ]
   * Enable hardening build flags (Closes: #656513)

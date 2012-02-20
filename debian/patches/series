@@ -20,6 +20,7 @@
 49long-usernames.patch
 50increase-max-TERM-length.patch
 51fix-utf8-status-padding-bug.patch
+52fix_screen_utf8_nfd.patch
 58-show-encoding-hardstatus.patch
 # 80-99: experimental patches, new features etc.
 80EXP_session_creation_time.patch
