@@ -80,6 +80,10 @@ screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
       (Closes: 522689)
     - Documents vertical split in man-page. (Closes: #611453)
     - Adds focus left/right commands. (Closes: #526002)
+    - Locked screens no more can be unlocked by reattaching to it:
+      (Closes: #238535)
+    - Shows cursor in front of the selected window in "windowlist -b"
+      (Closes: #446082)
   * Remove the patches which have been applied upstream or are
     otherwise no more necessary:
     - 17manpage_sessionname_warning
