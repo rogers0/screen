@@ -6,8 +6,10 @@ Affects screen's behaviour in the following situations:
 * 'screen -ls' lists available sessions sorted chronologically
 * 'screen -RR' now picks the youngest session instead of an
 arbitrary one
---- a/doc/screen.1
-+++ b/doc/screen.1
+Index: screen/doc/screen.1
+===================================================================
+--- screen.orig/doc/screen.1	2012-03-20 22:41:13.000000000 +0100
++++ screen/doc/screen.1	2012-03-20 22:41:52.000000000 +0100
 @@ -242,7 +242,7 @@
  .IR screen ,
  but prints a list of
@@ -35,8 +37,10 @@ arbitrary one
  .TP 5
  .BI "\-s " program 
  sets the default shell to the program specified, instead of the value
---- a/doc/screen.texinfo
-+++ b/doc/screen.texinfo
+Index: screen/doc/screen.texinfo
+===================================================================
+--- screen.orig/doc/screen.texinfo	2012-03-20 22:41:10.000000000 +0100
++++ screen/doc/screen.texinfo	2012-03-20 22:41:52.000000000 +0100
 @@ -318,7 +318,8 @@
  @itemx -list [@var{match}]
  Do not start @code{screen}, but instead print a list of session
@@ -65,9 +69,11 @@ arbitrary one
  
  @item -s @var{program}
  Set the default shell to be @var{program}.  By default, @code{screen}
---- a/extern.h
-+++ b/extern.h
-@@ -389,6 +389,8 @@
+Index: screen/extern.h
+===================================================================
+--- screen.orig/extern.h	2012-03-20 22:41:13.000000000 +0100
++++ screen/extern.h	2012-03-20 22:41:52.000000000 +0100
+@@ -390,6 +390,8 @@
  #else
  extern int   xsnprintf __P(());
  #endif
@@ -76,8 +82,10 @@ arbitrary one
  
  
  /* acl.c */
---- a/misc.c
-+++ b/misc.c
+Index: screen/misc.c
+===================================================================
+--- screen.orig/misc.c	2012-03-20 22:14:48.000000000 +0100
++++ screen/misc.c	2012-03-20 22:41:52.000000000 +0100
 @@ -29,6 +29,7 @@
  #include <sys/types.h>
  #include <sys/stat.h>	/* mkdir() declaration */
@@ -127,8 +135,10 @@ arbitrary one
 +  close(fd);
 +  return atol(uptimestr);
 +}
---- a/socket.c
-+++ b/socket.c
+Index: screen/socket.c
+===================================================================
+--- screen.orig/socket.c	2012-03-20 22:41:12.000000000 +0100
++++ screen/socket.c	2012-03-20 22:41:52.000000000 +0100
 @@ -125,16 +125,18 @@
    int sdirlen;
    int  matchlen = 0;

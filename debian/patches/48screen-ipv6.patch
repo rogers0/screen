@@ -1,7 +1,9 @@
 Author: <bpkroth@gmail.com>
 Description: Some patches stolen from the fedora package for better error checking and tty security.
---- a/doc/screen.1
-+++ b/doc/screen.1
+Index: screen/doc/screen.1
+===================================================================
+--- screen.orig/doc/screen.1	2012-03-20 22:41:10.000000000 +0100
++++ screen/doc/screen.1	2012-03-20 22:41:13.000000000 +0100
 @@ -398,6 +398,12 @@
  the \fB-d\fP or \fB-r\fP option to tell screen to look only for
  attached or detached screen sessions. Note that this command doesn't
@@ -15,9 +17,11 @@ Description: Some patches stolen from the fedora package for better error checki
  
  .SH "DEFAULT KEY BINDINGS"
  .ta 12n 26n
---- a/extern.h
-+++ b/extern.h
-@@ -456,8 +456,7 @@
+Index: screen/extern.h
+===================================================================
+--- screen.orig/extern.h	2012-03-20 22:41:12.000000000 +0100
++++ screen/extern.h	2012-03-20 22:41:13.000000000 +0100
+@@ -459,8 +459,7 @@
  
  /* teln.c */
  #ifdef BUILTIN_TELNET
@@ -27,8 +31,10 @@ Description: Some patches stolen from the fedora package for better error checki
  extern int   TelIsline __P((struct win *p));
  extern void  TelProcessLine __P((char **, int *));
  extern int   DoTelnet __P((char *, int *, int));
---- a/help.c
-+++ b/help.c
+Index: screen/help.c
+===================================================================
+--- screen.orig/help.c	2012-03-20 22:14:48.000000000 +0100
++++ screen/help.c	2012-03-20 22:41:13.000000000 +0100
 @@ -66,6 +66,10 @@
  {
    printf("Use: %s [-opts] [cmd [args]]\n", myname);
@@ -40,8 +46,10 @@ Description: Some patches stolen from the fedora package for better error checki
    printf("-a            Force all capabilities into each window's termcap.\n");
    printf("-A -[r|R]     Adapt all windows to the new display width & height.\n");
    printf("-c file       Read configuration file instead of '.screenrc'.\n");
---- a/screen.c
-+++ b/screen.c
+Index: screen/screen.c
+===================================================================
+--- screen.orig/screen.c	2012-03-20 22:41:12.000000000 +0100
++++ screen/screen.c	2012-03-20 22:41:13.000000000 +0100
 @@ -248,8 +248,9 @@
  struct win *fore;
  struct win *windows;
@@ -79,8 +87,10 @@ Description: Some patches stolen from the fedora package for better error checki
  		case 'a':
  		  nwin_options.aflag = 1;
  		  break;
---- a/teln.c
-+++ b/teln.c
+Index: screen/teln.c
+===================================================================
+--- screen.orig/teln.c	2012-03-20 22:14:48.000000000 +0100
++++ screen/teln.c	2012-03-20 22:41:13.000000000 +0100
 @@ -30,6 +30,7 @@
  #include <sys/socket.h>
  #include <fcntl.h>
@@ -259,9 +269,11 @@ Description: Some patches stolen from the fedora package for better error checki
  }
  
  int
---- a/window.c
-+++ b/window.c
-@@ -605,6 +605,13 @@
+Index: screen/window.c
+===================================================================
+--- screen.orig/window.c	2012-03-20 22:35:13.000000000 +0100
++++ screen/window.c	2012-03-20 22:41:13.000000000 +0100
+@@ -607,6 +607,13 @@
    n = pp - wtab;
    debug1("Makewin creating %d\n", n);
  
@@ -275,7 +287,7 @@ Description: Some patches stolen from the fedora package for better error checki
    if ((f = OpenDevice(nwin.args, nwin.lflag, &type, &TtyName)) < 0)
      return -1;
    if (type == W_TYPE_GROUP)
-@@ -766,7 +773,7 @@
+@@ -768,7 +775,7 @@
  #ifdef BUILTIN_TELNET
    if (type == W_TYPE_TELNET)
      {
@@ -284,7 +296,7 @@ Description: Some patches stolen from the fedora package for better error checki
  	{
  	  FreeWindow(p);
  	  return -1;
-@@ -878,6 +885,13 @@
+@@ -880,6 +887,13 @@
    int lflag, f;
  
    lflag = nwin_default.lflag;
@@ -298,7 +310,7 @@ Description: Some patches stolen from the fedora package for better error checki
    if ((f = OpenDevice(p->w_cmdargs, lflag, &p->w_type, &TtyName)) < 0)
      return -1;
  
-@@ -911,7 +925,7 @@
+@@ -913,7 +927,7 @@
  #ifdef BUILTIN_TELNET
    if (p->w_type == W_TYPE_TELNET)
      {
@@ -307,7 +319,7 @@ Description: Some patches stolen from the fedora package for better error checki
          return -1;
      }
    else
-@@ -1070,16 +1084,6 @@
+@@ -1072,16 +1086,6 @@
        *namep = "telnet";
        return 0;
      }
@@ -324,8 +336,10 @@ Description: Some patches stolen from the fedora package for better error checki
    if (strncmp(arg, "//", 2) == 0)
      {
        Msg(0, "Invalid argument '%s'", arg);
---- a/window.h
-+++ b/window.h
+Index: screen/window.h
+===================================================================
+--- screen.orig/window.h	2012-03-20 22:14:48.000000000 +0100
++++ screen/window.h	2012-03-20 22:41:13.000000000 +0100
 @@ -268,7 +268,7 @@
    struct display *w_zdisplay;
  #endif

@@ -1,9 +1,11 @@
 Author: <hesso@pool.math.tu-berlin.de>
 Description: Enhance the vsprintf() test to also succeed on Alpha.
 Cf. #213842.
---- a/configure.in
-+++ b/configure.in
-@@ -1211,7 +1211,7 @@
+Index: screen/configure.in
+===================================================================
+--- screen.orig/configure.in	2012-03-20 22:34:28.000000000 +0100
++++ screen/configure.in	2012-03-20 22:34:53.000000000 +0100
+@@ -1212,7 +1212,7 @@
  AC_SYS_LONG_FILE_NAMES
  
  AC_MSG_CHECKING(for vsprintf)

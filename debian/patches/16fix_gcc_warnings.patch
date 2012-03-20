@@ -26,29 +26,3 @@ Index: screen/layer.c
  struct mline *ol;
  {
    struct canvas *cv;
-Index: screen/process.c
-===================================================================
---- screen.orig/process.c	2011-10-08 19:58:34.000000000 +0200
-+++ screen/process.c	2011-10-08 19:58:41.000000000 +0200
-@@ -3302,7 +3302,7 @@
-           int newnr, fl = 0, kf = 0, af = 0, df = 0, mf = 0;
- 	  struct display *odisp = display;
- 	  int used = 0;
--          struct kmap_ext *kme;
-+          struct kmap_ext *kme = 0;
- 
- 	  for (; *args && **args == '-'; args++, argl++)
- 	    {
-Index: screen/screen.c
-===================================================================
---- screen.orig/screen.c	2011-10-08 19:54:20.000000000 +0200
-+++ screen/screen.c	2011-10-08 19:58:41.000000000 +0200
-@@ -2517,7 +2517,7 @@
-   int truncpos = -1;
-   int truncper = 0;
-   int trunclong = 0;
--  struct backtick *bt;
-+  struct backtick *bt = 0;
-  
-   if (winmsg_numrend >= 0)
-     winmsg_numrend = 0;

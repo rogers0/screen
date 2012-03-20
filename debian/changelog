@@ -2,6 +2,18 @@ screen (4.1.0~20120320gitdb59704-1) experimental; urgency=low
 
   * Happy 25th Birthday GNU Screen
   * New upstream snapshot
+    - Refreshed the following patches:
+      + 01configure_fix_alpha_vsprintf
+      + 11replace_doc_paths
+      + 14size_matters
+      + 48screen-ipv6
+      + 51fix-utf8-status-padding-bug
+      + 52fix_screen_utf8_nfd
+      + 58-show-encoding-hardstatus
+      + 80EXP_session_creation_time
+    - Removed those hunks from 16fix_gcc_warnings which have been applied
+      upstream.
+    - Manually adapted patch 26source_encoding.
 
   [ Axel Beckert ]
   * Switch Maintainer and Uploaders.

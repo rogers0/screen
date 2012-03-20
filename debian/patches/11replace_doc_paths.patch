@@ -3,8 +3,8 @@ Description: Fix the references to configuration and pipe paths to match the
 locations Debian uses.
 Index: screen/doc/screen.1
 ===================================================================
---- screen.orig/doc/screen.1	2011-10-08 19:54:22.000000000 +0200
-+++ screen/doc/screen.1	2011-10-08 19:58:19.000000000 +0200
+--- screen.orig/doc/screen.1	2012-03-20 22:34:27.000000000 +0100
++++ screen/doc/screen.1	2012-03-20 22:35:03.000000000 +0100
 @@ -101,7 +101,7 @@
  the invoking shell to the application (emacs in this case), because it is
  forked from the parent screen process, not from the invoking shell.
@@ -50,7 +50,7 @@ Index: screen/doc/screen.1
  The option \*Q-n\*U may be used to suppress the line feed.
  See also \*Qsleep\*U.
  Echo is also useful for online checking of environment variables.
-@@ -4842,14 +4842,14 @@
+@@ -4844,14 +4844,14 @@
  .I screen
  distribution package for private and global initialization files.
  .IP $SYSSCREENRC 
@@ -68,7 +68,7 @@ Index: screen/doc/screen.1
  Socket directories (default)
  .IP /usr/tmp/screens/S-<login>
  Alternate socket directories.
-@@ -4868,7 +4868,7 @@
+@@ -4870,7 +4870,7 @@
  or
  .IP /etc/termcap
  Terminal capability databases
@@ -77,7 +77,7 @@ Index: screen/doc/screen.1
  Login records
  .IP $LOCKPRG
  Program that locks a terminal.
-@@ -4990,9 +4990,9 @@
+@@ -4992,9 +4992,9 @@
  must be installed as set-uid with owner root on most systems in order
  to be able to correctly change the owner of the tty device file for
  each window.
@@ -91,8 +91,8 @@ Index: screen/doc/screen.1
  This will cause some programs (like "w" or "rwho")
 Index: screen/doc/screen.texinfo
 ===================================================================
---- screen.orig/doc/screen.texinfo	2011-10-08 19:54:22.000000000 +0200
-+++ screen/doc/screen.texinfo	2011-10-08 19:58:19.000000000 +0200
+--- screen.orig/doc/screen.texinfo	2012-03-20 22:34:27.000000000 +0100
++++ screen/doc/screen.texinfo	2012-03-20 22:35:03.000000000 +0100
 @@ -182,7 +182,7 @@
  the invoking shell to the application (emacs in this case), because it is
  forked from the parent screen process, not from the invoking shell.
@@ -147,7 +147,7 @@ Index: screen/doc/screen.texinfo
  This controls whether or not the window is @dfn{logged in}.  In addition
  to this toggle, it is convenient to have ``log in'' and ``log out''
  keys.  For instance, @code{bind I login on} and @code{bind O 
-@@ -5668,17 +5668,17 @@
+@@ -5670,17 +5670,17 @@
  global initialization files.
  
  @item @code{$SYSSCREENRC}
@@ -168,7 +168,7 @@ Index: screen/doc/screen.texinfo
  Socket directories (default)
  
  @item /usr/tmp/screens/S-@var{login}
-@@ -5701,7 +5701,7 @@
+@@ -5703,7 +5703,7 @@
  @itemx /etc/termcap
  Terminal capability databases
  
@@ -177,7 +177,7 @@ Index: screen/doc/screen.texinfo
  Login records
  
  @item @code{$LOCKPRG}
-@@ -5807,10 +5807,10 @@
+@@ -5809,10 +5809,10 @@
  in order to be able to
  correctly change the owner of the tty device file for each window.
  Special permission may also be required to write the file
@@ -190,7 +190,7 @@ Index: screen/doc/screen.texinfo
  with SIGKILL.  This will cause some programs (like "w" or "rwho") to
  advertise that a user is logged on who really isn't.
  
-@@ -5891,7 +5891,7 @@
+@@ -5893,7 +5893,7 @@
  @cindex socket directory
  
  The socket directory defaults either to @file{$HOME/.screen} or simply to 
