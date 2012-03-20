@@ -34,6 +34,7 @@ screen (4.1.0~20120320gitdb59704-1) experimental; urgency=low
       https://savannah.gnu.org/bugs/index.php?26401)
   * Add patch 52fix_screen_utf8_nfd by Nobuhiro Iwamatsu to fix screen
     outputing "ÿ" after a connected character. (Closes: #600246)
+  * Bumped Standards-Version to 3.9.3.
 
   [ Moritz Muehlenhoff ]
   * Enable hardening build flags (Closes: #656513)
