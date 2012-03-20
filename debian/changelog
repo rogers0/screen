@@ -1,4 +1,7 @@
-screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
+screen (4.1.0~20120320gitdb59704-1) experimental; urgency=low
+
+  * Happy 25th Birthday GNU Screen
+  * New upstream snapshot
 
   [ Axel Beckert ]
   * Switch Maintainer and Uploaders.
@@ -23,7 +26,7 @@ screen (4.1.0~20110819git450e8f3-2) UNRELEASED; urgency=low
   [ Moritz Muehlenhoff ]
   * Enable hardening build flags (Closes: #656513)
 
- -- Axel Beckert <abe@debian.org>  Sun, 19 Feb 2012 19:59:51 +0100
+ -- Axel Beckert <abe@debian.org>  Tue, 20 Mar 2012 22:16:07 +0100
 
 screen (4.1.0~20110819git450e8f3-1) experimental; urgency=low
 
