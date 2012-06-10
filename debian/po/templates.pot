@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: screen\n"
 "Report-Msgid-Bugs-To: screen@packages.debian.org\n"
-"POT-Creation-Date: 2012-06-10 03:35+0200\n"
+"POT-Creation-Date: 2012-06-10 16:41+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 #. Type: error
 #. Description
 #: ../templates:1001
-msgid "Previous screen binary has been copied to /tmp/"
+msgid "Previous screen binary has been copied to /tmp/screen-4.0.3"
 msgstr ""
 
 #. Type: error
@@ -50,7 +50,8 @@ msgid ""
 "To be able to reconnect to your running GNU Screen session after the new "
 "screen package has been unpacked, you'll need to call the old screen binary "
 "instead of the new one. For that purpose, the old screen binary has been "
-"copied to /tmp/. You can call it like this: \"/tmp/screen -rd\""
+"copied to /tmp/screen-4.0.3. You can call it like this: \"/tmp/screen-4.0.3 -"
+"rd\""
 msgstr ""
 
 #. Type: error
@@ -66,7 +67,7 @@ msgstr ""
 #. Type: error
 #. Description
 #: ../templates:2001
-msgid "Copying current screen binary to /tmp/ failed."
+msgid "Copying current screen binary to /tmp/screen-4.0.3 failed."
 msgstr ""
 
 #. Type: error
@@ -76,5 +77,5 @@ msgid ""
 "To be able to reconnect to your running GNU Screen session after the new "
 "screen package has been unpacked, you'll need to call the old screen binary "
 "instead of the new one. For that purpose, it has been tried to copy the old "
-"screen binary to /tmp/, but unfortunately this failed."
+"screen binary to /tmp/screen-4.0.3, but unfortunately this failed."
 msgstr ""

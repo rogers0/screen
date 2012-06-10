@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: screen\n"
 "Report-Msgid-Bugs-To: screen@packages.debian.org\n"
 "POT-Creation-Date: 2012-06-10 03:35+0200\n"
-"PO-Revision-Date: 2012-06-10 04:26+0200\n"
+"PO-Revision-Date: 2012-06-10 16:49+0200\n"
 "Last-Translator: Axel Beckert <abe@debian.org>\n"
 "Language-Team: Axel Beckert <abe@debian.org>\n"
 "Language: de\n"
@@ -20,8 +20,8 @@ msgstr ""
 #. Type: error
 #. Description
 #: ../templates:1001
-msgid "Previous screen binary has been copied to /tmp/"
-msgstr "Vorheriges screen-Programm wurde nach /tmp/ kopiert"
+msgid "Previous screen binary has been copied to /tmp/screen-4.0.3"
+msgstr "Vorheriges screen-Programm wurde nach /tmp/screen-4.0.3 kopiert"
 
 #. Type: error
 #. Description
@@ -54,13 +54,14 @@ msgid ""
 "To be able to reconnect to your running GNU Screen session after the new "
 "screen package has been unpacked, you'll need to call the old screen binary "
 "instead of the new one. For that purpose, the old screen binary has been "
-"copied to /tmp/. You can call it like this: \"/tmp/screen -rd\""
+"copied to /tmp/screen-4.0.3. You can call it like this: \"/tmp/screen-4.0.3 -"
+"rd\""
 msgstr ""
 "Um zur laufenden GNU-Screen-Sitzung wieder verbinden zu können, "
 "nachdem das neue screen-Paket ausgepackt wurden, muß das alte "
 "screen-Programm anstatt dem neuen aufgerufen werden. Zu diesem Zwecke "
-"wurde das alte screen-Programm nach /tmp/ kopiert. Man kann es z.B. so "
-"aufrufen: \"/tmp/screen -rd\""
+"wurde das alte screen-Programm nach /tmp/screen-4.0.3 kopiert. Man "
+"kann es z.B. so aufrufen: \"/tmp/screen-4.0.3 -rd\""
 
 #. Type: error
 #. Description
@@ -80,8 +81,8 @@ msgstr ""
 #. Type: error
 #. Description
 #: ../templates:2001
-msgid "Copying current screen binary to /tmp/ failed."
-msgstr "Kopieren des aktuellen screen-Programms nach /tmp/ fehlgeschlagen"
+msgid "Copying current screen binary to /tmp/screen-4.0.3 failed."
+msgstr "Kopieren des aktuellen screen-Programms nach /tmp/screen-4.0.3 fehlgeschlagen"
 
 #. Type: error
 #. Description
@@ -90,10 +91,10 @@ msgid ""
 "To be able to reconnect to your running GNU Screen session after the new "
 "screen package has been unpacked, you'll need to call the old screen binary "
 "instead of the new one. For that purpose, it has been tried to copy the old "
-"screen binary to /tmp/, but unfortunately this failed."
+"screen binary to /tmp/screen-4.0.3, but unfortunately this failed."
 msgstr ""
 "Um zur laufenden GNU-Screen-Sitzung wieder verbinden zu können, "
 "nachdem das neue screen-Paket ausgepackt wurden, muß man das alte "
 "screen-Programm anstatt dem neuen aufrufen. Zu diesem Zwecke wurde "
-"versucht, das alte screen-Programm nach /tmp/ zu kopieren. Dies ist "
-"jedoch fehlgeschlagen."
+"versucht, das alte screen-Programm nach /tmp/screen-4.0.3 zu "
+"kopieren. Dies ist jedoch fehlgeschlagen."

@@ -2,8 +2,8 @@ screen (4.1.0~20120320gitdb59704-2) unstable; urgency=low
 
   * Upload to unstable as the two RC issues which the experimental package
     had, are now resolved or at least workarounded:
-    - Copy /usr/bin/screen to /tmp/ on upgrade from pre-4.1.0 and use
-      debconf to inform the user about it. (Closes: #644788)
+    - Copy /usr/bin/screen to /tmp/screen-4.0.3 on upgrade from pre-4.1.0
+      and use debconf to inform the user about it. (Closes: #644788)
     - Add patch to fix terminal handling on kfreebsd (Closes: #660567)
       Thanks Jan Christoph Nordholz!
   * Use dh_lintian instead of handling lintian overrides manually.
@@ -17,7 +17,7 @@ screen (4.1.0~20120320gitdb59704-2) unstable; urgency=low
     - Fixes two typos found by lintian
     - Update 80EXP_session_creation_time.patch accordingly
 
- -- Axel Beckert <abe@debian.org>  Sun, 10 Jun 2012 16:28:58 +0200
+ -- Axel Beckert <abe@debian.org>  Sun, 10 Jun 2012 16:35:24 +0200
 
 screen (4.1.0~20120320gitdb59704-1) experimental; urgency=low
 

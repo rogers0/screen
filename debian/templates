@@ -1,6 +1,6 @@
 Template: screen/410-upgrade
 Type: error
-_Description: Previous screen binary has been copied to /tmp/
+_Description: Previous screen binary has been copied to /tmp/screen-4.0.3
  GNU Screen 4.1.0 currently can't speak with GNU Screen sessions
  started by GNU Screen 4.0.3.
  .
@@ -10,8 +10,8 @@ _Description: Previous screen binary has been copied to /tmp/
  To be able to reconnect to your running GNU Screen session after the
  new screen package has been unpacked, you'll need to call the old
  screen binary instead of the new one. For that purpose, the old
- screen binary has been copied to /tmp/. You can call it like this:
- "/tmp/screen -rd"
+ screen binary has been copied to /tmp/screen-4.0.3. You can call it
+ like this: "/tmp/screen-4.0.3 -rd"
  .
  In case your /tmp/ is a separate mount point and mounted with the
  nosuid or noexec options, you may need to copy it to some other place
@@ -21,7 +21,7 @@ _Description: Previous screen binary has been copied to /tmp/
 
 Template: screen/403-copy-failed
 Type: error
-_Description: Copying current screen binary to /tmp/ failed.
+_Description: Copying current screen binary to /tmp/screen-4.0.3 failed.
  GNU Screen 4.1.0 currently can't speak with GNU Screen sessions
  started by GNU Screen 4.0.3.
  .
@@ -31,5 +31,5 @@ _Description: Copying current screen binary to /tmp/ failed.
  To be able to reconnect to your running GNU Screen session after the
  new screen package has been unpacked, you'll need to call the old
  screen binary instead of the new one. For that purpose, it has been
- tried to copy the old screen binary to /tmp/, but unfortunately this
- failed.
+ tried to copy the old screen binary to /tmp/screen-4.0.3, but
+ unfortunately this failed.
