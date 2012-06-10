@@ -24,6 +24,6 @@
 53-fix-terminal-handling-on-kfreebsd.patch
 54-fix-parallel-build.patch
 58-show-encoding-hardstatus.patch
-# 80-99: experimental patches, new features etc.
 59-fix-manpage-warnings.patch
+# 80-99: experimental patches, new features etc.
 80EXP_session_creation_time.patch
