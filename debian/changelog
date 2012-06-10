@@ -6,6 +6,7 @@ screen (4.1.0~20120320gitdb59704-2) unstable; urgency=low
       and use debconf to inform the user about it. (Closes: #644788)
     - Add patch to fix terminal handling on kfreebsd (Closes: #660567)
       Thanks Jan Christoph Nordholz!
+  * Add patch to fix parallel building.
   * Use dh_lintian instead of handling lintian overrides manually.
   * No more clean up manually what dh_clean can clean up.
   * Add new patch to fix man page errors and warnings:
@@ -17,7 +18,7 @@ screen (4.1.0~20120320gitdb59704-2) unstable; urgency=low
     - Fixes two typos found by lintian
     - Update 80EXP_session_creation_time.patch accordingly
 
- -- Axel Beckert <abe@debian.org>  Sun, 10 Jun 2012 16:35:24 +0200
+ -- Axel Beckert <abe@debian.org>  Sun, 10 Jun 2012 17:54:53 +0200
 
 screen (4.1.0~20120320gitdb59704-1) experimental; urgency=low
 

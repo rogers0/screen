@@ -22,6 +22,7 @@
 51fix-utf8-status-padding-bug.patch
 52fix_screen_utf8_nfd.patch
 53-fix-terminal-handling-on-kfreebsd.patch
+54-fix-parallel-build.patch
 58-show-encoding-hardstatus.patch
 # 80-99: experimental patches, new features etc.
 59-fix-manpage-warnings.patch
