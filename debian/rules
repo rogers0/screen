@@ -79,9 +79,6 @@ install-stamp: build-stamp
 	# make it setgid utmp
 	chown root:utmp $(ROOT)/usr/bin/screen
 	chmod 2755 $(ROOT)/usr/bin/screen
-	# lintian overrides for the setgid bin etc
-	install -m 755 -d $(ROOT)/usr/share/lintian/overrides
-	install -m 644 debian/screen.lintian.overrides $(ROOT)/usr/share/lintian/overrides/screen
 	touch $@
 
 binary: binary-arch
@@ -97,6 +94,7 @@ binary-arch: install
 	dh_installdebconf
 	dh_installchangelogs -k patchlevel.h
 	dh_installinit --no-start --init-script='screen-cleanup' --update-rcd-params='start 70 S .'
+	dh_lintian
 	dh_strip
 	dh_compress
 	dh_fixperms -X/usr/bin/screen
