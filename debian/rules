@@ -24,12 +24,10 @@ endif
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f configure-stamp build-stamp install-stamp
 	test ! -s doc/Makefile || $(MAKE) -C doc realclean
 	test ! -s Makefile || ! grep -q clean Makefile || $(MAKE) realclean
-	rm -f config.log config.status Makefile
 	dh_autoreconf_clean
-	dh_clean
+	dh_clean config.log config.status Makefile
 
 configure: configure-stamp
 configure-stamp:

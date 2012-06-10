@@ -5,6 +5,7 @@ screen (4.1.0~20120320gitdb59704-2) UNRELEASED; urgency=low
   * Add patch to fix terminal handling on kfreebsd (Closes: #660567)
     Thanks Jan Christoph Nordholz!
   * Use dh_lintian instead of handling lintian overrides manually.
+  * No more clean up manually what dh_clean can clean up.
 
  -- Axel Beckert <abe@debian.org>  Sun, 10 Jun 2012 02:18:55 +0200
 
