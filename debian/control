@@ -11,6 +11,7 @@ Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/screen.git
 
 Package: screen
 Architecture: any
+Pre-Depends: debconf
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: iselect (>= 1.4.0-1) | screenie | byobu
 Description: terminal multiplexor with VT100/ANSI terminal emulation

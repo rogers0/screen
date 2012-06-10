@@ -2,12 +2,25 @@
 
 set -e
 
+. /usr/share/debconf/confmodule
+
 if [ "$1" = upgrade ]; then
   if dpkg --compare-versions "$2" lt-nl 4.0.3-7 && \
      dpkg --compare-versions "$2" gt 4.0.3-3; then
     if ! test -L /tmp/.screen && test -d /tmp/.screen && test -n "`find /tmp/.screen -type p 2>/dev/null`"; then
       ln -s /tmp/.screen /var/run/screen
     fi
+  fi
+  if pidof SCREEN >/dev/null && test '!' -e /tmp/screen && dpkg --compare-versions "$2" lt-nl 4.1.0~; then
+      if cp -pnT /usr/bin/screen /tmp/ ; then
+	  echo Copied /usr/bin/screen to /tmp/screen
+	  db_input high screen/410-upgrade || true
+	  db_go || true
+      else
+	  echo Copying /usr/bin/screen to /tmp/screen failed
+	  db_input high screen/403-copy-failed || true
+	  db_go || true
+      fi
   fi
 fi
 

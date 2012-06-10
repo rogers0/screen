@@ -94,6 +94,7 @@ binary-arch: install
 	dh_installexamples
 	dh_installman || true
 	dh_installinfo
+	dh_installdebconf
 	dh_installchangelogs -k patchlevel.h
 	dh_installinit --no-start --init-script='screen-cleanup' --update-rcd-params='start 70 S .'
 	dh_strip

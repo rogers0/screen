@@ -1,9 +1,11 @@
 screen (4.1.0~20120320gitdb59704-2) UNRELEASED; urgency=low
 
+  * Copy /usr/bin/screen to /tmp/ on upgrade from pre-4.1.0 and use
+    debconf to inform the user about it. (Closes: #644788)
   * Add patch to fix terminal handling on kfreebsd (Closes: #660567)
     Thanks Jan Christoph Nordholz!
 
- -- Axel Beckert <abe@debian.org>  Sun, 03 Jun 2012 22:33:02 +0200
+ -- Axel Beckert <abe@debian.org>  Sun, 10 Jun 2012 02:18:55 +0200
 
 screen (4.1.0~20120320gitdb59704-1) experimental; urgency=low
 

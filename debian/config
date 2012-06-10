@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+. /usr/share/debconf/confmodule
+
+if pidof SCREEN >/dev/null && test '!' -e /tmp/screen && dpkg --compare-versions $2 lt-nl 4.1.0~; then
+    if cp -pnT /usr/bin/screen /tmp/ ; then
+	echo Copied /usr/bin/screen to /tmp/screen
+	db_input high screen/410-upgrade || true
+	db_go || true
+    else
+	echo Copying /usr/bin/screen to /tmp/screen failed
+	db_input high screen/403-copy-failed || true
+	db_go || true
+    fi
+fi

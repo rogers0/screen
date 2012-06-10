@@ -1,0 +1,65 @@
+Template: screen/410-upgrade
+Type: error
+Description: Previous screen binary has been copied to /tmp/
+ GNU Screen 4.1.0 currently can't speak with GNU Screen sessions
+ started by GNU Screen 4.0.3.
+ .
+ On this system there seems to be at least one GNU Screen session
+ running, possibly the one you run this upgrade in.
+ .
+ To be able to reconnect to your running GNU Screen session after the
+ new screen package has been unpacked, you'll need to call the old
+ screen binary instead of the new one. For that purpose, the old
+ screen binary has been copied to /tmp/. You can call it like this:
+ "/tmp/screen -rd"
+ .
+ In case your /tmp/ is a separate mount point and mounted with the
+ nosuid or noexec options, you may need to copy it to some other place
+ beforehand, e.g. to /root/, before calling it. It's permissions
+ should be 2755 (-rwxr-sr-x) and it should belong to the user root and
+ group utmp.
+Description-de_DE.UTF-8: Vorheriges scren-Programm wurde nach /tmp/ kopiert
+ GNU Screen 4.1.0 kann momentan nicht mit GNU-Screen-Sitzungen
+ sprechen, die von GNU Screen 4.0.3 gestartet wurden.
+ .
+ Auf diesem System scheint mindestens eine GNU-Screen-Sitzung zu
+ laufen, möglicherweise diejenige, in der dieses Upgrade läuft.
+ .
+ Um zur laufenden GNU-Screen-Sitzung wieder verbinden zu können,
+ nachdem das neue screen-Paket ausgepackt wurden, muß man das alte
+ screen-Programm anstatt dem neuen aufrufen. Zu diesem Zwecke wurde
+ das alte screen-Programm nach /tmp/ kopiert. Man kann es z.B. so
+ aufrufen: "/tmp/screen -rd"
+ .
+ Im Falle, daß /tmp/ ein eigener Einhängepunkt ist und mit der Option
+ nosuid oder noexec eingehängt wurde, ist es notwendig, das
+ screen-Programm vor dem Aufrufen an einen anderen Platz zu kopieren,
+ z.B. nach /root/. Seine Berechtigungen müssen 2755 (-rwxr-sr-x) sein
+ und es sollte dem Benutzer root und der Gruppe utmp gehören.
+
+Template: screen/403-copy-failed
+Type: error
+Description: Copying current screen binary to /tmp/ failed.
+ GNU Screen 4.1.0 currently can't speak with GNU Screen sessions
+ started by GNU Screen 4.0.3.
+ .
+ On this system there seems to be at least one GNU Screen session
+ running, possibly the one you run this upgrade in.
+ .
+ To be able to reconnect to your running GNU Screen session after the
+ new screen package has been unpacked, you'll need to call the old
+ screen binary instead of the new one. For that purpose, it has been
+ tried to copy the old screen binary to /tmp/, but unfortunately this
+ failed.
+Description-de_DE.UTF-8: Kopieren des aktuellen screen-Programms nach /tmp/ fehlgeschlagen
+ kopiert GNU Screen 4.1.0 kann momentan nicht mit GNU-Screen-Sitzungen
+ sprechen, die von GNU Screen 4.0.3 gestartet wurden.
+ .
+ Auf diesem System scheint mindestens eine GNU-Screen-Sitzung zu
+ laufen, möglicherweise diejenige, in der dieses Upgrade läuft.
+ .
+ Um zur laufenden GNU-Screen-Sitzung wieder verbinden zu können,
+ nachdem das neue screen-Paket ausgepackt wurden, muß man das alte
+ screen-Programm anstatt dem neuen aufrufen. Zu diesem Zwecke wurde
+ versucht, das alte screen-Programm nach /tmp/ zu kopieren. Dies ist
+ jedoch fehlgeschlagen.
