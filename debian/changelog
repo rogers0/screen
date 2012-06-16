@@ -1,6 +1,11 @@
 screen (4.1.0~20120320gitdb59704-3) UNRELEASED; urgency=low
 
   * Update debconf templates received from the debian-l10n-english team
+    (Closes: #677303)
+  * Add translations of debconf templates
+    + Simplified Chinese (Closes: #677726; Thanks Aron Xu!)
+    + Danish (Closes: #677748; Thanks Joe Hansen!)
+    + Swedish (Closes: #677752; Thanks Martin Bagge!)
 
  -- Axel Beckert <abe@debian.org>  Sat, 16 Jun 2012 22:05:45 +0200
 
