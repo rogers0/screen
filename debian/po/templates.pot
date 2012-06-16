@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: screen\n"
 "Report-Msgid-Bugs-To: screen@packages.debian.org\n"
-"POT-Creation-Date: 2012-06-10 16:41+0200\n"
+"POT-Creation-Date: 2012-06-17 00:32+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,63 +19,51 @@ msgstr ""
 
 #. Type: error
 #. Description
-#: ../templates:1001
-msgid "Previous screen binary has been copied to /tmp/screen-4.0.3"
-msgstr ""
-
-#. Type: error
-#. Description
-#. Type: error
-#. Description
-#: ../templates:1001 ../templates:2001
-msgid ""
-"GNU Screen 4.1.0 currently can't speak with GNU Screen sessions started by "
-"GNU Screen 4.0.3."
-msgstr ""
-
-#. Type: error
-#. Description
-#. Type: error
-#. Description
-#: ../templates:1001 ../templates:2001
-msgid ""
-"On this system there seems to be at least one GNU Screen session running, "
-"possibly the one you run this upgrade in."
-msgstr ""
-
-#. Type: error
-#. Description
-#: ../templates:1001
-msgid ""
-"To be able to reconnect to your running GNU Screen session after the new "
-"screen package has been unpacked, you'll need to call the old screen binary "
-"instead of the new one. For that purpose, the old screen binary has been "
-"copied to /tmp/screen-4.0.3. You can call it like this: \"/tmp/screen-4.0.3 -"
-"rd\""
-msgstr ""
-
-#. Type: error
-#. Description
-#: ../templates:1001
-msgid ""
-"In case your /tmp/ is a separate mount point and mounted with the nosuid or "
-"noexec options, you may need to copy it to some other place beforehand, e.g. "
-"to /root/, before calling it. It's permissions should be 2755 (-rwxr-sr-x) "
-"and it should belong to the user root and group utmp."
-msgstr ""
-
-#. Type: error
-#. Description
 #: ../templates:2001
-msgid "Copying current screen binary to /tmp/screen-4.0.3 failed."
+msgid "Warning: upgrading to screen 4.1.0 with an active 4.0.3 session"
+msgstr ""
+
+#. Type: error
+#. Description
+#. Type: error
+#. Description
+#: ../templates:2001 ../templates:3001
+msgid ""
+"There seems to be at least one GNU Screen session running on this system; "
+"possibly the one you are running this upgrade in. However, GNU Screen 4.1.0 "
+"currently can't communicate with sessions started by Screen 4.0.3."
 msgstr ""
 
 #. Type: error
 #. Description
 #: ../templates:2001
 msgid ""
-"To be able to reconnect to your running GNU Screen session after the new "
-"screen package has been unpacked, you'll need to call the old screen binary "
-"instead of the new one. For that purpose, it has been tried to copy the old "
-"screen binary to /tmp/screen-4.0.3, but unfortunately this failed."
+"To reconnect to a running GNU Screen session after the new version has been "
+"unpacked, you'll need to call the old screen binary instead of the new one, "
+"so a copy has been made which can be invoked as \"/tmp/screen-4.0.3 -rd\"."
+msgstr ""
+
+#. Type: error
+#. Description
+#: ../templates:2001
+msgid ""
+"If your /tmp/ is a separate mount point mounted with the nosuid or noexec "
+"options, you may need to copy it to somewhere else (such as /root) before "
+"calling it. Its permissions should be 2755 (-rwxr-sr-x) and it should belong "
+"to the user root and group utmp."
+msgstr ""
+
+#. Type: error
+#. Description
+#: ../templates:3001
+msgid "Failed copy of screen binary to /tmp/screen-4.0.3"
+msgstr ""
+
+#. Type: error
+#. Description
+#: ../templates:3001
+msgid ""
+"To reconnect to a running GNU Screen session after the new version has been "
+"unpacked, you'll need to call the old screen binary instead of the new one. "
+"However, the attempt to copy it to /tmp/screen-4.0.3 has failed."
 msgstr ""
