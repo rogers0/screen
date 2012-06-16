@@ -1,5 +1,7 @@
 screen (4.1.0~20120320gitdb59704-3) UNRELEASED; urgency=low
 
+  * Fix workaround for #644788 (detect running screen in maintainer
+    scripts) on kfreebsd (Closes: #677227)
   * Update debconf templates received from the debian-l10n-english team
     (Closes: #677303)
   * Add translations of debconf templates
