@@ -8,6 +8,7 @@ screen (4.1.0~20120320gitdb59704-3) UNRELEASED; urgency=low
     + Simplified Chinese (Closes: #677726; Thanks Aron Xu!)
     + Danish (Closes: #677748; Thanks Joe Hansen!)
     + Swedish (Closes: #677752; Thanks Martin Bagge!)
+  * Updated German translation
   * Run debconf-updatepo automatically in clean target
 
  -- Axel Beckert <abe@debian.org>  Sat, 16 Jun 2012 22:05:45 +0200
