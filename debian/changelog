@@ -10,11 +10,12 @@ screen (4.1.0~20120320gitdb59704-3) UNRELEASED; urgency=low
     + Swedish (Closes: #677752; Thanks Martin Bagge!)
     + Slovak (Closes: #677838; Thanks Miguel Figueiredo!)
     + Portuguese (Closes: #677838; Thanks Miguel Figueiredo!)
+    + Russian (Closes: #678021; Thanks Yuri Kozlov!)
   * Updated German translation
   * Run debconf-updatepo automatically in clean target
     + Add build-dependency on po-debconf
 
- -- Axel Beckert <abe@debian.org>  Sun, 17 Jun 2012 16:07:57 +0200
+ -- Axel Beckert <abe@debian.org>  Mon, 18 Jun 2012 20:58:12 +0200
 
 screen (4.1.0~20120320gitdb59704-2) unstable; urgency=low
 
