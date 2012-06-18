@@ -1,4 +1,4 @@
-screen (4.1.0~20120320gitdb59704-3) UNRELEASED; urgency=low
+screen (4.1.0~20120320gitdb59704-3) unstable; urgency=low
 
   * Fix workaround for #644788 (detect running screen in maintainer
     scripts) on kfreebsd (Closes: #677227)
@@ -15,7 +15,7 @@ screen (4.1.0~20120320gitdb59704-3) UNRELEASED; urgency=low
   * Run debconf-updatepo automatically in clean target
     + Add build-dependency on po-debconf
 
- -- Axel Beckert <abe@debian.org>  Mon, 18 Jun 2012 20:58:12 +0200
+ -- Axel Beckert <abe@debian.org>  Mon, 18 Jun 2012 21:10:49 +0200
 
 screen (4.1.0~20120320gitdb59704-2) unstable; urgency=low
 
