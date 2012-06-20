@@ -1,4 +1,4 @@
-screen (4.1.0~20110819git450e8f3-4) unstable; urgency=low
+screen (4.1.0~20120320gitdb59704-4) unstable; urgency=low
 
   Currently screen 4.1.0 cannot reattach to running screen instances
   started by screen 4.0.3 like the screen version from Debian Squeeze.
