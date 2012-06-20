@@ -5,6 +5,8 @@ screen (4.1.0~20120320gitdb59704-4) UNRELEASED; urgency=low
   * Update NEWS.Debian entry. Now includes a howto resurrect running
     screen 4.0.3 sessions including generich commands for copy and
     paste. (Closes: #678181)
+  * Set sticky bit on /var/run/screen if screen is not setuid or setgid
+    (Closes: #592895)
   * Add translations of debconf templates
     + Norwegian Bokmål (Closes: #678112; Thanks Bjørn Steensrud!)
     + Polish (Closes: #678158; Thanks Michał Kułach!)
