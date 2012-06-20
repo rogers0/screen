@@ -4,7 +4,7 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-if pidof SCREEN screen >/dev/null && test '!' -e /tmp/screen-4.0.3 && dpkg --compare-versions $2 lt-nl 4.1.0~; then
+if pidof SCREEN screen >/dev/null && test '!' -e /tmp/screen-4.0.3 && dpkg --compare-versions "$2" lt-nl 4.1.0~; then
     if cp -pnT /usr/bin/screen /tmp/screen-4.0.3 ; then
 	echo Copied /usr/bin/screen to /tmp/screen-4.0.3
 	db_input high screen/410-upgrade || true

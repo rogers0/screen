@@ -1,5 +1,7 @@
 screen (4.1.0~20120320gitdb59704-4) UNRELEASED; urgency=low
 
+  * Fix missing quotation in debian/config's dpkg --compare-version call
+    (Closes: #678207)
   * Add translations of debconf templates
     + Norwegian Bokmål (Closes: #678112; Thanks Bjørn Steensrud!)
     + Polish (Closes: #678158; Thanks Michał Kułach!)
