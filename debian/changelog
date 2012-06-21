@@ -2,7 +2,7 @@ screen (4.1.0~20120320gitdb59704-4) UNRELEASED; urgency=low
 
   * Fix missing quoting in debian/config's dpkg --compare-version call
     (Closes: #678207)
-  * Update NEWS.Debian entry. Now includes a howto resurrect running
+  * Update NEWS.Debian entry. Now includes how to resurrect running
     screen 4.0.3 sessions including generich commands for copy and
     paste. (Closes: #678181)
   * Set sticky bit on /var/run/screen if screen is not setuid or setgid
@@ -13,7 +13,7 @@ screen (4.1.0~20120320gitdb59704-4) UNRELEASED; urgency=low
     + Norwegian Bokmål (Closes: #678112; Thanks Bjørn Steensrud!)
     + Polish (Closes: #678158; Thanks Michał Kułach!)
 
- -- Axel Beckert <abe@debian.org>  Tue, 19 Jun 2012 19:10:58 +0200
+ -- Axel Beckert <abe@debian.org>  Thu, 21 Jun 2012 16:35:50 +0200
 
 screen (4.1.0~20120320gitdb59704-3) unstable; urgency=low
 
