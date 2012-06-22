@@ -13,6 +13,7 @@ screen (4.1.0~20120320gitdb59704-4) UNRELEASED; urgency=low
     + Norwegian Bokmål (Closes: #678112; Thanks Bjørn Steensrud!)
     + Polish (Closes: #678158; Thanks Michał Kułach!)
     + Galician (Closes: #678469; Thanks Jorge Barreiro!)
+    + French (Closes: #678548; Thanks David Prévot!)
 
  -- Axel Beckert <abe@debian.org>  Thu, 21 Jun 2012 16:35:50 +0200
 
