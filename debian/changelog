@@ -1,3 +1,10 @@
+screen (4.1.0~20120320gitdb59704-5) UNRELEASED; urgency=low
+
+  * Fix bug number of Slovak debconf translation in
+    4.1.0~20120320gitdb59704-3 changelog entry
+
+ -- Axel Beckert <abe@debian.org>  Mon, 25 Jun 2012 02:04:45 +0200
+
 screen (4.1.0~20120320gitdb59704-4) unstable; urgency=low
 
   * Fix missing quoting in debian/config's dpkg --compare-version call
@@ -29,7 +36,7 @@ screen (4.1.0~20120320gitdb59704-3) unstable; urgency=low
     + Simplified Chinese (Closes: #677726; Thanks Aron Xu!)
     + Danish (Closes: #677748; Thanks Joe Hansen!)
     + Swedish (Closes: #677752; Thanks Martin Bagge!)
-    + Slovak (Closes: #677838; Thanks Miguel Figueiredo!)
+    + Slovak (Closes: #677848; Thanks Miguel Figueiredo!)
     + Portuguese (Closes: #677838; Thanks Miguel Figueiredo!)
     + Russian (Closes: #678021; Thanks Yuri Kozlov!)
   * Updated German translation
