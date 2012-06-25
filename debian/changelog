@@ -2,8 +2,11 @@ screen (4.1.0~20120320gitdb59704-5) UNRELEASED; urgency=low
 
   * Fix bug number of Slovak debconf translation in
     4.1.0~20120320gitdb59704-3 changelog entry
+  * Use GMANE URLs for refering to upstream discussions as lists.gnu.org
+    doesn't support threading over month boundaries. (Thanks Evgeni
+    Golov!)
 
- -- Axel Beckert <abe@debian.org>  Mon, 25 Jun 2012 02:04:45 +0200
+ -- Axel Beckert <abe@debian.org>  Mon, 25 Jun 2012 14:47:34 +0200
 
 screen (4.1.0~20120320gitdb59704-4) unstable; urgency=low
 
