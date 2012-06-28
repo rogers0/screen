@@ -5,6 +5,8 @@ screen (4.1.0~20120320gitdb59704-5) UNRELEASED; urgency=low
   * Use GMANE URLs for refering to upstream discussions as lists.gnu.org
     doesn't support threading over month boundaries. (Thanks Evgeni
     Golov!)
+  * Add translations of debconf templates
+    + Romanian (Closes: #679366; Thanks Andrei POPESCU!)
 
  -- Axel Beckert <abe@debian.org>  Mon, 25 Jun 2012 14:47:34 +0200
 
