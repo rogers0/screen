@@ -1,5 +1,7 @@
 screen (4.1.0~20120320gitdb59704-5) UNRELEASED; urgency=low
 
+  * Disable patch 52fix_screen_utf8_nfd.patch since it introduced a
+    regression (Closes: #677512, Reopens: #600246)
   * Fix bug number of Slovak debconf translation in
     4.1.0~20120320gitdb59704-3 changelog entry
   * Use GMANE URLs for refering to upstream discussions as lists.gnu.org
