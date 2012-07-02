@@ -20,7 +20,8 @@ msgstr ""
 #. Description
 #: ../templates:2001
 msgid "Warning: upgrading to screen 4.1.0 with an active 4.0.3 session"
-msgstr "Upozornění: aktualizuje se na screen 4.1.0 s aktivní relací verze 4.0.3"
+msgstr ""
+"Upozornění: aktualizuje se na screen 4.1.0 s aktivní relací verze 4.0.3"
 
 #. Type: error
 #. Description
@@ -32,9 +33,9 @@ msgid ""
 "possibly the one you are running this upgrade in. However, GNU Screen 4.1.0 "
 "currently can't communicate with sessions started by Screen 4.0.3."
 msgstr ""
-"Zdá se, že na tomto systému je spuštěna minimálně jedna relace programu GNU Screen; "
-"zřejmě ta, ze které spouštíte aktualizaci. GNU Screen 4.1.0 však v současné "
-"době neumí komunikovat s relacemi spuštěnými programem Screen 4.0.3."
+"Zdá se, že na tomto systému je spuštěna minimálně jedna relace programu GNU "
+"Screen; zřejmě ta, ze které spouštíte aktualizaci. GNU Screen 4.1.0 však v "
+"současné době neumí komunikovat s relacemi spuštěnými programem Screen 4.0.3."
 
 #. Type: error
 #. Description
@@ -57,10 +58,10 @@ msgid ""
 "calling it. Its permissions should be 2755 (-rwxr-sr-x) and it should belong "
 "to the user root and group utmp."
 msgstr ""
-"Je-li váš adresář /tmp/ připojen jako oddělený oddíl s volbami nosuid či noexec, "
-"budete jej muset před voláním někam zkopírovat (třeba do adresáře /root). "
-"Musí mít oprávnění 2755 (-rwxr-sr-x) a měl by patřit uživateli root a skupině "
-"utmp."
+"Je-li váš adresář /tmp/ připojen jako oddělený oddíl s volbami nosuid či "
+"noexec, budete jej muset před voláním někam zkopírovat (třeba do adresáře /"
+"root). Musí mít oprávnění 2755 (-rwxr-sr-x) a měl by patřit uživateli root a "
+"skupině utmp."
 
 #. Type: error
 #. Description

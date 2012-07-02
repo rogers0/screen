@@ -47,9 +47,9 @@ msgid ""
 "so a copy has been made which can be invoked as \"/tmp/screen-4.0.3 -rd\"."
 msgstr ""
 "Per riconnettersi ad una sessione di GNU Screen in esecuzione dopo che la "
-"nuova versione è stata spacchettata, è necessario eseguire il vecchio binario "
-"di screen invece del nuovo, perciò ne è stata fatta una copia che può "
-"essere chiamata usando \" /tmp/screen-4.0.3 -rd\"."
+"nuova versione è stata spacchettata, è necessario eseguire il vecchio "
+"binario di screen invece del nuovo, perciò ne è stata fatta una copia che "
+"può essere chiamata usando \" /tmp/screen-4.0.3 -rd\"."
 
 #. Type: error
 #. Description
@@ -62,8 +62,8 @@ msgid ""
 msgstr ""
 "Se /tmp/ è un punto di mount separato montato con le opzioni nosuid o "
 "noexec, può essere necessario copiarlo da qualche altra parte (come ad "
-"esempio /root) prima di eseguirlo. I suoi permessi devono essere 2755 "
-"(-rwxr-sr-x) e deve appartenere all'utente root e al gruppo utmp."
+"esempio /root) prima di eseguirlo. I suoi permessi devono essere 2755 (-rwxr-"
+"sr-x) e deve appartenere all'utente root e al gruppo utmp."
 
 #. Type: error
 #. Description
@@ -81,5 +81,5 @@ msgid ""
 msgstr ""
 "Per riconnettersi ad una sessione di GNU Screen in esecuzione dopo che la "
 "nuova versione è stata spacchettata è necessario eseguire il vecchio binario "
-"di screen invece del nuovo. Tuttavia il tentativo di copiarlo in "
-"/tmp/screen-4.0.3 è fallito."
+"di screen invece del nuovo. Tuttavia il tentativo di copiarlo in /tmp/"
+"screen-4.0.3 è fallito."

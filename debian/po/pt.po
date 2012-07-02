@@ -20,7 +20,8 @@ msgstr ""
 #. Description
 #: ../templates:2001
 msgid "Warning: upgrading to screen 4.1.0 with an active 4.0.3 session"
-msgstr "Aviso: a actualizar para screen 4.1.0 com uma sessão activa com screen 4.0.3"
+msgstr ""
+"Aviso: a actualizar para screen 4.1.0 com uma sessão activa com screen 4.0.3"
 
 #. Type: error
 #. Description
@@ -33,9 +34,9 @@ msgid ""
 "currently can't communicate with sessions started by Screen 4.0.3."
 msgstr ""
 "Parece haver pelo menos uma sessão de GNU Screen a correr neste sistema; "
-"possivelmente a que está a correr onde está a fazer esta actualização. "
-"No entanto, o GNU Screen 4.1.0 actualmente não consegue comunicar com "
-"sessões iniciadas por Screen 4.0.3."
+"possivelmente a que está a correr onde está a fazer esta actualização. No "
+"entanto, o GNU Screen 4.1.0 actualmente não consegue comunicar com sessões "
+"iniciadas por Screen 4.0.3."
 
 #. Type: error
 #. Description
@@ -47,8 +48,8 @@ msgid ""
 msgstr ""
 "Para ligar novamente a uma sessão GNU Screen em execução após a nova versão "
 "ter sido desempacotada, irá necessitar de chamar o antigo binário do screen "
-"em vez do novo, por isso foi feita uma cópia que pode ser invocada como "
-"\"/tmp/screen-4.0.3 -rd\"."
+"em vez do novo, por isso foi feita uma cópia que pode ser invocada como \"/"
+"tmp/screen-4.0.3 -rd\"."
 
 #. Type: error
 #. Description
@@ -82,4 +83,3 @@ msgstr ""
 "ter sido desempacotada, irá necessitar de chamar o antigo binário do screen "
 "em vez do novo. No entanto, a tentativa de o copiar para /tmp/screen-4.0.3 "
 "falhou."
-

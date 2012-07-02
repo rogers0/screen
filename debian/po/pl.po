@@ -35,9 +35,9 @@ msgid ""
 "possibly the one you are running this upgrade in. However, GNU Screen 4.1.0 "
 "currently can't communicate with sessions started by Screen 4.0.3."
 msgstr ""
-"Wygląda na to, że przynajmniej jedna sesja GNU Screen działa w tym systemie - "
-"możliwe, że wykonywana jest wewnątrz niej ta aktualizacja. GNU Screen 4.1.0 "
-"nie może się jednak komunikować z sesją rozpoczętą przez Screen 4.0.3."
+"Wygląda na to, że przynajmniej jedna sesja GNU Screen działa w tym systemie "
+"- możliwe, że wykonywana jest wewnątrz niej ta aktualizacja. GNU Screen "
+"4.1.0 nie może się jednak komunikować z sesją rozpoczętą przez Screen 4.0.3."
 
 #. Type: error
 #. Description
@@ -47,9 +47,9 @@ msgid ""
 "unpacked, you'll need to call the old screen binary instead of the new one, "
 "so a copy has been made which can be invoked as \"/tmp/screen-4.0.3 -rd\"."
 msgstr ""
-"Aby połączyć się ponownie z działającą sesją GNU Screen po rozpakowaniu nowej "
-"wersji, konieczne jest wywołanie starego pliku binarnego zamiast nowego; "
-"kopię tę można wywołać jako \"/tmp/screen-4.0.3 -rd\"."
+"Aby połączyć się ponownie z działającą sesją GNU Screen po rozpakowaniu "
+"nowej wersji, konieczne jest wywołanie starego pliku binarnego zamiast "
+"nowego; kopię tę można wywołać jako \"/tmp/screen-4.0.3 -rd\"."
 
 #. Type: error
 #. Description
@@ -79,7 +79,6 @@ msgid ""
 "unpacked, you'll need to call the old screen binary instead of the new one. "
 "However, the attempt to copy it to /tmp/screen-4.0.3 has failed."
 msgstr ""
-"Aby połączyć się ponownie z działającą sesją GNU Screen po rozpakowaniu nowej "
-"wersji, konieczne jest wywołanie starego pliku binarnego zamiast nowego. "
-"Niestety, skopiowanie go do /tmp/screen-4.0.3 nie powiodło się."
-
+"Aby połączyć się ponownie z działającą sesją GNU Screen po rozpakowaniu "
+"nowej wersji, konieczne jest wywołanie starego pliku binarnego zamiast "
+"nowego. Niestety, skopiowanie go do /tmp/screen-4.0.3 nie powiodło się."

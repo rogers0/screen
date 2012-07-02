@@ -46,8 +46,8 @@ msgid ""
 msgstr ""
 "For at genforbinde til en kørende GNU Screen-session efter at den nye "
 "version er blevet udpakket, så skal du kalde den gamle binære fil for screen "
-"i stedet for den nye, så en kopi er blevet lavet, som kan igangsættes som "
-"»/tmp/screen-4.0.3 -rd«."
+"i stedet for den nye, så en kopi er blevet lavet, som kan igangsættes som »/"
+"tmp/screen-4.0.3 -rd«."
 
 #. Type: error
 #. Description
@@ -59,9 +59,9 @@ msgid ""
 "to the user root and group utmp."
 msgstr ""
 "Hvis dit /tmp/ er et separat monteringspunkt monteret med tilvalgene nosuid "
-"eller noexec, så skal du måske kopiere den til et andet sted (såsom /root) før "
-"du kalder den. Dens rettigheder bør være 2755 (-rwxr-sr-x) og den skal tilhøre "
-"user root'en og gruppen utmp."
+"eller noexec, så skal du måske kopiere den til et andet sted (såsom /root) "
+"før du kalder den. Dens rettigheder bør være 2755 (-rwxr-sr-x) og den skal "
+"tilhøre user root'en og gruppen utmp."
 
 #. Type: error
 #. Description
@@ -81,4 +81,3 @@ msgstr ""
 "version er blevet udpakket, så skal du kalde den gamle binære fil for screen "
 "i stedet for den nye. Forsøget på at kopiere den til /tmp/screen-4.0.3 "
 "mislykkedes."
-

@@ -37,8 +37,8 @@ msgid ""
 msgstr ""
 "Parece haber polo menos unha sesión de GNU Screen executándose en este "
 "sistema; posiblemente sexa na que está a executar esta actualización. Pero "
-"GNU Screen 4.1.0 non pode comunicarse coas sesións comezadas por Screen 4.0."
-"3."
+"GNU Screen 4.1.0 non pode comunicarse coas sesións comezadas por Screen "
+"4.0.3."
 
 #. Type: error
 #. Description
@@ -50,8 +50,8 @@ msgid ""
 msgstr ""
 "Para volver a conectar con unha sesión de GNU Screen en execución despois de "
 "que a nova versión se desempaquete, terá que chamar ao antigo executábel de "
-"«screen», polo que se fixo unha copia que pode ser chamada con "
-"«/tmp/screen-4.0.3 -rd»."
+"«screen», polo que se fixo unha copia que pode ser chamada con «/tmp/"
+"screen-4.0.3 -rd»."
 
 #. Type: error
 #. Description
@@ -86,4 +86,3 @@ msgstr ""
 "que a nova versión se desempaquete, terá que chamar ao antigo executábel de "
 "«screen» en lugar do novo. Pero o intento de copialo a «/tmp/screen-4.0.3» "
 "fallou."
-
