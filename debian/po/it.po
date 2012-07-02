@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: screen\n"
 "Report-Msgid-Bugs-To: screen@packages.debian.org\n"
 "POT-Creation-Date: 2012-06-16 15:27+0200\n"
-"PO-Revision-Date: 2012-07-01 11:30+0200\n"
+"PO-Revision-Date: 2012-07-02 17:06+0200\n"
 "Last-Translator: Beatrice Torracca <beatricet@libero.it>\n"
 "Language-Team: Italian <debian-l10n-italian@lists.debian.org>\n"
 "Language: it\n"
@@ -49,7 +49,7 @@ msgstr ""
 "Per riconnettersi ad una sessione di GNU Screen in esecuzione dopo che la "
 "nuova versione è stata spacchettata, è necessario eseguire il vecchio "
 "binario di screen invece del nuovo, perciò ne è stata fatta una copia che "
-"può essere chiamata usando \" /tmp/screen-4.0.3 -rd\"."
+"può essere chiamata usando \"/tmp/screen-4.0.3 -rd\"."
 
 #. Type: error
 #. Description
