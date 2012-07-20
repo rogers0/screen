@@ -3,8 +3,10 @@ screen (4.1.0~20120320gitdb59704-6) UNRELEASED; urgency=low
   * Add translations of debconf templates:
     + Italian (Closes: #679747; Thanks Beatrice Torracca!)
   * Final update for all translations wrt. formatting (Closes: #677303)
+  * Screen's info pages are now splitted over more files than before. Also
+    include the new file doc/screen.info-6 (Closes: #682283)
 
- -- Axel Beckert <abe@debian.org>  Mon, 02 Jul 2012 11:12:17 +0200
+ -- Axel Beckert <abe@debian.org>  Sat, 21 Jul 2012 01:47:31 +0200
 
 screen (4.1.0~20120320gitdb59704-5) unstable; urgency=low
 
