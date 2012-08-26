@@ -1,3 +1,10 @@
+screen (4.1.0~20120320gitdb59704-7) UNRELEASED; urgency=low
+
+  * Extend 60-644788-screen-4.1.0-4.0.3-interoperability.patch:
+    + Add support for detaching (Closes: #684342)
+
+ -- Axel Beckert <abe@debian.org>  Sun, 26 Aug 2012 14:13:28 +0200
+
 screen (4.1.0~20120320gitdb59704-6) unstable; urgency=low
 
   * Apply patch by Julien Cristau <jcristau@debian.org> to add 4.0.3

@@ -1,6 +1,9 @@
 Author: Julien Cristau <jcristau@debian.org>
 Debian-Bug: #644788
 
+Author: Axel Beckert <abe@debian.org>
+Debian-Bug: #684342
+
 The following patch, while not all that pretty, seems to allow me to
 attach to a screen started with either the squeeze or sid version.
 I'm sure there's corner cases, but.
@@ -8,9 +11,10 @@ I'm sure there's corner cases, but.
 Cheers,
 Julien
 
-Index: screen-4.1.0~20120320gitdb59704/screen.h
---- screen-4.1.0~20120320gitdb59704.orig/screen.h
-+++ screen-4.1.0~20120320gitdb59704/screen.h
+Index: screen/screen.h
+===================================================================
+--- screen.orig/screen.h	2012-08-09 01:01:28.000000000 +0200
++++ screen/screen.h	2012-08-09 01:01:28.000000000 +0200
 @@ -240,6 +240,57 @@ struct msg
      } m;
  };
@@ -69,9 +73,10 @@ Index: screen-4.1.0~20120320gitdb59704/screen.h
  /*
   * And the signals the attacher receives from the backend
   */
-Index: screen-4.1.0~20120320gitdb59704/socket.c
---- screen-4.1.0~20120320gitdb59704.orig/socket.c
-+++ screen-4.1.0~20120320gitdb59704/socket.c
+Index: screen/socket.c
+===================================================================
+--- screen.orig/socket.c	2012-08-09 01:01:28.000000000 +0200
++++ screen/socket.c	2012-08-09 01:01:29.000000000 +0200
 @@ -1067,7 +1067,9 @@ ReceiveMsg()
      }
    if (left > 0)
@@ -83,10 +88,11 @@ Index: screen-4.1.0~20120320gitdb59704/socket.c
          Msg(0, "Message %d of %d bytes too small", left, (int)sizeof(m));
        else
  	debug("No data on socket.\n");
-Index: screen-4.1.0~20120320gitdb59704/attacher.c
---- screen-4.1.0~20120320gitdb59704.orig/attacher.c
-+++ screen-4.1.0~20120320gitdb59704/attacher.c
-@@ -133,6 +133,46 @@ struct msg *m;
+Index: screen/attacher.c
+===================================================================
+--- screen.orig/attacher.c	2012-08-09 01:01:28.000000000 +0200
++++ screen/attacher.c	2012-08-09 01:32:08.000000000 +0200
+@@ -133,6 +133,48 @@ struct msg *m;
    return 0;
  }
  
@@ -94,7 +100,9 @@ Index: screen-4.1.0~20120320gitdb59704/attacher.c
 +WriteOldMessage(struct msg *m)
 +{
 +  sleep(1); /* give the server some time to reopen the pipe */
-+  if (m->type == MSG_ATTACH && m->m.attach.detachfirst == MSG_ATTACH)
++  if (m->type == MSG_ATTACH && (m->m.attach.detachfirst == MSG_ATTACH ||
++				m->m.attach.detachfirst == MSG_DETACH ||
++				m->m.attach.detachfirst == MSG_POW_DETACH))
 +    {
 +      struct old_msg old_m;
 +      int s;
@@ -133,7 +141,7 @@ Index: screen-4.1.0~20120320gitdb59704/attacher.c
  
  int
  Attach(how)
-@@ -397,6 +437,7 @@ int how;
+@@ -397,6 +439,7 @@ int how;
    if (WriteMessage(lasts, &m))
      Panic(errno, "WriteMessage");
    close(lasts);
