@@ -3,6 +3,7 @@
 # Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
 # Copyright (C) 1997-2001 Juan Cespedes <cespedes@debian.org>
 # Copyright (C) 2001 Adam Lazur <zal@debian.org>
+# Copyright (C) 2011-2013 Axel Beckert <abe@debian.org>
 
 # Uncomment me to turn on debugging
 #export DH_VERBOSE=1
@@ -11,18 +12,14 @@ ROOT := $(CURDIR)/debian/screen
 # statically define this... sucko
 TTYGROUP := 5
 
-clean:
-	dh_testdir
-	dh_testroot
+%:
+	dh $@ --with autoreconf
+
+override_dh_auto_clean:
 	test ! -s doc/Makefile || $(MAKE) -C doc realclean
 	test ! -s Makefile || ! grep -q clean Makefile || $(MAKE) realclean
-	dh_autoreconf_clean
-	dh_clean
 
-configure: configure-stamp
-configure-stamp:
-	dh_testdir
-	dh_autoreconf
+override_dh_auto_configure:
 	dh_auto_configure -- \
 		    --with-socket-dir=/var/run/screen \
 		    --enable-pam \
@@ -33,26 +30,14 @@ configure-stamp:
 		    --enable-colors256 \
 		    --enable-telnet \
 		    --enable-use-locale
-
 	# Assert the use of fifos instead of sockets
 	grep -q "define.*NAMEDPIPE.*1" config.h || echo "#define NAMEDPIPE 1" >> config.h
-	touch $@
 
-build: build-arch build-indep
-build-arch: build-stamp
-build-indep: build-stamp
-build-stamp: configure-stamp
-	dh_testdir
+override_dh_auto_build:
 	dh_auto_build       -- CFLAGS+='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
 	dh_auto_build -Ddoc -- CFLAGS+='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
-	touch $@
 
-install: install-stamp
-install-stamp: build-stamp
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
+override_dh_auto_install:
 	# can't call the normal install target b/c it installs the info files
 	# and other crud
 	$(MAKE) prefix=$(ROOT)/usr SCREENENCODINGS='$$(prefix)/share/screen/utf8encodings' installdirs install_bin
@@ -64,29 +49,12 @@ install-stamp: build-stamp
 	chmod 2755 $(ROOT)/usr/bin/screen
 	# Fix package-contains-info-dir-file, remove /usr/share/info/dir.gz
 	rm -f $(ROOT)/usr/share/info/dir*
-	touch $@
 
-binary: binary-arch
-binary-indep: install
-binary-arch: install
-	dh_testdir
-	dh_testroot
-	dh_installdocs
-	dh_install
-	dh_installexamples
-	dh_installman
-	dh_installinfo
-	dh_installdebconf
+override_dh_installchangelogs:
 	dh_installchangelogs -k patchlevel.h
-	dh_installinit --no-start --init-script='screen-cleanup' --update-rcd-params='start 70 S .'
-	dh_lintian
-	dh_strip
-	dh_compress
-	dh_fixperms -X/usr/bin/screen
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
 
-.PHONY: configure build clean binary-indep binary-arch binary install
+override_dh_installinit:
+	dh_installinit --no-start --init-script='screen-cleanup' --update-rcd-params='start 70 S .'
+
+override_dh_fixperms:
+	dh_fixperms -X/usr/bin/screen
