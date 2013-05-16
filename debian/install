@@ -1,0 +1,2 @@
+debian/screenrc etc/
+debian/README.terminfo usr/share/doc/screen/terminfo/

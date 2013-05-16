@@ -57,8 +57,6 @@ install-stamp: build-stamp
 	# can't call the normal install target b/c it installs the info files
 	# and other crud
 	$(MAKE) prefix=$(ROOT)/usr SCREENENCODINGS='$$(prefix)/share/screen/utf8encodings' installdirs install_bin
-	# install the debian screenrc to etc
-	install -m 644 debian/screenrc $(ROOT)/etc
 	# hack around the fact that the install target makes screen a symlink to screen-$$(VERSION)
 	rm -f $(ROOT)/usr/bin/screen
 	mv -f $(ROOT)/usr/bin/screen* $(ROOT)/usr/bin/screen
@@ -73,7 +71,7 @@ binary-arch: install
 	dh_testdir
 	dh_testroot
 	dh_installdocs
-	cp debian/README.terminfo $(ROOT)/usr/share/doc/screen/terminfo/
+	dh_install
 	dh_installexamples
 	dh_installman || true
 	dh_installinfo
