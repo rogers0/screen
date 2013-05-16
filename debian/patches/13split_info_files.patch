@@ -1,6 +1,8 @@
 Author: <hesso@pool.math.tu-berlin.de>
-Description: Split the info files at 50k to match the distribution style
-of the orig tarball.
+Description: Split the info files at 50k
+ This matches the distribution style of the orig tarball.
+Last-Revised: 2013-05-16 by Axel Beckert <abe@debian.org>
+
 --- a/doc/Makefile.in
 +++ b/doc/Makefile.in
 @@ -28,7 +28,7 @@
@@ -8,7 +10,7 @@ of the orig tarball.
  info screen.info: screen.texinfo
  	@rm -f screen.info*
 -	$(MAKEINFO) $(srcdir)/screen.texinfo -o screen.info
-+	$(MAKEINFO) --split 50000 $(srcdir)/screen.texinfo -o screen.info
++	$(MAKEINFO) --split-size=50000 $(srcdir)/screen.texinfo -o screen.info
  
  install: installdirs
  	$(INSTALL_DATA) $(srcdir)/screen.1 $(DESTDIR)$(mandir)/man1/screen.1
