@@ -12,15 +12,6 @@ ROOT := $(CURDIR)/debian/$(package)
 # statically define this... sucko
 TTYGROUP := 5
 
-DPKG_EXPORT_BUILDFLAGS = 1
-include /usr/share/dpkg/buildflags.mk
-
-ifeq ($(findstring noopt,$(DEB_BUILD_OPTIONS)),noopt)
-CC_OPTFLAGS := -O0 -g3
-else
-CC_OPTFLAGS := -O2 -g
-endif
-
 clean:
 	dh_testdir
 	dh_testroot
@@ -33,10 +24,7 @@ configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	dh_autoreconf
-	./configure --prefix=/usr \
-		    $(shell dpkg-buildflags --export=configure) \
-		    --infodir='$$(prefix)/share/info' \
-		    --mandir='$$(prefix)/share/man' \
+	dh_auto_configure -- \
 		    --with-socket-dir=/var/run/screen \
 		    --enable-pam \
 		    --with-pty-mode=0620 \
@@ -56,8 +44,8 @@ build-arch: build-stamp
 build-indep: build-stamp
 build-stamp: configure-stamp
 	dh_testdir
-	$(MAKE) CFLAGS+='$(CC_OPTFLAGS) -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
-	$(MAKE) CFLAGS+='$(CC_OPTFLAGS) -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers' -C doc
+	dh_auto_build       -- CFLAGS+='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
+	dh_auto_build -Ddoc -- CFLAGS+='-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers'
 	touch $@
 
 install: install-stamp

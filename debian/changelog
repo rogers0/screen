@@ -5,6 +5,12 @@ screen (4.1.0~20120320gitdb59704-8) UNRELEASED; urgency=low
     (Closes: #707530)
   * Use doc/screen.info* instead of listing every file indiviually in
     debian/info.
+  * Bump debhelper compatibility to 9
+    + Update versioned debhelper build-dependency
+  * Revamp debian/rules
+    + Use dh_auto_{configure,build}
+    + Drop DPKG_EXPORT_BUILDFLAGS and /usr/share/dpkg/buildflags.mk
+    + Drop manual DEB_BUILD_OPTIONS parsing
   * Apply wrap-and-sort.
 
  -- Axel Beckert <abe@debian.org>  Thu, 16 May 2013 03:15:42 +0200
