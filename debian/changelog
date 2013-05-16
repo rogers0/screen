@@ -3,6 +3,8 @@ screen (4.1.0~20120320gitdb59704-8) UNRELEASED; urgency=low
   * Update debian/patches/13split_info_files.patch to change now ambiguous
     makeinfo option --split to --split-size. Fixes FTBFS with texinfo 5.x.
     (Closes: #707530)
+  * Use doc/screen.info* instead of listing every file indiviually in
+    debian/info.
 
  -- Axel Beckert <abe@debian.org>  Thu, 16 May 2013 03:15:42 +0200
 
