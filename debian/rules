@@ -62,6 +62,8 @@ install-stamp: build-stamp
 	# make it setgid utmp
 	chown root:utmp $(ROOT)/usr/bin/screen
 	chmod 2755 $(ROOT)/usr/bin/screen
+	# Fix package-contains-info-dir-file, remove /usr/share/info/dir.gz
+	rm -f $(ROOT)/usr/share/info/dir*
 	touch $@
 
 binary: binary-arch

@@ -17,6 +17,7 @@ screen (4.1.0~20120320gitdb59704-8) UNRELEASED; urgency=low
     + Simplify variable usage
     + Fix dh_clean vs dh_prep in install target
   * Apply wrap-and-sort.
+  * Fix lintian warning package-contains-info-dir-file
 
  -- Axel Beckert <abe@debian.org>  Thu, 16 May 2013 03:15:42 +0200
 
