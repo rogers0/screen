@@ -74,7 +74,7 @@ binary-arch: install
 	dh_installdocs
 	dh_install
 	dh_installexamples
-	dh_installman || true
+	dh_installman
 	dh_installinfo
 	dh_installdebconf
 	dh_installchangelogs -k patchlevel.h

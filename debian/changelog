@@ -16,6 +16,7 @@ screen (4.1.0~20120320gitdb59704-8) UNRELEASED; urgency=low
     + Use dh_install and debian/install instead of install and cp
     + Simplify variable usage
     + Fix dh_clean vs dh_prep in install target
+    + No more ignore dh_installman errors
   * Apply wrap-and-sort.
   * Fix lintian warning package-contains-info-dir-file
 
