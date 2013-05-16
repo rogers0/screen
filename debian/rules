@@ -18,7 +18,7 @@ clean:
 	test ! -s doc/Makefile || $(MAKE) -C doc realclean
 	test ! -s Makefile || ! grep -q clean Makefile || $(MAKE) realclean
 	dh_autoreconf_clean
-	dh_clean config.log config.status Makefile
+	dh_clean
 
 configure: configure-stamp
 configure-stamp:
