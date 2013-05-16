@@ -15,6 +15,7 @@ screen (4.1.0~20120320gitdb59704-8) UNRELEASED; urgency=low
       files to clean up
     + Use dh_install and debian/install instead of install and cp
     + Simplify variable usage
+    + Fix dh_clean vs dh_prep in install target
   * Apply wrap-and-sort.
 
  -- Axel Beckert <abe@debian.org>  Thu, 16 May 2013 03:15:42 +0200

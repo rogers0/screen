@@ -51,7 +51,7 @@ install: install-stamp
 install-stamp: build-stamp
 	dh_testdir
 	dh_testroot
-	dh_clean
+	dh_prep
 	dh_installdirs
 	# can't call the normal install target b/c it installs the info files
 	# and other crud
