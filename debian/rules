@@ -7,8 +7,7 @@
 # Uncomment me to turn on debugging
 #export DH_VERBOSE=1
 
-package := screen
-ROOT := $(CURDIR)/debian/$(package)
+ROOT := $(CURDIR)/debian/screen
 # statically define this... sucko
 TTYGROUP := 5
 
