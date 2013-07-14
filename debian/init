@@ -27,6 +27,7 @@ start)
         rm -f $SCREENDIR
         mkdir $SCREENDIR
         chown root:utmp $SCREENDIR
+        [ -x /sbin/restorecon ] && /sbin/restorecon $SCREENDIR
     fi
     find $SCREENDIR -type p -delete
 # If the local admin has used dpkg-statoverride to install the screen

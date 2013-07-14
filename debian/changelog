@@ -3,6 +3,8 @@ screen (4.1.0~20120320gitdb59704-9) UNRELEASED; urgency=low
   * Build-Conflict against libelf-dev on non-linux (Closes: #684386)
   * Allow /dev/console to be a symlink. (Closes: #701173) Thanks to Igor
     Pashev for the report and patch.
+  * screen-cleanup init.d script: Label /var/run/screen for SE Linux
+    (Closes: #680360)
 
  -- Axel Beckert <abe@debian.org>  Sun, 14 Jul 2013 21:23:58 +0200
 
