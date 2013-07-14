@@ -1,0 +1,36 @@
+Description: /dev/console may be a symlink
+ See http://lists.debian.org/debian-devel/2013/01/msg00576.html
+ In case of SunOS kernel (illumos) it is not possible for a device
+ file to have st_nlink != 1, so do not bother with "/devices/"
+Debian-Bug: 701173
+Author: Igor Pashev <pashev.igor@gmail.com>
+
+Index: screen/tty.sh
+===================================================================
+--- screen.orig/tty.sh	2013-01-27 02:16:57.916935245 +0000
++++ screen/tty.sh	2013-01-27 02:33:12.831241123 +0000
+@@ -1506,11 +1506,21 @@
+ char *tty;
+ {
+   struct stat st;
++  char * real;
++  int rc;
+ 
+-  if (lstat(tty, &st) || !S_ISCHR(st.st_mode) ||
+-     (st.st_nlink > 1 && strncmp(tty, "/dev/", 5)))
++  real = realpath(tty, NULL);
++  if (!real)
+     return -1;
+-  return 0;
++  
++  if (lstat(real, &st) || !S_ISCHR(st.st_mode) ||
++    (st.st_nlink > 1 && strncmp(real, "/dev/", 5)))
++    rc = -1;
++  else
++    rc = 0;
++
++  free(real);
++  return rc;
+ }
+ 
+ /*

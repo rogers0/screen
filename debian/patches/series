@@ -27,5 +27,6 @@
 58-show-encoding-hardstatus.patch
 59-fix-manpage-warnings.patch
 60-644788-screen-4.1.0-4.0.3-interoperability.patch
+61-allow-dev-console-to-be-a-symlink.patch
 # 80-99: experimental patches, new features etc.
 80EXP_session_creation_time.patch
