@@ -1,3 +1,9 @@
+screen (4.1.0~20120320gitdb59704-9) UNRELEASED; urgency=low
+
+  * Build-Conflict against libelf-dev on non-linux (Closes: #684386)
+
+ -- Axel Beckert <abe@debian.org>  Sun, 14 Jul 2013 21:23:58 +0200
+
 screen (4.1.0~20120320gitdb59704-8) unstable; urgency=low
 
   * Update debian/patches/13split_info_files.patch to change now ambiguous
