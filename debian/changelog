@@ -6,6 +6,7 @@ screen (4.1.0~20120320gitdb59704-9) UNRELEASED; urgency=low
   * screen-cleanup init.d script: Label /var/run/screen for SE Linux
     (Closes: #680360)
   * Add a package with debugging symbols (Closes: #715170)
+  * Ensure that the title prompt can only appear once. (Closes: #625866)
 
  -- Axel Beckert <abe@debian.org>  Sun, 14 Jul 2013 21:23:58 +0200
 
