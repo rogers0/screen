@@ -54,7 +54,7 @@ override_dh_installchangelogs:
 	dh_installchangelogs -k patchlevel.h
 
 override_dh_installinit:
-	dh_installinit --no-start --init-script='screen-cleanup' --update-rcd-params='start 70 S .'
+	dh_installinit --no-start --init-script='screen-cleanup'
 
 override_dh_fixperms:
 	dh_fixperms -X/usr/bin/screen

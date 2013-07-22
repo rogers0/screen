@@ -7,6 +7,9 @@ screen (4.1.0~20120320gitdb59704-9) UNRELEASED; urgency=low
     (Closes: #680360)
   * Add a package with debugging symbols (Closes: #715170)
   * Ensure that the title prompt can only appear once. (Closes: #625866)
+  * No more pass --update-rcd-params='start 70 S .' to dh_installinit. The
+    LSB headers of the init script already contain all necesssary
+    information. (Closes: #717553)
 
  -- Axel Beckert <abe@debian.org>  Sun, 14 Jul 2013 21:23:58 +0200
 
