@@ -39,3 +39,19 @@ Index: screen/screen.h
  	  int encoding;		/* encoding of display */
  	  int detachfirst;      /* whether to detach remote sessions first */
  	}
+Index: screen/process.c
+===================================================================
+--- screen.orig/process.c	2013-07-22 16:56:05.000000000 +0200
++++ screen/process.c	2013-07-22 17:02:15.000000000 +0200
+@@ -2664,9 +2664,9 @@
+       s = NULL;
+       if (ParseSaveStr(act, &s))
+ 	break;
+-      if (strlen(s) >= 20)
++      if (strlen(s) >= 40)
+ 	{
+-	  OutputMsg(0, "%s: term: argument too long ( < 20)", rc_name);
++	  OutputMsg(0, "%s: term: argument too long ( < 40)", rc_name);
+ 	  free(s);
+ 	  break;
+ 	}
