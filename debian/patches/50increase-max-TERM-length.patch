@@ -2,6 +2,7 @@ From: Andy Spencer
 Subject: [screen-devel] [PATCH 1/1] Increase max TERM length to 40 characters
 Date: Tue, 5 Apr 2011 03:26:58 +0000
 Source: https://lists.gnu.org/archive/html/screen-devel/2011-04/msg00002.html
+Debian-Bugs: 630976 621804
 
 Some terms contain rather long TERM names these days, for example,
 `rxvt-unicode-256color'. Increasing the max size for the TERM variables
