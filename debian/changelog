@@ -1,3 +1,9 @@
+screen (4.1.0~20120320gitdb59704-10) UNRELEASED; urgency=low
+
+  * Add a debian/upstream file according to DEP-12.
+
+ -- Axel Beckert <abe@debian.org>  Tue, 23 Jul 2013 14:48:32 +0200
+
 screen (4.1.0~20120320gitdb59704-9) unstable; urgency=low
 
   * Build-Conflict against libelf-dev on non-linux (Closes: #684386)

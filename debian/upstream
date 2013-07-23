@@ -1,0 +1,11 @@
+%YAML 1.1
+---
+# https://wiki.debian.org/UpstreamMetadata
+Bug-Database: https://savannah.gnu.org/bugs/?group=screen
+Changelog: http://git.savannah.gnu.org/cgit/screen.git/plain/src/ChangeLog
+Contact: screen-devel@gnu.org
+FAQ: http://aperiodic.net/screen/faq
+Name: GNU Screen
+Homepage: https://www.gnu.org/software/screen/
+Repository: git://git.sv.gnu.org/screen.git
+Repository-Browse: http://git.savannah.gnu.org/cgit/screen.git/
