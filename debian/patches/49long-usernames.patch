@@ -1,8 +1,10 @@
 Description: Patch to allow usernames longer than 20 characters.
 Source: http://www.mail-archive.com/screen-devel@gnu.org/msg00186.html
 Author: Steve Kemp
+Author: Martin von Wittich <martin.von.wittich@iserv.eu>
 Upstream-Bug: http://savannah.gnu.org/bugs/?21653
 Debian-Bug: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=560231
+Debian-Bug: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=735554
 Ubuntu-Bug: https://bugs.launchpad.net/ubuntu/+source/screen/+bug/582153
 
 Index: screen/acconfig.h
@@ -62,9 +64,9 @@ Index: screen/acls.h
    int  u_detachwin;		/* the window where he last detached */
 Index: screen/screen.c
 ===================================================================
---- screen.orig/screen.c	2011-10-08 21:20:56.000000000 +0200
-+++ screen/screen.c	2011-10-08 21:20:57.000000000 +0200
-@@ -997,7 +997,7 @@
+--- screen.orig/screen.c	2014-01-16 22:13:09.000000000 +0100
++++ screen/screen.c	2014-01-16 22:15:00.000000000 +0100
+@@ -997,10 +997,10 @@
  
    if (home == 0 || *home == '\0')
      home = ppp->pw_dir;
@@ -72,7 +74,11 @@ Index: screen/screen.c
 +  if (strlen(LoginName) > MAX_USERNAME_LEN)
      Panic(0, "LoginName too long - sorry.");
  #ifdef MULTIUSER
-   if (multi && strlen(multi) > 20)
+-  if (multi && strlen(multi) > 20)
++  if (multi && strlen(multi) > MAX_USERNAME_LEN)
+     Panic(0, "Screen owner name too long - sorry.");
+ #endif
+   if (strlen(home) > MAXPATHLEN - 25)
 Index: screen/screen.h
 ===================================================================
 --- screen.orig/screen.h	2011-10-08 21:20:48.000000000 +0200
