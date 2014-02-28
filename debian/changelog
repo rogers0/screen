@@ -2,7 +2,8 @@ screen (4.1.0~20120320gitdb59704-10) UNRELEASED; urgency=low
 
   * Extend 49long-usernames.patch to also cover multiuser usage (Closes:
     #735554) Thanks Martin von Wittich!
-  * Add systemd-variant of /etc/init.d/screen-cleanup (Closes: #740301)
+  * Add systemd variant of /etc/init.d/screen-cleanup; document in
+    README.Debian and NEWS.Debian. (Closes: #740301)
   * Add a debian/upstream/metadata file according to DEP-12.
   * Bump Standards-Version to 3.9.5 (no changes).
 

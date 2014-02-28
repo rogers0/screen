@@ -25,9 +25,10 @@ A: Simplified, the binary ensures that $SCREENDIR has just enough permission
    /usr/bin/screen setgid utmp -> /var/run/screen 0775
    /usr/bin/screen without setid bits -> /var/run/screen 0777
 
-   These cases are all handled by the init script. However, the actual test
-   is a bit more complicated. And as the variable names are all quite self-
-   explanatory, just have a look at the C code itself:
+   These cases are all handled by the init script or by the tmpfiles.d
+   configuration documented later in this file. However, the actual test is a
+   bit more complicated. And as the variable names are all quite
+   self-explanatory, just have a look at the C code itself:
 
 ]   n = (eff_uid == 0 && (real_uid || (st.st_mode & 0775) != 0775)) ? 0755 :
 ]       (eff_gid == (int)st.st_gid && eff_gid != real_gid) ? 0775 :
@@ -37,7 +38,7 @@ A: Simplified, the binary ensures that $SCREENDIR has just enough permission
 
    If the invoking user has primary group utmp, the above assumption will fail.
    The same holds if the underlying file system is mounted 'nosuid'. In these
-   cases you have to adapt the init script yourself.
+   cases you have to adapt the init script or tmpfiles.d configuration yourself.
 
 
 Q: shift+page up in xterm/gnome-terminal/konsole used to let me scroll back a
@@ -109,8 +110,28 @@ A: Screen has to be setuid root to accomplish this. (Note the security implicati
 
 ] dpkg-statoverride --update --add root utmp 4755 /usr/bin/screen
 ] chmod 0755 /var/run/screen
+] echo 'd /var/run/screen 0755 root utmp' > /etc/tmpfiles.d/screen-cleanup.conf
 
    dpkg-statoverride will make sure that the modified permissions remain in effect
    even if a new version of the screen package is installed. /var/run/screen will
    be automatically recreated with the proper permissions if the directory lives
    on volatile storage (doesn't persist between subsequent reboots).
+
+
+Q: I don't want screen to be setuid *or* setgid - how do I disable that?
+
+A: As above, via dpkg-statoverride:
+
+] dpkg-statoverride --update --add root utmp 0755 /usr/bin/screen
+] chmod 1777 /var/run/screen
+] echo 'd /var/run/screen 1777 root utmp' > /etc/tmpfiles.d/screen-cleanup.conf
+
+
+Q: I've configured screen with different permissions, but I want to go back to
+   the default setgid configuration - how can I do that?
+
+A:
+
+] dpkg-statoverride --remove /usr/bin/screen
+] chmod 0775 /var/run/screen
+] rm /etc/tmpfiles.d/screen-cleanup.conf
