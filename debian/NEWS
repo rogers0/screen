@@ -1,3 +1,17 @@
+screen (4.1.0~20120320gitdb59704-10) unstable; urgency=low
+
+  A systemd variant of /etc/init.d/screen-cleanup has been added. This
+  means that some of the optional functionality of this init script is
+  lost on systems running systemd.
+
+  On systems running systemd the permissions of /var/run/screen are no
+  more updated automatically if the local administrator changes the
+  permissions of /usr/bin/screen with dpkg-statoverride. Instead he has
+  to copy /usr/lib/tmpfiles.d/screen-cleanup.conf to /etc/tmpfiles.d/ and
+  override the permissions in there.
+
+ -- Axel Beckert <abe@debian.org>  Fri, 28 Feb 2014 12:23:42 +0100
+
 screen (4.1.0~20120320gitdb59704-7) unstable; urgency=low
 
   In case you upgrade screen from 4.0.3 to 4.1.0 while running inside
