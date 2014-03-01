@@ -11,8 +11,8 @@ screen (4.1.0~20120320gitdb59704-10) UNRELEASED; urgency=low
   * Bump Standards-Version to 3.9.5 (no changes).
   * debian/watch:
     + Update to use GNU's server (old location no more exist)
-    + Check upstream GPG signature and add upstream keyring as
-      debian/upstream-signing-key.pgp
+    + Check upstream GPG signature and add upstream signing key as
+      debian/upstream/signing-key.asc
 
  -- Axel Beckert <abe@debian.org>  Tue, 23 Jul 2013 14:48:32 +0200
 
