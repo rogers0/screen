@@ -9,6 +9,7 @@ screen (4.1.0~20120320gitdb59704-10) UNRELEASED; urgency=low
     Thanks Josh Triplett for help and patches!
   * Add a debian/upstream/metadata file according to DEP-12.
   * Bump Standards-Version to 3.9.5 (no changes).
+  * debian/watch: Update to use GNU's server (old location no more exist)
 
  -- Axel Beckert <abe@debian.org>  Tue, 23 Jul 2013 14:48:32 +0200
 
