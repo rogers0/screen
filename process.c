@@ -6360,6 +6360,12 @@ char *data;
       buf = crypt(u->u_password, salt);
       bzero(u->u_password, strlen(u->u_password));
       free((char *)u->u_password);
+      if (!buf)
+	{
+	  Msg(0, "[ crypt() error - no secure ]");
+	  u->u_password = NullStr;
+	  return;
+	}
       u->u_password = SaveStr(buf);
       bzero(buf, strlen(buf));
 #ifdef COPY_PASTE
@@ -6472,6 +6478,7 @@ int i;
 {
   struct action *act;
   int discard = 0;
+  int keyno = i;
 
   debug1("StuffKey #%d", i);
 #ifdef DEBUG
@@ -6511,6 +6518,9 @@ int i;
 
   if (discard && (!act || act->nr != RC_COMMAND))
     {
+      /* if the input was just a single byte we let it through */
+      if (D_tcs[keyno + T_CAPS].str && strlen(D_tcs[keyno + T_CAPS].str) == 1)
+	return -1;
       if (D_ESCseen)
         {
           D_ESCseen = 0;
