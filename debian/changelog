@@ -1,4 +1,4 @@
-screen (4.2.0-1) UNRELEASED; urgency=low
+screen (4.2.0-1) experimental; urgency=low
 
   * New upstream release
     Refreshed patches:
@@ -12,7 +12,7 @@ screen (4.2.0-1) UNRELEASED; urgency=low
     + 51fix-utf8-status-padding-bug.patch
     + 59-fix-manpage-warnings.patch
 
- -- Axel Beckert <abe@debian.org>  Thu, 17 Apr 2014 14:26:26 +0200
+ -- Axel Beckert <abe@debian.org>  Thu, 17 Apr 2014 15:09:54 +0200
 
 screen (4.1.0~20120320gitdb59704-10) unstable; urgency=medium
 
