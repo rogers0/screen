@@ -10,7 +10,8 @@ screen (4.1.0~20120320gitdb59704-10) UNRELEASED; urgency=low
   * Add a debian/upstream/metadata file according to DEP-12.
   * Bump Standards-Version to 3.9.5 (no changes).
   * debian/watch:
-    + Update to use GNU's server (old location no more exist)
+    + Update to use GNU's and Savannah's servers (old location at
+      uni-erlangen.de no more exist)
     + Check upstream GPG signature and add upstream signing key as
       debian/upstream/signing-key.asc
 
