@@ -10,9 +10,9 @@ Signed-off-by: Dustin Kirkland <address@hidden>
 === modified file 'src/display.c'
 Index: screen/display.c
 ===================================================================
---- screen.orig/display.c	2012-03-20 22:15:02.000000000 +0100
-+++ screen/display.c	2012-03-20 22:41:28.000000000 +0100
-@@ -2155,7 +2155,7 @@
+--- screen.orig/display.c	2014-04-17 14:23:17.247036061 +0200
++++ screen/display.c	2014-04-17 14:23:17.235036151 +0200
+@@ -2163,7 +2163,7 @@
      {
        int chars = strlen_onscreen((unsigned char *)(s + start), (unsigned char *)(s + max));
        D_encoding = 0;
@@ -21,7 +21,7 @@ Index: screen/display.c
        D_encoding = UTF8;
        D_x -= (max - chars);	/* Yak! But this is necessary to count for
  				   the fact that not every byte represents a
-@@ -2249,11 +2249,15 @@
+@@ -2257,11 +2257,15 @@
  RefreshHStatus()
  {
    char *buf;
@@ -39,7 +39,7 @@ Index: screen/display.c
    if (buf && *buf)
      {
        ShowHStatus(buf);
-@@ -2348,8 +2352,13 @@
+@@ -2356,8 +2360,13 @@
  	{
  	  if (y == cv->c_ye + 1 && from >= cv->c_xs && from <= cv->c_xe)
  	    {
@@ -54,7 +54,7 @@ Index: screen/display.c
  	      if (cv->c_captev.timeout.tv_sec)
  		evenq(&cv->c_captev);
  	      xx = to > cv->c_xe ? cv->c_xe : to;
-@@ -2358,7 +2367,7 @@
+@@ -2366,7 +2375,7 @@
  	      SetRendition(&mchar_so);
  	      if (l > xx - cv->c_xs + 1)
  		l = xx - cv->c_xs + 1;

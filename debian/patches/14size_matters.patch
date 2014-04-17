@@ -3,8 +3,8 @@ Description: * Increase the MAXSTR macro to suit present-day needs.
 * Increase the maximum length of the input line buffer likewise.
 Index: screen/input.c
 ===================================================================
---- screen.orig/input.c	2012-03-20 22:34:27.000000000 +0100
-+++ screen/input.c	2012-03-20 22:35:13.000000000 +0100
+--- screen.orig/input.c	2014-04-17 14:19:10.747075706 +0200
++++ screen/input.c	2014-04-17 14:19:10.731076736 +0200
 @@ -43,7 +43,7 @@
  
  struct inpline
@@ -36,8 +36,8 @@ Index: screen/input.c
        maxlen = flayer->l_width - 1 - strlen(istr);
 Index: screen/process.c
 ===================================================================
---- screen.orig/process.c	2012-03-20 22:34:27.000000000 +0100
-+++ screen/process.c	2012-03-20 22:35:13.000000000 +0100
+--- screen.orig/process.c	2014-04-17 14:19:10.747075706 +0200
++++ screen/process.c	2014-04-17 14:19:10.735076470 +0200
 @@ -2097,7 +2097,7 @@
  	ChangeAKA(fore, *args, strlen(*args));
        break;
@@ -49,8 +49,8 @@ Index: screen/process.c
  	  s = *args;
 Index: screen/screen.h
 ===================================================================
---- screen.orig/screen.h	2012-03-20 22:34:27.000000000 +0100
-+++ screen/screen.h	2012-03-20 22:35:13.000000000 +0100
+--- screen.orig/screen.h	2014-04-17 14:19:10.747075706 +0200
++++ screen/screen.h	2014-04-17 14:19:10.739076209 +0200
 @@ -91,7 +91,7 @@
  
  #define Ctrl(c) ((c)&037)
@@ -62,9 +62,9 @@ Index: screen/screen.h
  #define MSGMINWAIT 	1
 Index: screen/window.c
 ===================================================================
---- screen.orig/window.c	2012-03-20 22:34:27.000000000 +0100
-+++ screen/window.c	2012-03-20 22:35:13.000000000 +0100
-@@ -2233,7 +2233,7 @@
+--- screen.orig/window.c	2014-04-17 14:19:10.747075706 +0200
++++ screen/window.c	2014-04-17 14:19:10.739076209 +0200
+@@ -2237,7 +2237,7 @@
        return;
      }
    flayer = &p->w_layer;

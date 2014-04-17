@@ -2,8 +2,8 @@ Author: <hesso@pool.math.tu-berlin.de>
 Description: Get rid of several minor gcc warnings.
 Index: screen/attacher.c
 ===================================================================
---- screen.orig/attacher.c	2011-10-08 19:58:12.000000000 +0200
-+++ screen/attacher.c	2011-10-08 19:58:41.000000000 +0200
+--- screen.orig/attacher.c	2014-04-17 14:19:15.702758400 +0200
++++ screen/attacher.c	2014-04-17 14:19:15.638762477 +0200
 @@ -848,7 +848,7 @@
    pam_handle_t *pamh = 0;
    int pam_error;
@@ -15,9 +15,9 @@ Index: screen/attacher.c
  #ifdef USE_PAM
 Index: screen/layer.c
 ===================================================================
---- screen.orig/layer.c	2011-10-08 19:54:20.000000000 +0200
-+++ screen/layer.c	2011-10-08 19:58:41.000000000 +0200
-@@ -492,7 +492,7 @@
+--- screen.orig/layer.c	2014-04-17 14:19:15.702758400 +0200
++++ screen/layer.c	2014-04-17 14:19:15.642762218 +0200
+@@ -493,7 +493,7 @@
  void
  LClearLine(l, y, xs, xe, bce, ol)
  struct layer *l;

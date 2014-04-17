@@ -2,8 +2,8 @@ Author: <bpkroth@gmail.com>
 Description: Some patches stolen from the fedora package for better error checking and tty security.
 Index: screen/utmp.c
 ===================================================================
---- screen.orig/utmp.c	2011-10-08 19:54:17.000000000 +0200
-+++ screen/utmp.c	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/utmp.c	2014-04-17 14:21:36.843412125 +0200
++++ screen/utmp.c	2014-04-17 14:21:36.815412195 +0200
 @@ -361,7 +361,7 @@
        char *tty;
        debug("couln't zap slot -> do mesg n\n");
@@ -42,8 +42,8 @@ Index: screen/utmp.c
    retbuf[0] = '\0';
 Index: screen/extern.h
 ===================================================================
---- screen.orig/extern.h	2011-10-08 19:54:16.000000000 +0200
-+++ screen/extern.h	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/extern.h	2014-04-17 14:21:36.843412125 +0200
++++ screen/extern.h	2014-04-17 14:21:36.819412181 +0200
 @@ -110,6 +110,7 @@
  extern struct baud_values *lookup_baud __P((int bps));
  extern int   SetBaud __P((struct mode *, int, int));
@@ -54,8 +54,8 @@ Index: screen/extern.h
  /* mark.c */
 Index: screen/screen.c
 ===================================================================
---- screen.orig/screen.c	2011-10-08 19:58:56.000000000 +0200
-+++ screen/screen.c	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/screen.c	2014-04-17 14:21:36.843412125 +0200
++++ screen/screen.c	2014-04-17 14:21:36.823412180 +0200
 @@ -972,8 +972,13 @@
  	else \
  	  attach_tty = ""; \
@@ -74,8 +74,8 @@ Index: screen/screen.c
    } while (0)
 Index: screen/tty.sh
 ===================================================================
---- screen.orig/tty.sh	2011-10-08 19:58:28.000000000 +0200
-+++ screen/tty.sh	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/tty.sh	2014-04-17 14:21:36.843412125 +0200
++++ screen/tty.sh	2014-04-17 14:21:36.827412192 +0200
 @@ -60,6 +60,7 @@
  #include <sys/types.h>
  #include <signal.h>
@@ -106,8 +106,8 @@ Index: screen/tty.sh
   */
 Index: screen/socket.c
 ===================================================================
---- screen.orig/socket.c	2011-10-08 19:54:17.000000000 +0200
-+++ screen/socket.c	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/socket.c	2014-04-17 14:21:36.843412125 +0200
++++ screen/socket.c	2014-04-17 14:21:36.827412192 +0200
 @@ -722,6 +722,7 @@
    char *args[MAXARGS];
    register int n;
@@ -126,8 +126,8 @@ Index: screen/socket.c
        if (IsNumColon(p, 10, buf, sizeof(buf)))
 Index: screen/braille_tsi.c
 ===================================================================
---- screen.orig/braille_tsi.c	2011-10-08 19:54:17.000000000 +0200
-+++ screen/braille_tsi.c	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/braille_tsi.c	2014-04-17 14:21:36.843412125 +0200
++++ screen/braille_tsi.c	2014-04-17 14:21:36.831412183 +0200
 @@ -127,7 +127,6 @@
    r = read(bd.bd_fd,ibuf,1);
    if (r != 1)
@@ -138,8 +138,8 @@ Index: screen/braille_tsi.c
    else
 Index: screen/fileio.c
 ===================================================================
---- screen.orig/fileio.c	2011-10-08 19:58:46.000000000 +0200
-+++ screen/fileio.c	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/fileio.c	2014-04-17 14:21:36.843412125 +0200
++++ screen/fileio.c	2014-04-17 14:21:36.831412183 +0200
 @@ -80,8 +80,6 @@
      }
    else
@@ -151,8 +151,8 @@ Index: screen/fileio.c
        cp[len1 + add_colon] = '\0';
 Index: screen/attacher.c
 ===================================================================
---- screen.orig/attacher.c	2011-10-08 19:59:12.000000000 +0200
-+++ screen/attacher.c	2011-10-08 19:59:23.000000000 +0200
+--- screen.orig/attacher.c	2014-04-17 14:21:36.843412125 +0200
++++ screen/attacher.c	2014-04-17 14:21:36.831412183 +0200
 @@ -185,8 +185,8 @@
  	  if (ret == SIG_POWER_BYE)
  	    {
@@ -258,7 +258,7 @@ Index: screen/attacher.c
  #endif
    char *pass = 0, mypass[16 + 1], salt[3];
    int using_pam = 1;
-@@ -926,6 +941,15 @@
+@@ -932,6 +947,15 @@
        pam_error = pam_start("screen", ppp->pw_name, &PAM_conversation, &pamh);
        if (pam_error != PAM_SUCCESS)
  	AttacherFinit(SIGARG);		/* goodbye */

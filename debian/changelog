@@ -1,3 +1,19 @@
+screen (4.2.0-1) UNRELEASED; urgency=low
+
+  * New upstream release
+    Refreshed patches:
+    + 10norootpassword.patch
+    + 11replace_doc_paths.patch
+    + 14size_matters.patch
+    + 16fix_gcc_warnings.patch
+    + 46fix-keybinding-typo-in-manpage.patch
+    + 47screen-cc.patch
+    + 48screen-ipv6.patch
+    + 51fix-utf8-status-padding-bug.patch
+    + 59-fix-manpage-warnings.patch
+
+ -- Axel Beckert <abe@debian.org>  Thu, 17 Apr 2014 14:26:26 +0200
+
 screen (4.1.0~20120320gitdb59704-10) unstable; urgency=medium
 
   * Extend 49long-usernames.patch to also cover multiuser usage (Closes:

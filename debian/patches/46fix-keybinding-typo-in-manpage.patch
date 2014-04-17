@@ -6,18 +6,9 @@ backspace) (Closes: #541793)
 
 Index: screen/doc/screen.1
 ===================================================================
---- screen.orig/doc/screen.1	2011-10-08 19:58:19.000000000 +0200
-+++ screen/doc/screen.1	2011-10-08 19:59:19.000000000 +0200
-@@ -512,7 +512,7 @@
- Show the number (and title) of the current window.
- .IP "\fBC-a backspace\fP"
- .PD 0
--.IP "\fBC-a h\fP"
-+.IP "\fBC-a C-h\fP"
- .IP "\fBC-a p\fP"
- .IP "\fBC-a C-p\fP	(prev)"
- .PD
-@@ -578,7 +578,7 @@
+--- screen.orig/doc/screen.1	2014-04-17 14:21:30.439417247 +0200
++++ screen/doc/screen.1	2014-04-17 14:21:30.427417253 +0200
+@@ -580,7 +580,7 @@
  Write out a \*Q.termcap\*U file.
  .IP "\fBC-a ?\fP	(help)"
  Show key bindings.
@@ -28,9 +19,9 @@ Index: screen/doc/screen.1
  .IP "\fBC-a :\fP	(colon)"
 Index: screen/doc/screen.texinfo
 ===================================================================
---- screen.orig/doc/screen.texinfo	2011-10-08 19:58:19.000000000 +0200
-+++ screen/doc/screen.texinfo	2011-10-08 19:59:19.000000000 +0200
-@@ -791,7 +791,7 @@
+--- screen.orig/doc/screen.texinfo	2014-04-17 14:21:30.439417247 +0200
++++ screen/doc/screen.texinfo	2014-04-17 14:21:30.431417261 +0200
+@@ -792,7 +792,7 @@
  (help)@*
  Show key bindings.  @xref{Help}.
  
@@ -39,7 +30,7 @@ Index: screen/doc/screen.texinfo
  (quit)@*
  Kill all windows and terminate @code{screen}.  @xref{Quit}.
  
-@@ -2031,13 +2031,10 @@
+@@ -2032,13 +2032,10 @@
  
  @node Quit,  , Suspend, Session Management
  @section Quit
