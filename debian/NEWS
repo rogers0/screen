@@ -1,4 +1,4 @@
-screen (4.1.0~20120320gitdb59704-10) unstable; urgency=low
+screen (4.1.0~20120320gitdb59704-10) unstable; urgency=medium
 
   On systems running systemd, the management of /var/run/screen previously
   handled by /etc/init.d/screen-cleanup now occurs via systemd-tmpfiles and

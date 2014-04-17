@@ -1,4 +1,4 @@
-screen (4.1.0~20120320gitdb59704-10) UNRELEASED; urgency=low
+screen (4.1.0~20120320gitdb59704-10) unstable; urgency=medium
 
   * Extend 49long-usernames.patch to also cover multiuser usage (Closes:
     #735554) Thanks Martin von Wittich!
@@ -15,7 +15,7 @@ screen (4.1.0~20120320gitdb59704-10) UNRELEASED; urgency=low
     + Check upstream GPG signature and add upstream signing key as
       debian/upstream/signing-key.asc
 
- -- Axel Beckert <abe@debian.org>  Tue, 23 Jul 2013 14:48:32 +0200
+ -- Axel Beckert <abe@debian.org>  Thu, 17 Apr 2014 11:45:17 +0200
 
 screen (4.1.0~20120320gitdb59704-9) unstable; urgency=low
 
