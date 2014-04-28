@@ -4,48 +4,48 @@
 # See machine dependant config.h for more configuration options.
 #
 
-srcdir = @srcdir@
-VPATH = @srcdir@
+srcdir = .
+
 
 DESTDIR = 
 
 # Where to install screen.
 
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-datarootdir = @datarootdir@
-datadir = @datadir@
+prefix = /usr
+exec_prefix = ${prefix}
+datarootdir = ${prefix}/share
+datadir = /usr/share
 
 # don't forget to change mandir and infodir in doc/Makefile.
 bindir  = $(exec_prefix)/bin
 
-VERSION = @VERSION@
+VERSION = 4.2.0
 SCREEN = screen-$(VERSION)
 
 GIT_REV = "`git describe --always 2>/dev/null`"
-DEFS = @DEFS@ -DGIT_REV=\"$(GIT_REV)\"
+DEFS = -DHAVE_CONFIG_H -DGIT_REV=\"$(GIT_REV)\"
 
-ETCSCREENRC = @ETCSCREENRC@
+ETCSCREENRC = /etc/screenrc
 ifeq (${ETCSCREENRC}, )
 ETCSCREENRC=$(prefix)/etc/screenrc
 endif
 SCREENENCODINGS = $(datadir)/screen/utf8encodings
 
-CC = @CC@
-CFLAGS = @CFLAGS@
-CPPFLAGS = @CPPFLAGS@ -DETCSCREENRC='"$(ETCSCREENRC)"' \
+CC = x86_64-pc-linux-gnu-gcc
+CFLAGS = -g -O2 -D_GNU_SOURCE
+CPPFLAGS = -DNONETHACK -DETCSCREENRC='"$(ETCSCREENRC)"' \
            -DSCREENENCODINGS='"$(SCREENENCODINGS)"'
-LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
+LDFLAGS = 
+LIBS = -lcurses  -lelf -lutempter -lutil -lcrypt -lpam
 
-CPP=@CPP@
+CPP=x86_64-pc-linux-gnu-gcc -E
 CPP_DEPEND=$(CC) -MM
 
-INSTALL = @INSTALL@
-INSTALL_PROGRAM = @INSTALL_PROGRAM@
-INSTALL_DATA = @INSTALL_DATA@
+INSTALL = /usr/bin/install -c
+INSTALL_PROGRAM = ${INSTALL}
+INSTALL_DATA = ${INSTALL} -m 644
 
-AWK = @AWK@
+AWK = gawk
 
 ### Chose some debug configuration options:
 # -DDEBUG

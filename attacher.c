@@ -185,8 +185,8 @@ int how;
 	  if (ret == SIG_POWER_BYE)
 	    {
 	      int ppid;
-	      setgid(real_gid);
-	      setuid(real_uid);
+	      if (setgid(real_gid) || setuid(real_uid))
+		Panic(errno, "setuid/gid");
 	      if ((ppid = getppid()) > 1)
 		Kill(ppid, SIGHUP);
 	      exit(0);
@@ -282,7 +282,10 @@ int how;
 #ifdef MULTIUSER
   if (!multiattach)
 #endif
-    setuid(real_uid);
+    {
+      if (setuid(real_uid))
+        Panic(errno, "setuid");
+    }
 #if defined(MULTIUSER) && defined(USE_SETEUID)
   else
     {
@@ -290,7 +293,8 @@ int how;
       xseteuid(real_uid); /* multi_uid, allow backend to send signals */
     }
 #endif
-  setgid(real_gid);
+  if (setgid(real_gid))
+    Panic(errno, "setgid");
   eff_uid = real_uid;
   eff_gid = real_gid;
 
@@ -486,7 +490,8 @@ AttacherFinit SIGDEFARG
 #ifdef MULTIUSER
   if (tty_oldmode >= 0)
     {
-      setuid(own_uid);
+      if (setuid(own_uid))
+        Panic(errno, "setuid");
       chmod(attach_tty, tty_oldmode);
     }
 #endif
@@ -504,11 +509,14 @@ AttacherFinitBye SIGDEFARG
   if (multiattach)
     exit(SIG_POWER_BYE);
 #endif
-  setgid(real_gid);
+  if (setgid(real_gid))
+    Panic(errno, "setgid");
 #ifdef MULTIUSER
-  setuid(own_uid);
+  if (setuid(own_uid))
+    Panic(errno, "setuid");
 #else
-  setuid(real_uid);
+  if (setuid(real_uid))
+    Panic(errno, "setuid");
 #endif
   /* we don't want to disturb init (even if we were root), eh? jw */
   if ((ppid = getppid()) > 1)
@@ -621,7 +629,7 @@ Attacher()
         {
 	  fcntl(0, F_SETFL, 0);
 	  SetTTY(0, &attach_Mode);
-	  printf("\nSuddenly the Dungeon collapses!! - You die...\n");
+	  printf("\nError: Cannot find master process to attach to!\n");
 	  eexit(1);
         }
 #ifdef BSDJOBS
@@ -679,11 +687,14 @@ static sigret_t
 LockHup SIGDEFARG
 {
   int ppid = getppid();
-  setgid(real_gid);
+  if (setgid(real_gid))
+    Panic(errno, "setgid");
 #ifdef MULTIUSER
-  setuid(own_uid);
+  if (setuid(own_uid))
+    Panic(errno, "setuid");
 #else
-  setuid(real_uid);
+  if (setuid(real_uid))
+    Panic(errno, "setuid");
 #endif
   if (ppid > 1)
     Kill(ppid, SIGHUP);
@@ -710,11 +721,14 @@ LockTerminal()
       if ((pid = fork()) == 0)
         {
           /* Child */
-          setgid(real_gid);
+          if (setgid(real_gid))
+            Panic(errno, "setgid");
 #ifdef MULTIUSER
-          setuid(own_uid);
+          if (setuid(own_uid))
+            Panic(errno, "setuid");
 #else
-          setuid(real_uid);	/* this should be done already */
+          if (setuid(real_uid))   /* this should be done already */
+            Panic(errno, "setuid");
 #endif
           closeallfiles(0);	/* important: /etc/shadow may be open */
           execl(prg, "SCREEN-LOCK", NULL);
@@ -847,11 +861,16 @@ screen_builtin_lck()
 #ifdef USE_PAM
   pam_handle_t *pamh = 0;
   int pam_error;
-#else
-  char *pass, mypass[16 + 1], salt[3];
+  char *tty_name;
 #endif
+  char *pass = 0, mypass[16 + 1], salt[3];
+  int using_pam = 1;
 
-#ifndef USE_PAM
+#ifdef USE_PAM
+  if (!ppp->pw_uid)
+    {
+#endif
+  using_pam = 0;
   pass = ppp->pw_passwd;
   if (pass == 0 || *pass == 0)
     {
@@ -890,6 +909,8 @@ screen_builtin_lck()
 	}
       pass = ppp->pw_passwd = SaveStr(pass);
     }
+#ifdef USE_PAM
+    }
 #endif
 
   debug("screen_builtin_lck looking in gcos field\n");
@@ -919,21 +940,35 @@ screen_builtin_lck()
           AttacherFinit(SIGARG);
           /* NOTREACHED */
         }
+      if (using_pam)
+        {
 #ifdef USE_PAM
       PAM_conversation.appdata_ptr = cp1;
       pam_error = pam_start("screen", ppp->pw_name, &PAM_conversation, &pamh);
       if (pam_error != PAM_SUCCESS)
 	AttacherFinit(SIGARG);		/* goodbye */
+
+      if (strncmp(attach_tty, "/dev/", 5) == 0)
+	tty_name = attach_tty + 5;
+      else
+	tty_name = attach_tty;
+      pam_error = pam_set_item(pamh, PAM_TTY, tty_name);
+      if (pam_error != PAM_SUCCESS)
+	AttacherFinit(SIGARG);		/* goodbye */
+
       pam_error = pam_authenticate(pamh, 0);
       pam_end(pamh, pam_error);
       PAM_conversation.appdata_ptr = 0;
       if (pam_error == PAM_SUCCESS)
 	break;
-#else
-      char *buf = crypt(cp1, pass);
-      if (buf && !strncmp(buf, pass, strlen(pass)))
-	break;
 #endif
+        }
+      else
+	{
+          char *buf = crypt(cp1, pass);
+          if (buf && !strncmp(buf, pass, strlen(pass)))
+	    break;
+	}
       debug("screen_builtin_lck: NO!!!!!\n");
       bzero(cp1, strlen(cp1));
     }

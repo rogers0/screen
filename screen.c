@@ -655,6 +655,8 @@ char **av;
 		    }
 		  break;
 		case 'w':
+		  if (strcmp(ap+1, "ipe"))
+		    exit_with_usage(myname, "Unknown option %s", --ap);
 		  lsflag = 1;
 		  wipeflag = 1;
 		  if (ac > 1 && !SockMatch)
@@ -970,18 +972,23 @@ char **av;
 	else \
 	  attach_tty = ""; \
       } \
-    else if (stat(attach_tty, &st)) \
-      Panic(errno, "Cannot access '%s'", attach_tty); \
+    else \
+      { \
+	if (stat(attach_tty, &st)) \
+	  Panic(errno, "Cannot access '%s'", attach_tty); \
+	if (CheckTtyname(attach_tty)) \
+	  Panic(0, "Bad tty '%s'", attach_tty); \
+      } \
     if (strlen(attach_tty) >= MAXPATHLEN) \
       Panic(0, "TtyName too long - sorry."); \
   } while (0)
 
   if (home == 0 || *home == '\0')
     home = ppp->pw_dir;
-  if (strlen(LoginName) > 20)
+  if (strlen(LoginName) > MAXLOGINLEN)
     Panic(0, "LoginName too long - sorry.");
 #ifdef MULTIUSER
-  if (multi && strlen(multi) > 20)
+  if (multi && strlen(multi) > MAXLOGINLEN)
     Panic(0, "Screen owner name too long - sorry.");
 #endif
   if (strlen(home) > MAXPATHLEN - 25)
@@ -1108,7 +1115,7 @@ char **av;
 	  sprintf(SockPath, "%s/S-%s", SockDir, LoginName);
 	  if (access(SockPath, F_OK))
 	    {
-	      if (mkdir(SockPath, 0700) == -1)
+	      if (mkdir(SockPath, 0700) == -1 && errno != EEXIST)
 		Panic(errno, "Cannot make directory '%s'", SockPath);
 	      (void) chown(SockPath, real_uid, real_gid);
 	    }
@@ -1164,8 +1171,12 @@ char **av;
 #endif
       SET_GUID();
       i = FindSocket((int *)NULL, &fo, &oth, SockMatch);
-      if (quietflag)
-        exit(8 + (fo ? ((oth || i) ? 2 : 1) : 0) + i);
+      if (quietflag) {
+        if (rflag)
+          exit(10 + i);
+        else
+          exit(9 + (fo || oth ? 1 : 0) + fo);
+      }
       if (fo == 0)
         Panic(0, "No Sockets found in %s.\n", SockPath);
       Panic(0, "%d Socket%s in %s.\n", fo, fo > 1 ? "s" : "", SockPath);

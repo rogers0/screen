@@ -91,7 +91,7 @@
 
 #define Ctrl(c) ((c)&037)
 
-#define MAXSTR		512
+#define MAXSTR		768
 #define MAXARGS 	64
 #define MSGWAIT 	5
 #define MSGMINWAIT 	1
@@ -182,8 +182,10 @@ struct mode
  * 					 A few revisions after 8147d08 incorrectly
  * 					 carried version 1, but should have carried 2.
  * 2:	screen version 4.1.0devel	(revisions 8b46d8a upto YYYYYYY)
+ * 3:	screen version 4.2.0		(was incorrectly originally. Patched here)
+ * 4:	screen version 4.2.1		(bumped once again due to changed terminal and login length)
  */
-#define MSG_VERSION	2
+#define MSG_VERSION	4
 
 #define MSG_REVISION	(('m'<<24) | ('s'<<16) | ('g'<<8) | MSG_VERSION)
 struct msg
@@ -202,32 +204,32 @@ struct msg
 	  int nargs;
 	  char line[MAXPATHLEN];
 	  char dir[MAXPATHLEN];
-	  char screenterm[20];	/* is screen really "screen" ? */
+	  char screenterm[MAXTERMLEN];	/* is screen really "screen" ? */
 	}
       create;
       struct
 	{
-	  char auser[20 + 1];	/* username */
+	  char auser[MAXLOGINLEN + 1];	/* username */
 	  int apid;		/* pid of frontend */
 	  int adaptflag;	/* adapt window size? */
 	  int lines, columns;	/* display size */
 	  char preselect[20];
 	  int esc;		/* his new escape character unless -1 */
 	  int meta_esc;		/* his new meta esc character unless -1 */
-	  char envterm[20 + 1];	/* terminal type */
+	  char envterm[MAXTERMLEN + 1];	/* terminal type */
 	  int encoding;		/* encoding of display */
 	  int detachfirst;      /* whether to detach remote sessions first */
 	}
       attach;
       struct 
 	{
-	  char duser[20 + 1];	/* username */
+	  char duser[MAXLOGINLEN + 1];	/* username */
 	  int dpid;		/* pid of frontend */
 	}
       detach;
       struct 
 	{
-	  char auser[20 + 1];	/* username */
+	  char auser[MAXLOGINLEN + 1];	/* username */
 	  int nargs;
 	  char cmd[MAXPATHLEN];	/* command */
 	  int apid;		/* pid of frontend */

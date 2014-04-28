@@ -80,8 +80,6 @@ register char *str1, *str2;
     }
   else
     {
-      if (len1 == 0)
-	return 0;
       if ((cp = malloc((unsigned) len1 + add_colon + 1)) == NULL)
 	Panic(0, "%s", strnomem);
       cp[len1 + add_colon] = '\0';
@@ -413,11 +411,6 @@ int dump;
   char *mode = "w";
 #ifdef COPY_PASTE
   int public = 0;
-# ifdef _MODE_T
-  mode_t old_umask;
-# else
-  int old_umask;
-# endif
 # ifdef HAVE_LSTAT
   struct stat stb, stb2;
   int fd, exists = 0;
@@ -480,7 +473,6 @@ int dump;
 #ifdef COPY_PASTE
       if (dump == DUMP_EXCHANGE && public)
 	{
-          old_umask = umask(0);
 # ifdef HAVE_LSTAT
 	  if (exists)
 	    {
@@ -501,7 +493,6 @@ int dump;
 # else
           f = fopen(fn, mode);
 # endif
-          umask(old_umask);
 	}
       else
 #endif /* COPY_PASTE */
