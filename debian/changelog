@@ -34,6 +34,8 @@ screen (4.2.1-1) UNRELEASED; urgency=low
 
     Added patch to fix wrong version in upstream's top-level Makefile.
 
+  * Update line-numbers in lintian overrides.
+
  -- Axel Beckert <abe@debian.org>  Mon, 28 Apr 2014 03:20:36 +0200
 
 screen (4.2.0-2) unstable; urgency=low
