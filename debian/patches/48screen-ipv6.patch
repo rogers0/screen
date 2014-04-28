@@ -2,9 +2,9 @@ Author: <bpkroth@gmail.com>
 Description: Some patches stolen from the fedora package for better error checking and tty security.
 Index: screen/doc/screen.1
 ===================================================================
---- screen.orig/doc/screen.1	2014-04-17 14:23:06.359089910 +0200
-+++ screen/doc/screen.1	2014-04-17 14:23:06.343089985 +0200
-@@ -400,6 +400,12 @@
+--- screen.orig/doc/screen.1	2014-04-28 03:12:22.610448138 +0200
++++ screen/doc/screen.1	2014-04-28 03:12:22.558447876 +0200
+@@ -403,6 +403,12 @@
  \fB-r\fP option to tell screen to look only for attached or
  detached screen sessions. Note that this command doesn't work if
  the session is password protected.
@@ -19,8 +19,8 @@ Index: screen/doc/screen.1
  .ta 12n 26n
 Index: screen/extern.h
 ===================================================================
---- screen.orig/extern.h	2014-04-17 14:23:06.359089910 +0200
-+++ screen/extern.h	2014-04-17 14:23:06.343089985 +0200
+--- screen.orig/extern.h	2014-04-28 03:12:22.610448138 +0200
++++ screen/extern.h	2014-04-28 03:12:22.562447905 +0200
 @@ -459,8 +459,7 @@
  
  /* teln.c */
@@ -33,8 +33,8 @@ Index: screen/extern.h
  extern int   DoTelnet __P((char *, int *, int));
 Index: screen/help.c
 ===================================================================
---- screen.orig/help.c	2014-04-17 14:23:06.359089910 +0200
-+++ screen/help.c	2014-04-17 14:23:06.347089970 +0200
+--- screen.orig/help.c	2014-04-28 03:12:22.610448138 +0200
++++ screen/help.c	2014-04-28 03:12:22.562447905 +0200
 @@ -66,6 +66,10 @@
  {
    printf("Use: %s [-opts] [cmd [args]]\n", myname);
@@ -48,8 +48,8 @@ Index: screen/help.c
    printf("-c file       Read configuration file instead of '.screenrc'.\n");
 Index: screen/screen.c
 ===================================================================
---- screen.orig/screen.c	2014-04-17 14:23:06.359089910 +0200
-+++ screen/screen.c	2014-04-17 14:23:06.347089970 +0200
+--- screen.orig/screen.c	2014-04-28 03:12:22.610448138 +0200
++++ screen/screen.c	2014-04-28 03:12:22.566447920 +0200
 @@ -248,8 +248,9 @@
  struct win *fore;
  struct win *windows;
@@ -89,8 +89,8 @@ Index: screen/screen.c
  		  break;
 Index: screen/teln.c
 ===================================================================
---- screen.orig/teln.c	2014-04-17 14:23:06.359089910 +0200
-+++ screen/teln.c	2014-04-17 14:23:06.347089970 +0200
+--- screen.orig/teln.c	2014-04-28 03:12:22.610448138 +0200
++++ screen/teln.c	2014-04-28 03:12:22.566447920 +0200
 @@ -30,6 +30,7 @@
  #include <sys/socket.h>
  #include <fcntl.h>
@@ -271,8 +271,8 @@ Index: screen/teln.c
  int
 Index: screen/window.c
 ===================================================================
---- screen.orig/window.c	2014-04-17 14:23:06.359089910 +0200
-+++ screen/window.c	2014-04-17 14:23:06.351089971 +0200
+--- screen.orig/window.c	2014-04-28 03:12:22.610448138 +0200
++++ screen/window.c	2014-04-28 03:12:22.570447935 +0200
 @@ -611,6 +611,13 @@
    n = pp - wtab;
    debug1("Makewin creating %d\n", n);
@@ -338,8 +338,8 @@ Index: screen/window.c
        Msg(0, "Invalid argument '%s'", arg);
 Index: screen/window.h
 ===================================================================
---- screen.orig/window.h	2014-04-17 14:23:06.359089910 +0200
-+++ screen/window.h	2014-04-17 14:23:06.351089971 +0200
+--- screen.orig/window.h	2014-04-28 03:12:22.610448138 +0200
++++ screen/window.h	2014-04-28 03:12:22.570447935 +0200
 @@ -268,7 +268,7 @@
    struct display *w_zdisplay;
  #endif

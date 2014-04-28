@@ -8,9 +8,9 @@ Affects screen's behaviour in the following situations:
 arbitrary one
 Index: screen/doc/screen.1
 ===================================================================
---- screen.orig/doc/screen.1	2012-03-20 22:41:13.000000000 +0100
-+++ screen/doc/screen.1	2012-03-20 22:41:52.000000000 +0100
-@@ -242,7 +242,7 @@
+--- screen.orig/doc/screen.1	2014-04-28 03:17:56.464112915 +0200
++++ screen/doc/screen.1	2014-04-28 03:17:56.448112764 +0200
+@@ -244,7 +244,7 @@
  .IR screen ,
  but prints a list of
  .I pid.tty.host
@@ -19,7 +19,7 @@ Index: screen/doc/screen.1
  .I screen
  sessions.
  Sessions marked `detached' can be resumed with \*Qscreen \-r\*U. Those marked
-@@ -340,7 +340,7 @@
+@@ -342,7 +342,7 @@
  sessions in another user's directory. This requires setuid-root.
  .TP 5
  .B \-R
@@ -28,7 +28,7 @@ Index: screen/doc/screen.1
  .I screen
  session it finds.  If successful, all other command-line options are ignored.
  If no detached session exists, starts a new session using the specified
-@@ -350,6 +350,8 @@
+@@ -352,6 +352,8 @@
  .I screen
  is run as a login-shell (actually screen uses \*Q\-xRR\*U in that case).
  For combinations with the \fB\-d\fP/\fB\-D\fP option see there.
@@ -39,9 +39,9 @@ Index: screen/doc/screen.1
  sets the default shell to the program specified, instead of the value
 Index: screen/doc/screen.texinfo
 ===================================================================
---- screen.orig/doc/screen.texinfo	2012-03-20 22:41:10.000000000 +0100
-+++ screen/doc/screen.texinfo	2012-03-20 22:41:52.000000000 +0100
-@@ -318,7 +318,8 @@
+--- screen.orig/doc/screen.texinfo	2014-04-28 03:17:56.464112915 +0200
++++ screen/doc/screen.texinfo	2014-04-28 03:17:56.452112800 +0200
+@@ -320,7 +320,8 @@
  @itemx -list [@var{match}]
  Do not start @code{screen}, but instead print a list of session
  identification strings (usually of the form @var{pid.tty.host};
@@ -51,7 +51,7 @@ Index: screen/doc/screen.texinfo
  with @code{screen -r}.  Those marked @samp{attached} are running and
  have a controlling terminal.  If the session runs in multiuser mode,
  it is marked @samp{multi}.  Sessions marked as @samp{unreachable} either
-@@ -404,14 +405,15 @@
+@@ -406,14 +407,15 @@
  sessions in another user's directory. This requires setuid-root.
  
  @item -R
@@ -71,8 +71,8 @@ Index: screen/doc/screen.texinfo
  Set the default shell to be @var{program}.  By default, @code{screen}
 Index: screen/extern.h
 ===================================================================
---- screen.orig/extern.h	2012-03-20 22:41:13.000000000 +0100
-+++ screen/extern.h	2012-03-20 22:41:52.000000000 +0100
+--- screen.orig/extern.h	2014-04-28 03:17:56.464112915 +0200
++++ screen/extern.h	2014-04-28 03:17:56.456112845 +0200
 @@ -390,6 +390,8 @@
  #else
  extern int   xsnprintf __P(());
@@ -84,8 +84,8 @@ Index: screen/extern.h
  /* acl.c */
 Index: screen/misc.c
 ===================================================================
---- screen.orig/misc.c	2012-03-20 22:14:48.000000000 +0100
-+++ screen/misc.c	2012-03-20 22:41:52.000000000 +0100
+--- screen.orig/misc.c	2014-04-28 03:17:56.464112915 +0200
++++ screen/misc.c	2014-04-28 03:17:56.456112845 +0200
 @@ -29,6 +29,7 @@
  #include <sys/types.h>
  #include <sys/stat.h>	/* mkdir() declaration */
@@ -137,8 +137,8 @@ Index: screen/misc.c
 +}
 Index: screen/socket.c
 ===================================================================
---- screen.orig/socket.c	2012-03-20 22:41:12.000000000 +0100
-+++ screen/socket.c	2012-03-20 22:41:52.000000000 +0100
+--- screen.orig/socket.c	2014-04-28 03:17:56.464112915 +0200
++++ screen/socket.c	2014-04-28 03:17:56.456112845 +0200
 @@ -125,16 +125,18 @@
    int sdirlen;
    int  matchlen = 0;

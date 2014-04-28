@@ -13,9 +13,9 @@ Julien
 
 Index: screen/screen.h
 ===================================================================
---- screen.orig/screen.h	2012-08-09 01:01:28.000000000 +0200
-+++ screen/screen.h	2012-08-09 01:01:28.000000000 +0200
-@@ -240,6 +240,57 @@ struct msg
+--- screen.orig/screen.h	2014-04-28 03:16:47.859711248 +0200
++++ screen/screen.h	2014-04-28 03:16:47.839711148 +0200
+@@ -242,6 +242,57 @@
      } m;
  };
  
@@ -75,9 +75,9 @@ Index: screen/screen.h
   */
 Index: screen/socket.c
 ===================================================================
---- screen.orig/socket.c	2012-08-09 01:01:28.000000000 +0200
-+++ screen/socket.c	2012-08-09 01:01:29.000000000 +0200
-@@ -1067,7 +1067,9 @@ ReceiveMsg()
+--- screen.orig/socket.c	2014-04-28 03:16:47.859711248 +0200
++++ screen/socket.c	2014-04-28 03:16:47.843711169 +0200
+@@ -1067,7 +1067,9 @@
      }
    if (left > 0)
      {
@@ -90,9 +90,9 @@ Index: screen/socket.c
  	debug("No data on socket.\n");
 Index: screen/attacher.c
 ===================================================================
---- screen.orig/attacher.c	2012-08-09 01:01:28.000000000 +0200
-+++ screen/attacher.c	2012-08-09 01:32:08.000000000 +0200
-@@ -133,6 +133,48 @@ struct msg *m;
+--- screen.orig/attacher.c	2014-04-28 03:16:47.859711248 +0200
++++ screen/attacher.c	2014-04-28 03:16:47.843711169 +0200
+@@ -133,6 +133,48 @@
    return 0;
  }
  
@@ -141,7 +141,7 @@ Index: screen/attacher.c
  
  int
  Attach(how)
-@@ -397,6 +439,7 @@ int how;
+@@ -397,6 +439,7 @@
    if (WriteMessage(lasts, &m))
      Panic(errno, "WriteMessage");
    close(lasts);
