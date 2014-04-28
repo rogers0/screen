@@ -1,0 +1,17 @@
+Description: Fix wrong version in upstream Makefile
+Author: Axel Beckert <abe@debian.org>
+Forwarded: yes
+
+Index: screen/Makefile
+===================================================================
+--- screen.orig/Makefile	2014-04-28 03:33:06.000000000 +0200
++++ screen/Makefile	2014-04-28 03:38:45.823006116 +0200
+@@ -19,7 +19,7 @@
+ # don't forget to change mandir and infodir in doc/Makefile.
+ bindir  = $(exec_prefix)/bin
+ 
+-VERSION = 4.2.0
++VERSION = 4.2.1
+ SCREEN = screen-$(VERSION)
+ 
+ GIT_REV = "`git describe --always 2>/dev/null`"

@@ -1,5 +1,6 @@
 # 01-08: fixes to configure, altering preprocessor macros etc.
 # 10-79: "regular" code and documentation fixes
+00-fix-version-in-Makefile.patch
 11replace_doc_paths.patch
 13split_info_files.patch
 26source_encoding.patch
