@@ -36,6 +36,7 @@
  */
 
 #include "config.h"
+#include "os.h"
 #include "acls.h"
 #include "comm.h"
 
@@ -241,9 +242,7 @@ struct comm comms[RC_LAST + 1] =
 #ifdef MULTIUSER
   { "multiuser",	ARGS_1 },
 #endif
-#ifdef NETHACK
   { "nethack",		ARGS_1 },
-#endif
   { "next",		ARGS_0 },
 #ifdef MULTI
   { "nonblock",		NEED_DISPLAY|ARGS_01 },
