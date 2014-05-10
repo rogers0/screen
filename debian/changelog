@@ -25,14 +25,21 @@ screen (4.2.1-1) UNRELEASED; urgency=low
     + 61-allow-dev-console-to-be-a-symlink.patch
     + 62-prevent-repeated-title-prompt.patch
 
+    Also dropped patch 60-644788-screen-4.1.0-4.0.3-interoperability.patch
+    as it was only necessary for the migration from Squeeze to Wheezy and
+    from Precise to Trusty.
+
     Refreshed and/or updated the following remaining patches:
     + 11replace_doc_paths.patch
     + 48screen-ipv6.patch
     + 58-show-encoding-hardstatus.patch
-    + 60-644788-screen-4.1.0-4.0.3-interoperability.patch
     + 80EXP_session_creation_time.patch
 
-    Added patch to fix wrong version in upstream's top-level Makefile.
+    New patches:
+    + Fix wrong version in upstream's top-level Makefile.
+    + Set values in os.h to those from 49long-usernames and
+      50increase-max-TERM-length to ensure backwards compatibility in
+      Debian. (See #644788 for the discussion with older releases.)
 
   * Update line-numbers in lintian overrides.
 

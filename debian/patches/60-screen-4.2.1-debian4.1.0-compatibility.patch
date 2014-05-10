@@ -1,0 +1,39 @@
+Description: Patch to make 4.2.1 compatible with Debian's 4.1.0 and
+ 4.2.0 packages 4.2.1 includes the Debian patches to extend the login
+ name and $TERM length, but uses even larger values. This causes
+ screen clients to no more be able to talk to older screen
+ servers. See #644788 for a discussion of the same issue with earlier
+ release combinations (4.1.0 vs 4.0.3).
+ .
+ For now this patch sets the mentioned values back to those which
+ werew in use in Debian before (and seemed to be large enough for use
+ in Debian).
+Author: Axel Beckert <abe@debian.org>
+Forwarded: no
+
+Index: screen-4.2.1/os.h
+===================================================================
+--- screen-4.2.1.orig/os.h	2014-05-10 11:26:20.679307288 +0200
++++ screen-4.2.1/os.h	2014-05-10 11:26:20.675307254 +0200
+@@ -524,6 +524,6 @@
+ /* Changing those you won't be able to attach to your old sessions
+  * when changing those values in official tree don't forget to bump
+  * MSG_VERSION */
+-#define MAXTERMLEN	32
+-#define MAXLOGINLEN	256
++#define MAXTERMLEN	40
++#define MAXLOGINLEN	50
+ 
+Index: screen-4.2.1/screen.h
+===================================================================
+--- screen-4.2.1.orig/screen.h	2014-05-10 09:31:30.000000000 +0200
++++ screen-4.2.1/screen.h	2014-05-10 11:27:21.011263804 +0200
+@@ -185,7 +185,7 @@
+  * 3:	screen version 4.2.0		(was incorrectly originally. Patched here)
+  * 4:	screen version 4.2.1		(bumped once again due to changed terminal and login length)
+  */
+-#define MSG_VERSION	4
++#define MSG_VERSION	3
+ 
+ #define MSG_REVISION	(('m'<<24) | ('s'<<16) | ('g'<<8) | MSG_VERSION)
+ struct msg
