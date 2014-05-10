@@ -1,0 +1,9 @@
+The clean target needs 00-fix-version-in-Makefile.patch to be applied.
+
+So instead of debuild clean or debclean please run:
+
+  quilt pop -a -f
+  quilt push
+  debclean
+
+ -- Axel Beckert <abe@debian.org>, Sat, 10 May 2014 11:27:56 +0200
