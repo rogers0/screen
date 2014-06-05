@@ -11,10 +11,10 @@ Description: Patch to make 4.2.1 compatible with Debian's 4.1.0 and
 Author: Axel Beckert <abe@debian.org>
 Forwarded: no
 
-Index: screen-4.2.1/os.h
+Index: screen/os.h
 ===================================================================
---- screen-4.2.1.orig/os.h	2014-05-10 11:26:20.679307288 +0200
-+++ screen-4.2.1/os.h	2014-05-10 11:26:20.675307254 +0200
+--- screen.orig/os.h	2014-06-05 22:28:50.096065274 +0200
++++ screen/os.h	2014-06-05 22:28:50.088065390 +0200
 @@ -524,6 +524,6 @@
  /* Changing those you won't be able to attach to your old sessions
   * when changing those values in official tree don't forget to bump
@@ -24,16 +24,25 @@ Index: screen-4.2.1/os.h
 +#define MAXTERMLEN	40
 +#define MAXLOGINLEN	50
  
-Index: screen-4.2.1/screen.h
+Index: screen/screen.h
 ===================================================================
---- screen-4.2.1.orig/screen.h	2014-05-10 09:31:30.000000000 +0200
-+++ screen-4.2.1/screen.h	2014-05-10 11:27:21.011263804 +0200
+--- screen.orig/screen.h	2014-06-05 22:28:50.096065274 +0200
++++ screen/screen.h	2014-06-05 22:29:43.355302506 +0200
 @@ -185,7 +185,7 @@
   * 3:	screen version 4.2.0		(was incorrectly originally. Patched here)
   * 4:	screen version 4.2.1		(bumped once again due to changed terminal and login length)
   */
 -#define MSG_VERSION	4
-+#define MSG_VERSION	3
++#define MSG_VERSION	2
  
  #define MSG_REVISION	(('m'<<24) | ('s'<<16) | ('g'<<8) | MSG_VERSION)
  struct msg
+@@ -204,7 +204,7 @@
+ 	  int nargs;
+ 	  char line[MAXPATHLEN];
+ 	  char dir[MAXPATHLEN];
+-	  char screenterm[MAXTERMLEN];	/* is screen really "screen" ? */
++	  char screenterm[20];	/* is screen really "screen" ? */
+ 	}
+       create;
+       struct

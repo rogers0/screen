@@ -38,8 +38,9 @@ screen (4.2.1-1) UNRELEASED; urgency=low
     New patches:
     + Fix wrong version in upstream's top-level Makefile.
     + Set values in os.h to those from 49long-usernames and
-      50increase-max-TERM-length to ensure backwards compatibility in
-      Debian. (See #644788 for the discussion with older releases.)
+      50increase-max-TERM-length and set MSG_VERSION back to 2 to ensure
+      backwards compatibility in Debian. (See #644788 for the discussion
+      with older releases.)
 
   * Update line-numbers in lintian overrides.
   * Add README.source explaining which patch is needed for the clean target.
