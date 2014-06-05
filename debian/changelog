@@ -1,4 +1,4 @@
-screen (4.2.1-1) UNRELEASED; urgency=low
+screen (4.2.1-1) experimental; urgency=low
 
   * New upstream release
 
@@ -45,7 +45,7 @@ screen (4.2.1-1) UNRELEASED; urgency=low
   * Update line-numbers in lintian overrides.
   * Add README.source explaining which patch is needed for the clean target.
 
- -- Axel Beckert <abe@debian.org>  Mon, 28 Apr 2014 03:20:36 +0200
+ -- Axel Beckert <abe@debian.org>  Thu, 05 Jun 2014 23:50:40 +0200
 
 screen (4.2.0-2) unstable; urgency=low
 
