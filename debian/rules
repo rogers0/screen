@@ -13,7 +13,7 @@ ROOT := $(CURDIR)/debian/screen
 TTYGROUP := 5
 
 %:
-	dh $@ --with autoreconf
+	dh $@ --parallel --with autoreconf
 
 override_dh_auto_clean:
 	test ! -s doc/Makefile || $(MAKE) -C doc realclean
