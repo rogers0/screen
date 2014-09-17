@@ -1,0 +1,2 @@
+Test-Command: prove -v debian/tests/t
+Depends: @, perl

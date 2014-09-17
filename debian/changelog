@@ -1,5 +1,6 @@
 screen (4.2.1-3) UNRELEASED; urgency=medium
 
+  * Add a very simple TAP-based DEP8 test suite under debian/tests/t.
   * Change Vcs-Browser header to new cgit web interface.
 
  -- Axel Beckert <abe@debian.org>  Tue, 16 Sep 2014 01:09:07 +0200
