@@ -1,22 +1,9 @@
 #!/bin/sh
 
-echo 1..5
+echo 1..6
 
-TESTNAME=`basename $0`.`mktemp -u XXXXXXXX`
+. `dirname $0`/boilerplate.sh
 
-screen -d -m -U -S "$TESTNAME"
-if [ "$?" != 0 ]; then echo -n 'not '; fi; echo ok 1 - Create session
-
-sleep 1
-
-screen -ls | fgrep -q '(Detached)'
-if [ "$?" != 0 ]; then echo -n 'not '; fi; echo ok 2 - Detached session found
-
-screen -ls | fgrep -q "$TESTNAME"
-if [ "$?" != 0 ]; then echo -n 'not '; fi; echo ok 3 - Session has expected session name
-
-screen -S "$TESTNAME" -X quit
-if [ "$?" != 0 ]; then echo -n 'not '; fi; echo ok 4 - Quit command sent to session
-
-screen -ls | fgrep -q "$TESTNAME"
-if [ "$?" = 0 ]; then echo -n 'not '; fi; echo ok 5 - Session is gone
+create_session_3_tests -U
+has_window_number_zero
+kill_session_2_tests

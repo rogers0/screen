@@ -2,8 +2,10 @@
 
 echo 1..2
 
+. `dirname $0`/boilerplate.sh
+
 screen -v | fgrep -q 'Screen version '
-if [ "$?" != 0 ]; then echo -n 'not '; fi; echo ok 1 - Outputs version
+check_exit_code_true Outputs version
 
 screen -h | fgrep -q 'Options:'
-if [ "$?" != 0 ]; then echo -n 'not '; fi; echo ok 2 - Outputs help
+check_exit_code_true Outputs help
