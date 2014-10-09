@@ -1,5 +1,7 @@
 screen (4.2.1-3) UNRELEASED; urgency=medium
 
+  * Cherry-pick 7d8fd3ad from upstream to fix segfaults with full screen
+    text-mode applications and altscreen on (Closes: #681572)
   * Add a very simple TAP-based DEP8 test suite under debian/tests/t.
   * Change Vcs-Browser header to new cgit web interface.
 

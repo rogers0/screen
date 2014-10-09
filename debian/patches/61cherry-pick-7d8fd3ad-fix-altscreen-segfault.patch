@@ -1,0 +1,21 @@
+Origin: commit 7d8fd3ad5ed852aefd6c15b99c5d99158fe7f77e
+Author: Lukáš Nykrýn <lnykryn@redhat.com>
+Acked-By: Amadeusz Sławiński <amade@asmblr.net>
+Description: Fixes segfault with altscreen on.
+Bug: https://savannah.gnu.org/bugs/?35757
+Bug-Debian: https://bugs.debian.org/681572
+
+diff --git a/ansi.c b/ansi.c
+index e76eef4..bbdc119 100644
+--- a/ansi.c
++++ b/ansi.c
+@@ -1444,8 +1444,8 @@ int c, intermediate;
+ 		  else
+ 		    {
+ 		      if (curr->w_alt.on) {
+-		        LeaveAltScreen(curr);
+ 		        RestoreCursor(&curr->w_alt.cursor);
++		        LeaveAltScreen(curr);
+ 		      }
+ 		    }
+ 		  if (a1 == 47 && !i)
