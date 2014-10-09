@@ -1,4 +1,4 @@
-screen (4.2.1-3) UNRELEASED; urgency=medium
+screen (4.2.1-3) unstable; urgency=low
 
   * Cherry-pick 7d8fd3ad from upstream to fix segfaults with full screen
     text-mode applications and altscreen on (Closes: #681572)
@@ -10,7 +10,7 @@ screen (4.2.1-3) UNRELEASED; urgency=medium
   * Add lintian overrides for configure-generated-file-in-source as
     config.{log,status} are listed in debian/clean.
 
- -- Axel Beckert <abe@debian.org>  Tue, 16 Sep 2014 01:09:07 +0200
+ -- Axel Beckert <abe@debian.org>  Thu, 09 Oct 2014 03:19:07 +0200
 
 screen (4.2.1-2) unstable; urgency=low
 
