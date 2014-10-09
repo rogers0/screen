@@ -1,0 +1,24 @@
+Origin: commit 8ffd5f465ef4ed07b45534393ed51502b9b0ea77
+Author: Amadeusz Sławiński <amade@asmblr.net>
+Description: Fix caption/hardstatus color rendering problem
+Bug: https://savannah.gnu.org/bugs/?42369
+Bug: https://savannah.gnu.org/bugs/?32339
+Bug: https://savannah.gnu.org/bugs/?42247
+Bug-Debian: https://bugs.debian.org/731388
+Bug-Ubuntu: https://bugs.launchpad.net/bugs/1257895
+
+Index: screen/screen.c
+===================================================================
+--- screen.orig/screen.c	2014-10-09 03:13:45.115043584 +0200
++++ screen/screen.c	2014-10-09 03:13:45.111043634 +0200
+@@ -2283,8 +2283,8 @@
+ 	  while (i-- > 0)
+ 	    *pn-- = ' ';
+ 	  numpad--;
+-	  if (r && p - buf == winmsg_rendpos[r - 1])
+-	    winmsg_rendpos[--r] = pn - buf;
++	  if (r && p - buf + 1== winmsg_rendpos[r - 1])
++	    winmsg_rendpos[--r] = pn - buf + 1;
+ 	}
+     }
+   return pn2;
