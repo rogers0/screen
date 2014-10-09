@@ -1,0 +1,3 @@
+# Listed in debian/clean and upstream is IIRC aware of it
+screen source: configure-generated-file-in-source config.log
+screen source: configure-generated-file-in-source config.status
