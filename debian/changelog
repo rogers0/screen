@@ -6,6 +6,7 @@ screen (4.2.1-3) UNRELEASED; urgency=medium
     rendering errors (Closes: #731388, LP: #1257895)
   * Add a very simple TAP-based DEP8 test suite under debian/tests/t.
   * Change Vcs-Browser header to new cgit web interface.
+  * Bump Standards-Version to 3.9.6 (no changes needed)
 
  -- Axel Beckert <abe@debian.org>  Tue, 16 Sep 2014 01:09:07 +0200
 
