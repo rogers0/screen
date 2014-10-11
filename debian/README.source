@@ -1,4 +1,24 @@
-The clean target needs 00-fix-version-in-Makefile.patch to be applied.
+Jenkins Autobuilds of Debian's Screen Package
+=============================================
+
+The Jenkins instance of the Grml Project builds new screen packages
+upon each push to the collab-maint git repository, see
+http://jenkins.grml.org/view/Debian/. Thanks Mika Prokop and the Grml
+Team for that service!
+
+You can get the resulting .deb packages also via APT, see
+http://jenkins.grml.org/view/Debian/job/screen-binaries/ for details.
+
+Less than perfect upstream 4.2.1 tarball
+========================================
+
+Besides autotools cache files in the upstream 4.2.1 tarball (and hence
+also in Debian's screen git repository) which get deleted by
+debian/rules' clean target, it also has the slip of having the wrong
+upstream version in the shipped Makefile.
+
+Hence the clean target needs 00-fix-version-in-Makefile.patch to be
+applied.
 
 So instead of debuild clean or debclean please run:
 
@@ -6,4 +26,4 @@ So instead of debuild clean or debclean please run:
   quilt push
   debclean
 
- -- Axel Beckert <abe@debian.org>, Sat, 10 May 2014 11:27:56 +0200
+ -- Axel Beckert <abe@debian.org>, Sat, 11 Oct 2014 23:06:31 +0200
