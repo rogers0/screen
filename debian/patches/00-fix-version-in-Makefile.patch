@@ -1,6 +1,6 @@
 Description: Fix wrong version in upstream Makefile
 Author: Axel Beckert <abe@debian.org>
-Forwarded: yes
+Forwarded: https://lists.gnu.org/archive/html/screen-devel/2014-04/msg00077.html
 
 Index: screen/Makefile
 ===================================================================
