@@ -1,11 +1,15 @@
-Author: <hesso@pool.math.tu-berlin.de>
-Description: Add lookup code for the creation time of each session. Requires
-digging in /proc/$pid and /proc/uptime, though, so it's definitely
-no candidate for the Beautiful C contest.
-Affects screen's behaviour in the following situations:
-* 'screen -ls' lists available sessions sorted chronologically
-* 'screen -RR' now picks the youngest session instead of an
-arbitrary one
+Author: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
+Description: Add lookup code for the creation time of each session.
+ Requires digging in /proc/$pid and /proc/uptime, though, so it's
+ definitely no candidate for the Beautiful C contest.
+ .
+ Affects screen's behaviour in the following situations:
+ .
+ * 'screen -ls' lists available sessions sorted chronologically
+ * 'screen -RR' now picks the youngest session instead of an
+   arbitrary one
+Bug-Debian: https://bugs.debian.org/206572
+
 Index: screen/doc/screen.1
 ===================================================================
 --- screen.orig/doc/screen.1	2014-04-28 03:17:56.464112915 +0200
