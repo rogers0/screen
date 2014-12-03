@@ -1,5 +1,7 @@
-Author: <bpkroth@gmail.com>
+Author: Brian P Kroth <bpkroth@gmail.com>
 Description: Some patches stolen from the fedora package for better error checking and tty security.
+Bugs-Debian: https://bugs.debian.org/641867
+
 Index: screen/doc/screen.1
 ===================================================================
 --- screen.orig/doc/screen.1	2014-04-28 03:12:22.610448138 +0200

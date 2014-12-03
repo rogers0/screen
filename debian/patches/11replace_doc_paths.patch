@@ -1,6 +1,7 @@
-Author: <hesso@pool.math.tu-berlin.de>
-Description: Fix the references to configuration and pipe paths to match the
-locations Debian uses.
+Author: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
+Description: Fix the references to configuration and pipe paths to match the locations Debian uses.
+Forwarded: not-needed
+
 Index: screen/doc/screen.1
 ===================================================================
 --- screen.orig/doc/screen.1	2014-04-28 03:02:20.286110393 +0200

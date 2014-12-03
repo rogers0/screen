@@ -1,5 +1,7 @@
 Author: Loic Minier <lool@dooz.org>
 Description: Unbreak several useful keybindings.
+Bugs-Debian: https://bugs.debian.org/484647
+
 --- a/termcap.c
 +++ b/termcap.c
 @@ -552,8 +552,6 @@

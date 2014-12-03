@@ -1,7 +1,8 @@
-Author: <hesso@pool.math.tu-berlin.de>
+Author: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
 Description: Split the info files at 50k
  This matches the distribution style of the orig tarball.
 Last-Revised: 2013-05-16 by Axel Beckert <abe@debian.org>
+Bug-Debian: https://bugs.debian.org/707530
 
 --- a/doc/Makefile.in
 +++ b/doc/Makefile.in

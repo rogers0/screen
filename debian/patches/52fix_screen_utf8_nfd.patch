@@ -1,15 +1,15 @@
-## 52fix_screen_utf8_nfd.dpatch by Nobuhiro Iwamatsu <iwamatsu@debian.org>
-##
-## DP: screen outputs screen "ÿ" after a connected character.  
-## DP: This is a character without the need. 
-## DP: This happens in UTF-8 environment. 
-## DP: Before : screen$ ruby1.9.1 -e 'puts "\u304b\u3099.."'
-## DP:          がÿ...
-## DP: patch applied :  screen $ ruby1.9.1 -e 'puts "\u304b\u3099.."'
-## DP:          が..
-## DP: Report from  http://d.hatena.ne.jp/mrkn/20101014/fix_screen_utf8_nfd_bug
-## DP: Copyright Kenta Murata (mrkn) <mrkn@ruby-lang.org>
-## DP: Modified by Nobuhiro Iwamatsu <iwamatsu@debian.org>
+Author: Kenta Murata (mrkn) <mrkn@ruby-lang.org>
+Reviewed-By: Nobuhiro Iwamatsu <iwamatsu@debian.org>
+Description: screen outputs screen "ÿ" after a connected character.
+ This is a character without the need. 
+ This happens in UTF-8 environment. 
+ Before : screen$ ruby1.9.1 -e 'puts "\u304b\u3099.."'
+          がÿ...
+ patch applied :  screen $ ruby1.9.1 -e 'puts "\u304b\u3099.."'
+          が..
+Origin: http://d.hatena.ne.jp/mrkn/20101014/fix_screen_utf8_nfd_bug
+Bugs-Debian: https://bugs.debian.org/600246
+Bugs-Debian: https://bugs.debian.org/677512
 
 Index: screen/ansi.c
 ===================================================================

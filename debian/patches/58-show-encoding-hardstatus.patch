@@ -1,8 +1,12 @@
-Author: rascov@rascov.tw
-Date: Wed Feb 11 05:51:31 CST 2009
-Subject: show encoding in hardstatus, orginal from FreeBSD by yzlin@cs.nctu.edu.tw
+Description: show encoding in hardstatus
+Author: Yi-Jheng Lin <yzlin@cs.nctu.edu.tw>
+Origin: https://svnweb.freebsd.org/ports/head/sysutils/screen/files/opt-showencoding?view=markup
+Reviewed-By: rascov <rascov@rascov.tw>
+Reviewed-By: Dustin Kirkland <kirkland@ubuntu.com>
+Last-Update: Wed Feb 11 05:51:31 CST 2009
+Bug-FreeBSD: https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=124492
 Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/screen/+bug/286810
-Bug-Debian: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=533498
+Bug-Debian: https://bugs.debian.org/533498
 
 Index: screen/screen.c
 ===================================================================
