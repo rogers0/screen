@@ -4,6 +4,7 @@ screen (4.2.1-4) UNRELEASED; urgency=low
     /usr/share/doc/screen/changelog.gz
   * Mention in README.source that Grml's Jenkins builds screen snapshots.
   * Make all patch headers DEP3 compliant. Add bug report numbers, etc.
+  * Change priority from optional to standard. (Closes: #783524)
 
  -- Axel Beckert <abe@debian.org>  Sat, 11 Oct 2014 22:11:57 +0200
 

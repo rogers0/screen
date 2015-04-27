@@ -1,6 +1,6 @@
 Source: screen
 Section: misc
-Priority: optional
+Priority: standard
 Maintainer: Axel Beckert <abe@debian.org>
 Uploaders: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
 Standards-Version: 3.9.6
