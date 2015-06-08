@@ -1,1 +1,1 @@
-dev/null lib/systemd/system/screen-cleanup.service
+dev/null etc/systemd/system/screen-cleanup.service
