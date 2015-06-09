@@ -11,6 +11,10 @@ screen (4.2.1-4) UNRELEASED; urgency=low
     /etc/systemd/system/ so that it and /etc/init.d/screen-cleanup are
     removed at the same time upon remove/purge. (LP: #1462692)
     + Add lintian override for systemd-service-file-outside-lib.
+  * debian/copyright:
+    + Convert to machine-readable DEP5 format.
+    + Update packaging copyright years.
+    + Add https://ftp.gnu.org/gnu/screen/ as additional download source.
 
  -- Axel Beckert <abe@debian.org>  Sat, 11 Oct 2014 22:11:57 +0200
 
