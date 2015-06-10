@@ -1,6 +1,7 @@
 Author: Brian P Kroth <bpkroth@gmail.com>
 Description: Some patches stolen from the fedora package for better error checking and tty security.
 Bugs-Debian: https://bugs.debian.org/641867
+Forwarded: http://git.savannah.gnu.org/cgit/screen.git/commit/?h=screen-v4&id=6795815fe1a9d7a12c4fbe3d407ed06377377b14
 
 Index: screen/doc/screen.1
 ===================================================================
