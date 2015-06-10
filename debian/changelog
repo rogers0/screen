@@ -13,6 +13,7 @@ screen (4.2.1-4) UNRELEASED; urgency=low
     + Add https://ftp.gnu.org/gnu/screen/ as additional download source.
   * Add some comments to document the reasons for some entries in
     debian/dirs and debian/lintian-overrides.
+  * Remove obsolete "etc" from debian/dirs.
 
  -- Axel Beckert <abe@debian.org>  Sat, 11 Oct 2014 22:11:57 +0200
 
