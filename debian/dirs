@@ -1,3 +1,0 @@
-# The following directory is needed if the local admin wants to remove
-# the setgid bit by following the steps listed in README.Debian.
-etc/tmpfiles.d
