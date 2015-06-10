@@ -7,10 +7,6 @@ screen (4.2.1-4) UNRELEASED; urgency=low
   * Change priority from optional to standard. (Closes: #783524)
   * Declare package as autopkgtestable to make ci.d.n run the test suite.
   * Install all NEWS files as docs, also those from elder releases.
-  * Move /lib/systemd/system/screen-cleanup.service symlink to
-    /etc/systemd/system/ so that it and /etc/init.d/screen-cleanup are
-    removed at the same time upon remove/purge. (LP: #1462692)
-    + Add lintian override for systemd-service-file-outside-lib.
   * debian/copyright:
     + Convert to machine-readable DEP5 format.
     + Update packaging copyright years.
