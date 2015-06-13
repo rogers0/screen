@@ -1,3 +1,17 @@
+screen (4.3.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    + Drop 00-fix-version-in-Makefile.patch (obsolete) and remove 4.2.1
+      upstream tar ball notes from README.Debian.
+    + Drop 48screen-ipv6.patch, applied upstream.
+    + Drop all patches cherry-picked from upstream.
+    + Refresh patches 11replace_doc_paths.patch, 26source_encoding.patch,
+      58-show-encoding-hardstatus.patch,
+      60-screen-4.2.1-debian4.1.0-compatibility.patch,
+      80EXP_session_creation_time.patch
+
+ -- Axel Beckert <abe@debian.org>  Sat, 13 Jun 2015 23:32:10 +0200
+
 screen (4.2.1-4) unstable; urgency=medium
 
   * Drop dh_installchangelogs override to install the new ChangeLog to

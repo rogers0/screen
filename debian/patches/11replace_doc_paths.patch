@@ -4,8 +4,8 @@ Forwarded: not-needed
 
 Index: screen/doc/screen.1
 ===================================================================
---- screen.orig/doc/screen.1	2014-04-28 03:02:20.286110393 +0200
-+++ screen/doc/screen.1	2014-04-28 03:02:20.270110198 +0200
+--- screen.orig/doc/screen.1	2015-06-13 23:32:52.641346051 +0200
++++ screen/doc/screen.1	2015-06-13 23:32:52.637346051 +0200
 @@ -103,7 +103,7 @@
  the invoking shell to the application (emacs in this case), because it is
  forked from the parent screen process, not from the invoking shell.
@@ -24,7 +24,7 @@ Index: screen/doc/screen.1
  This can also be defined through the \*Qdeflogin\*U .screenrc command.
  .TP 5
  .BR \-ls " [" \fImatch ]
-@@ -625,7 +625,7 @@
+@@ -636,7 +636,7 @@
  
  .SH CUSTOMIZATION
  The \*Qsocket directory\*U defaults either to $HOME/.screen or simply to
@@ -33,7 +33,7 @@ Index: screen/doc/screen.1
  .I screen
  is installed setuid-root, then the administrator
  should compile
-@@ -638,7 +638,7 @@
+@@ -649,7 +649,7 @@
  When
  .I screen
  is invoked, it executes initialization commands from the files
@@ -42,7 +42,7 @@ Index: screen/doc/screen.1
  \*Q.screenrc\*U in the user's home directory. These are the \*Qprogrammer's
  defaults\*U that can be overridden in the following ways: for the
  global screenrc file 
-@@ -1845,7 +1845,7 @@
+@@ -1871,7 +1871,7 @@
  The echo command may be used to annoy 
  .I screen
  users with a 'message of the
@@ -51,7 +51,7 @@ Index: screen/doc/screen.1
  The option \*Q\-n\*U may be used to suppress the line feed.
  See also \*Qsleep\*U.
  Echo is also useful for online checking of environment variables.
-@@ -4857,14 +4857,14 @@
+@@ -4903,14 +4903,14 @@
  .I screen
  distribution package for private and global initialization files.
  .IP $SYSSCREENRC 
@@ -69,7 +69,7 @@ Index: screen/doc/screen.1
  Socket directories (default)
  .IP /usr/tmp/screens/S\-<login>
  Alternate socket directories.
-@@ -4883,7 +4883,7 @@
+@@ -4929,7 +4929,7 @@
  or
  .IP /etc/termcap
  Terminal capability databases
@@ -78,7 +78,7 @@ Index: screen/doc/screen.1
  Login records
  .IP $LOCKPRG
  Program that locks a terminal.
-@@ -5005,9 +5005,9 @@
+@@ -5051,9 +5051,9 @@
  must be installed as set-uid with owner root on most systems in order
  to be able to correctly change the owner of the tty device file for
  each window.
@@ -92,8 +92,8 @@ Index: screen/doc/screen.1
  This will cause some programs (like "w" or "rwho")
 Index: screen/doc/screen.texinfo
 ===================================================================
---- screen.orig/doc/screen.texinfo	2014-04-28 03:02:20.286110393 +0200
-+++ screen/doc/screen.texinfo	2014-04-28 03:02:20.274110247 +0200
+--- screen.orig/doc/screen.texinfo	2015-06-13 23:32:52.641346051 +0200
++++ screen/doc/screen.texinfo	2015-06-13 23:32:52.637346051 +0200
 @@ -184,7 +184,7 @@
  the invoking shell to the application (emacs in this case), because it is
  forked from the parent screen process, not from the invoking shell.
@@ -112,7 +112,7 @@ Index: screen/doc/screen.texinfo
  is equivalent to the @code{deflogin} command (@pxref{Login}).
  
  @item -ls [@var{match}]
-@@ -488,7 +488,7 @@
+@@ -492,7 +492,7 @@
  @cindex screenrc
  When @code{screen} is invoked, it executes initialization commands from
  the files @file{.screenrc} in the user's home directory and
@@ -121,7 +121,7 @@ Index: screen/doc/screen.texinfo
  following ways:
  For the global screenrc file @code{screen} searches for the environment
  variable @code{$SYSSCREENRC} (this override feature may be disabled at
-@@ -1074,7 +1074,7 @@
+@@ -1086,7 +1086,7 @@
  @item logfile @var{filename}
  Place where to collect logfiles.  @xref{Log}.
  @item login [@var{state}]
@@ -130,7 +130,7 @@ Index: screen/doc/screen.texinfo
  @item logtstamp [@var{state}]
  Configure logfile time-stamps.  @xref{Log}.
  @item mapdefault
-@@ -2322,7 +2322,7 @@
+@@ -2334,7 +2334,7 @@
  * Naming Windows::		Control the name of the window
  * Console::			See the host's console messages
  * Kill::                        Destroy an unwanted window
@@ -139,7 +139,7 @@ Index: screen/doc/screen.texinfo
  * Mode::                        Control the file mode of the pty
  * Monitor::                     Watch for activity or inactivity in a window
  * Windows::			List the active windows
-@@ -2531,7 +2531,7 @@
+@@ -2543,7 +2543,7 @@
  @kindex L
  @deffn Command login [state]
  (@kbd{C-a L})@*
@@ -148,7 +148,7 @@ Index: screen/doc/screen.texinfo
  This controls whether or not the window is @dfn{logged in}.  In addition
  to this toggle, it is convenient to have ``log in'' and ``log out''
  keys.  For instance, @code{bind I login on} and @code{bind O 
-@@ -5684,17 +5684,17 @@
+@@ -5734,17 +5734,17 @@
  global initialization files.
  
  @item @code{$SYSSCREENRC}
@@ -169,7 +169,7 @@ Index: screen/doc/screen.texinfo
  Socket directories (default)
  
  @item /usr/tmp/screens/S-@var{login}
-@@ -5717,7 +5717,7 @@
+@@ -5767,7 +5767,7 @@
  @itemx /etc/termcap
  Terminal capability databases
  
@@ -178,7 +178,7 @@ Index: screen/doc/screen.texinfo
  Login records
  
  @item @code{$LOCKPRG}
-@@ -5823,10 +5823,10 @@
+@@ -5873,10 +5873,10 @@
  in order to be able to
  correctly change the owner of the tty device file for each window.
  Special permission may also be required to write the file
@@ -191,7 +191,7 @@ Index: screen/doc/screen.texinfo
  with SIGKILL.  This will cause some programs (like "w" or "rwho") to
  advertise that a user is logged on who really isn't.
  
-@@ -5907,7 +5907,7 @@
+@@ -5956,7 +5956,7 @@
  @cindex socket directory
  
  The socket directory defaults either to @file{$HOME/.screen} or simply to 

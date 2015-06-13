@@ -10,9 +10,9 @@ Bug-Debian: https://bugs.debian.org/533498
 
 Index: screen/screen.c
 ===================================================================
---- screen.orig/screen.c	2014-04-28 03:14:19.195018278 +0200
-+++ screen/screen.c	2014-04-28 03:14:19.179018199 +0200
-@@ -2801,6 +2801,18 @@
+--- screen.orig/screen.c	2015-06-13 23:35:52.353329013 +0200
++++ screen/screen.c	2015-06-13 23:35:52.349329014 +0200
+@@ -2824,6 +2824,18 @@
  	    }
  	  p += strlen(p) - 1;
  	  break;
@@ -33,9 +33,9 @@ Index: screen/screen.c
  	    char rbuf[128];
 Index: screen/process.c
 ===================================================================
---- screen.orig/process.c	2014-04-28 03:14:19.195018278 +0200
-+++ screen/process.c	2014-04-28 03:14:19.183018228 +0200
-@@ -3693,6 +3693,7 @@
+--- screen.orig/process.c	2015-06-13 23:35:52.353329013 +0200
++++ screen/process.c	2015-06-13 23:35:52.349329014 +0200
+@@ -3770,6 +3770,7 @@
  	    {
  	      WinSwitchEncoding(fore, n);
  	      ResetCharsets(fore);

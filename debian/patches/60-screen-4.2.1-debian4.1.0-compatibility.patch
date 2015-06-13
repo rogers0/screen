@@ -13,9 +13,9 @@ Forwarded: no
 
 Index: screen/os.h
 ===================================================================
---- screen.orig/os.h	2014-06-05 22:28:50.096065274 +0200
-+++ screen/os.h	2014-06-05 22:28:50.088065390 +0200
-@@ -524,6 +524,6 @@
+--- screen.orig/os.h	2015-06-13 23:36:01.569328035 +0200
++++ screen/os.h	2015-06-13 23:36:01.565328035 +0200
+@@ -525,6 +525,6 @@
  /* Changing those you won't be able to attach to your old sessions
   * when changing those values in official tree don't forget to bump
   * MSG_VERSION */
@@ -26,8 +26,8 @@ Index: screen/os.h
  
 Index: screen/screen.h
 ===================================================================
---- screen.orig/screen.h	2014-06-05 22:28:50.096065274 +0200
-+++ screen/screen.h	2014-06-05 22:29:43.355302506 +0200
+--- screen.orig/screen.h	2015-06-13 23:36:01.569328035 +0200
++++ screen/screen.h	2015-06-13 23:36:01.565328035 +0200
 @@ -185,7 +185,7 @@
   * 3:	screen version 4.2.0		(was incorrectly originally. Patched here)
   * 4:	screen version 4.2.1		(bumped once again due to changed terminal and login length)
