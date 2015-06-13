@@ -1,4 +1,4 @@
-screen (4.3.0-1) UNRELEASED; urgency=medium
+screen (4.3.0-1) experimental; urgency=low
 
   * New upstream release
     + Drop 00-fix-version-in-Makefile.patch (obsolete) and remove 4.2.1
@@ -15,7 +15,7 @@ screen (4.3.0-1) UNRELEASED; urgency=medium
     + Adds feature "firstline" for a status line in the first line at the
       top of the terminal window. (Closes: #512342, #548845)
 
- -- Axel Beckert <abe@debian.org>  Sat, 13 Jun 2015 23:32:10 +0200
+ -- Axel Beckert <abe@debian.org>  Sun, 14 Jun 2015 00:58:44 +0200
 
 screen (4.2.1-4) unstable; urgency=medium
 
