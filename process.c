@@ -129,6 +129,7 @@ static void SaveAction __P((struct action *, int, char **, int *));
 static int  NextWindow __P((void));
 static int  PreviousWindow __P((void));
 static int  MoreWindows __P((void));
+static void CollapseWindowlist __P((void));
 static void LogToggle __P((int));
 static void ShowInfo __P((void));
 static void ShowDInfo __P((void));
@@ -170,6 +171,7 @@ static void ResizeFin __P((char *, int, char *));
 static struct action *FindKtab __P((char *, int));
 static void SelectFin __P((char *, int, char *));
 static void SelectLayoutFin __P((char *, int, char *));
+static void ShowWindowsX __P((char *));
 
 
 extern struct layer *flayer;
@@ -1840,6 +1842,10 @@ int key;
       Activate(-1);
       break;
     case RC_WINDOWS:
+			if (args[0]) {
+				ShowWindowsX(args[0]);
+				break;
+			}
       ShowWindows(-1);
       break;
     case RC_VERSION:
@@ -2853,7 +2859,9 @@ int key;
 	  s = args[0];
 	  if (!strncmp(s, "always", 6))
 	    s += 6;
-	  if (!strcmp(s, "lastline"))
+	  if (!strcmp(s, "firstline"))
+	    new_use = HSTATUS_FIRSTLINE;
+	  else if (!strcmp(s, "lastline"))
 	    new_use = HSTATUS_LASTLINE;
 	  else if (!strcmp(s, "ignore"))
 	    new_use = HSTATUS_IGNORE;
@@ -2887,6 +2895,8 @@ int key;
 		  old_use = D_has_hstatus;
 		  D_has_hstatus = new_use;
 		  if ((new_use == HSTATUS_LASTLINE && old_use != HSTATUS_LASTLINE) || (new_use != HSTATUS_LASTLINE && old_use == HSTATUS_LASTLINE))
+		    ChangeScreenSize(D_width, D_height, 1);
+		  if ((new_use == HSTATUS_FIRSTLINE && old_use != HSTATUS_FIRSTLINE) || (new_use != HSTATUS_FIRSTLINE && old_use == HSTATUS_FIRSTLINE))
 		    ChangeScreenSize(D_width, D_height, 1);
 		  RefreshHStatus();
 		}
@@ -2996,6 +3006,17 @@ int key;
       if (msgok)
 	OutputMsg(0, "silencewait set to %d seconds", SilenceWait);
       break;
+    case RC_BUMPRIGHT:
+      if (fore->w_number < NextWindow())
+        WindowChangeNumber(fore->w_number, NextWindow());
+      break;
+    case RC_BUMPLEFT:
+      if (fore->w_number > PreviousWindow())
+        WindowChangeNumber(fore->w_number, PreviousWindow());
+      break;
+    case RC_COLLAPSE:
+      CollapseWindowlist();
+      break;
     case RC_NUMBER:
       if (*args == 0)
         OutputMsg(0, queryflag >= 0 ? "%d (%s)" : "This is window %d (%s).", fore->w_number, fore->w_title);
@@ -3018,7 +3039,7 @@ int key;
 	    n += old;
 	  else if (rel < 0)
 	    n = old - n;
-	  if (!WindowChangeNumber(fore, n))
+	  if (!WindowChangeNumber(old, n))
 	    {
 	      /* Window number could not be changed. */
 	      queryflag = -1;
@@ -3026,6 +3047,62 @@ int key;
 	    }
 	}
       break;
+
+		case RC_ZOMBIE_TIMEOUT:
+			if (argc != 1) {
+				Msg(0, "Setting zombie polling needs a timeout arg\n");
+				break;
+			}
+
+			nwin_default.poll_zombie_timeout = atoi(args[0]);
+			if (fore)
+				fore->w_poll_zombie_timeout = nwin_default.poll_zombie_timeout;
+			debug1("Setting zombie polling to %d\n", nwin_default.poll_zombie_timeout);
+			break;
+
+		case RC_SORT:
+			if (fore) {
+			/* Better do not allow this. Not sure what the utmp stuff in number
+			* command above is for (you get four entries in e.g. /var/log/wtmp
+			* per number switch). But I don't know enough about this.
+			*/
+				Msg(0, "Sorting inside a window is not allowed. Push CTRL-a \" "
+					"and try again\n");
+				break;
+			}
+			/*
+			* Simple sort algorithm: Look out for the smallest, put it
+			* to the first place, look out for the 2nd smallest, ...
+			*/
+			for (i = 0; i < maxwin ; i++) {
+				if (wtab[i] == NULL)
+					continue;
+				n = i;
+
+				for (nr = i + 1; nr < maxwin; nr++) {
+					if (wtab[nr] == NULL)
+						continue;
+					debug2("Testing window %d and %d.\n", nr, n);
+					if (strcmp(wtab[nr]->w_title,wtab[n]->w_title) < 0)
+						n = nr;
+				}
+
+				if (n != i) {
+					debug2("Exchange window %d and %d.\n", i, n);
+					p = wtab[n];
+					wtab[n] = wtab[i];
+					wtab[i] = p;
+					wtab[n]->w_number = n;
+					wtab[i]->w_number = i;
+#ifdef MULTIUSER
+					/* exchange the acls for these windows. */
+					AclWinSwap(i, n);
+#endif
+				}
+			}
+			WindowChanged((struct win *)0, 0);
+			break;
+
     case RC_SILENCE:
       n = fore->w_silence != 0;
       i = fore->w_silencewait;
@@ -4120,7 +4197,10 @@ int key;
       else
 	{
 	  if (!windows)
-	    wtab = realloc(wtab, n * sizeof(struct win *));
+            {
+	      wtab = realloc(wtab, n * sizeof(struct win *));
+              bzero(wtab, n * sizeof(struct win *));
+            }
 	  maxwin = n;
 	}
       break;
@@ -4532,6 +4612,22 @@ int key;
     }
 }
 #undef OutputMsg
+
+void
+CollapseWindowlist()
+/* renumber windows from 0, leaving no gaps */
+{
+  int pos, moveto=0;
+
+  for (pos = 1; pos < MAXWIN; pos++)
+    if (wtab[pos])
+      for (; moveto < pos; moveto++)
+        if (!wtab[moveto])
+          {
+          WindowChangeNumber(pos, moveto);
+          break;
+          }
+}
 
 void
 DoCommand(argv, argl) 
@@ -5588,6 +5684,24 @@ int where;
   Msg(0, "%s", ss);
 }
 
+/*
+* String Escape based windows listing
+* mls: currently does a Msg() call for each(!) window, dunno why
+*/
+static void
+ShowWindowsX(str)
+char *str;
+{
+	int i;
+	debug1("ShowWindowsX: string [%s]", string);
+	for (i = 0; i < maxwin ; i++) {
+		if (!wtab[i])
+			continue;
+		Msg(0, "%s", MakeWinMsg(str, wtab[i], '%'));
+	}
+}
+
+
 static void
 ShowInfo()
 {
@@ -6282,7 +6396,7 @@ char *data;
   else
     { strcpy(p = i->pw2, "\377"); l = sizeof(i->pw2) - 1; }
   if (buf && len)
-    strncpy(p, buf, 1 + (l < len) ? l : len);
+    strncpy(p, buf, 1 + ((l < len) ? l : len));
   if (!*i->name)
     Input("Screen User: ", sizeof(i->name) - 1, INP_COOKED, su_fin, (char *)i, 0);
   else if (!*i->pw1)

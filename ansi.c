@@ -568,7 +568,7 @@ register int len;
 		{
 		case '0': case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
-		  if (curr->w_NumArgs < MAXARGS)
+		  if (curr->w_NumArgs >= 0 && curr->w_NumArgs < MAXARGS)
 		    {
 		      if (curr->w_args[curr->w_NumArgs] < 100000000)
 			curr->w_args[curr->w_NumArgs] =
@@ -1444,8 +1444,8 @@ int c, intermediate;
 		  else
 		    {
 		      if (curr->w_alt.on) {
-		        LeaveAltScreen(curr);
 		        RestoreCursor(&curr->w_alt.cursor);
+		        LeaveAltScreen(curr);
 		      }
 		    }
 		  if (a1 == 47 && !i)

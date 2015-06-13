@@ -57,6 +57,7 @@ struct NewWindow
   int   encoding;
   char	*hstatus;
   char	*charset;
+  int	poll_zombie_timeout;
 };
 
 #ifdef PSEUDOS
@@ -150,6 +151,8 @@ struct win
   struct event w_readev;
   struct event w_writeev;
   struct event w_silenceev;	/* silence event */
+  struct event w_zombieev;	/* event to try to resurrect window */
+  int	 w_poll_zombie_timeout;
   int	 w_ptyfd;		/* fd of the master pty */
   char	 w_inbuf[IOSIZE];
   int	 w_inlen;
@@ -268,7 +271,7 @@ struct win
   struct display *w_zdisplay;
 #endif
 #ifdef BUILTIN_TELNET
-  struct sockaddr_in w_telsa;
+  struct sockaddr_storage w_telsa;
   char   w_telbuf[IOSIZE];
   int    w_telbufl;
   char   w_telmopts[256];
@@ -343,7 +346,7 @@ struct win
 
 #define Layer2Window(l) ((struct win *)(l)->l_bottom->l_data)
 
-int WindowChangeNumber __P((struct win *, int));
+int WindowChangeNumber __P((int, int));
 
 #endif /* SCREEN_WINDOW_H */
 

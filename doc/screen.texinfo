@@ -7,7 +7,7 @@
 @finalout
 @setchapternewpage odd
 @c %**end of header
-@set version 4.1.0
+@set version 4.3.0
 
 @direntry
 * Screen: (screen).             Full-screen window manager.
@@ -52,7 +52,7 @@ by the Foundation.
 @title Screen
 @subtitle The virtual terminal manager
 @subtitle for Version @value{version}
-@subtitle Aug 2003
+@subtitle May 2015
 
 @page
 @vskip 0pt plus 1filll
@@ -406,6 +406,10 @@ runs in multiuser mode. This indicates that screen should look for
 sessions in another user's directory. This requires setuid-root.
 
 @item -R
+resumes screen only when it's unambiguous which one to attach, usually
+when only one @code{screen} is detached. Otherwise lists available sessions.
+
+@item -RR
 Resume the first appropriate detached @code{screen} session.  If
 successful, all other command-line options are ignored.  If no detached
 session exists, start a new session using the specified options, just as
@@ -901,6 +905,10 @@ Send a break signal to the current window.  @xref{Break}.
 Specify how to generate breaks.  @xref{Break}.
 @item bufferfile [@var{exchange-file}]
 Select a file for screen-exchange.  @xref{Screen Exchange}.
+@item bumpleft
+Swaps window with previous one on window list.  @xref{Bumpleft}.
+@item bumpright
+Swaps window with previous one on window list.  @xref{Bumpright}.
 @item c1 [@var{state}]
 Change c1 code processing.  @xref{Character Processing}.
 @item caption @var{mode} [@var{string}]
@@ -917,6 +925,8 @@ Treat ambiguous width characters as full/half width.  @xref{Character Processing
 Clear the window screen.  @xref{Clear}.
 @item colon
 Enter a @code{screen} command.  @xref{Colon}.
+@item collapse
+Reorders window on window list, removing number gaps between them.  @xref{Collapse}.
 @item command [-c @var{class}]
 Simulate the screen escape key.  @xref{Command Character}.
 @item compacthist [@var{state}]
@@ -981,6 +991,8 @@ Set default line-wrapping behavior.  @xref{Wrap}.
 Set default writelock behavior.  @xref{Multiuser Session}.
 @item defzombie [@var{keys}]
 Keep dead windows.  @xref{Zombie}.
+@item zombie_timeout [@var{seconds}]
+Try to reconnect dead windows after timeout.  @xref{Zombie}.
 @item detach [-h]
 Disconnect @code{screen} from the terminal.  @xref{Detach}.
 @item digraph [@var{preset} [@var{unicode-value}]]
@@ -2614,7 +2626,7 @@ before displaying a message. Default is 30 seconds.
 @section Windows
 @kindex w
 @kindex C-w
-@deffn Command windows
+@deffn Command windows [ string ]
 (@kbd{C-a w}, @kbd{C-a C-w})@*
 Uses the message line to display a list of all the windows.  Each
 window is listed by number with the name of the program running in the
@@ -2633,6 +2645,11 @@ windows in the zombie state are marked with @samp{Z}.
 
 If this list is too long to fit on the terminal's status line only the
 portion around the current window is displayed.
+
+You can customize the output format to any string you like including
+string escapes (@pxref{String Escapes}).
+In this case, if the string parameter is passed, the maximum output
+size is unlimited (instead of 1024 bytes if no parameter is passed).
 @end deffn
 
 @node Hardstatus, Mousetrack, Windows, Window Settings
@@ -4840,7 +4857,7 @@ is a literal caret or up-arrow.
 @node Hardware Status Line, Last Message, Privacy Message, Message Line
 @section Hardware Status Line
 @deffn Command hardstatus [state]
-@deffnx Command hardstatus [@code{always}]@code{lastline}|@code{message}|@code{ignore} [string]
+@deffnx Command hardstatus [@code{always}]@code{firstline}|@code{lastline}|@code{message}|@code{ignore} [string]
 @deffnx Command hardstatus @code{string} [string]
 (none)@*
 This command configures the use and emulation of the terminal's
@@ -4853,8 +4870,8 @@ setting is @samp{on}.
 The second form tells screen what to do if the terminal doesn't
 have a hardstatus line (i.e. the termcap/terminfo capabilities
 "hs", "ts", "fs" and "ds" are not set). If the type
-@code{lastline} is used, screen will reserve the last line of the
-display for the hardstatus. @code{message} uses
+@code{firstline}/@code{lastline} is used, screen will reserve the first/last
+line of the display for the hardstatus. @code{message} uses
 @code{screen}'s message mechanism and
 @code{ignore} tells @code{screen} never to display the hardstatus.
 If you prepend the word @code{always} to the type (e.g., @code{alwayslastline}), @code{screen} will use
@@ -5032,6 +5049,9 @@ categories.
 @menu
 * At::                          Execute a command at other displays or windows.
 * Break::                       Send a break signal to the window.
+* Bumpleft::			Swaps window with previous one on window list.
+* Bumpright::			Swaps window with next one on window list.
+* Collapse::			Collapses window list.
 * Debug::                       Suppress/allow debugging output.
 * License::                     Display the disclaimer page.
 * Nethack::                     Use @code{nethack}-like error messages.
@@ -5088,7 +5108,7 @@ that a display is associated with the target windows.  These commands may not
 work correctly under @code{at} looping over windows.
 @end deffn
 
-@node Break, Debug, At, Miscellaneous
+@node Break, Bumpleft, At, Miscellaneous
 @section Break
 @kindex b
 @kindex C-b
@@ -5130,7 +5150,30 @@ dependent, this also differs between serial board drivers.
 Calling @code{defbreaktype} with no parameter displays the current setting.
 @end deffn
 
-@node Debug, License, Break, Miscellaneous
+@node Bumpleft, Bumpright, Break, Miscellaneous
+@section Bumpleft
+@deffn Command bumpleft
+(none)@*
+Exchanges windows positions on window list, with window having lower number
+(left to current one).
+@end deffn
+
+@node Bumpright, Collapse, Bumpleft, Miscellaneous
+@section Bumpright
+@deffn Command bumpright
+(none)@*
+Exchanges windows positions on window list, with window having bigger number
+(right to current one).
+@end deffn
+
+@node Collapse, Debug, Bumpright, Miscellaneous
+@section Collapse
+@deffn Command collapse
+(none)@*
+Changes windows numbers, so there is no gaps between them.
+@end deffn
+
+@node Debug, License, Collapse, Miscellaneous
 @section Debug
 @deffn Command debug [on|off]
 (none)@*
@@ -5231,6 +5274,8 @@ Display the version and modification date in the message line.
 @section Zombie
 @deffn Command zombie [@var{keys} [onerror] ]
 @deffnx Command defzombie [@var{keys}]
+@deffn Command zombie_timeout [@var{seconds}]
+@end deffn
 (none)@*
 Per default windows are removed from the window list as soon as the
 windows process (e.g. shell) exits. When a string of two keys is
@@ -5250,6 +5295,11 @@ Optionally you can put the word @code{onerror} after the keys. This will
 cause screen to monitor exit status of the process running in the window.
 If it exits normally ('0'), the window disappears. Any other exit value
 causes the window to become a zombie.
+
+Additionally the @code{zombie_timeout} command exists.
+If a window is declared ``dead'', screen will automatically try to
+resurrect the window after the timeout.
+It only works if zombie keys are defined via @code{zombie} command.
 @end deffn
 
 @node Printcmd, Rendition, Zombie, Miscellaneous
@@ -5865,8 +5915,7 @@ features.
 @cindex bug report
 
 If you find a bug in @code{Screen}, please send electronic mail to
-@w{@samp{screen@@uni-erlangen.de}}, and also to
-@w{@samp{bug-gnu-utils@@prep.ai.mit.edu}}.  Include the version number
+@w{@samp{screen-devel@@gnu.org}}.  Include the version number
 of @code{Screen} which you are using.  Also include in your message the
 hardware and operating system, the compiler used to compile, a
 description of the bug behavior, and the conditions that triggered the

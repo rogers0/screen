@@ -111,6 +111,8 @@ struct comm comms[RC_LAST + 1] =
 #ifdef COPY_PASTE
   { "bufferfile",	ARGS_01 },
 #endif
+  { "bumpleft",		ARGS_0 },
+  { "bumpright",	ARGS_0 },
   { "c1",		NEED_FORE|ARGS_01 },
   { "caption",		ARGS_12 },
 #ifdef MULTIUSER
@@ -122,6 +124,7 @@ struct comm comms[RC_LAST + 1] =
   { "cjkwidth",		ARGS_01 },
 #endif
   { "clear",		NEED_FORE|ARGS_0 },
+  { "collapse",		ARGS_0 },
   { "colon",		NEED_LAYER|ARGS_01 },
   { "command",		NEED_DISPLAY|ARGS_02 },
 #ifdef COPY_PASTE
@@ -296,6 +299,7 @@ struct comm comms[RC_LAST + 1] =
   { "sleep",		ARGS_1 },
   { "slowpaste",	NEED_FORE|ARGS_01 },
   { "sorendition",      ARGS_012 },
+  { "sort",		ARGS_0},
   { "source",		ARGS_1 },
   { "split",		NEED_DISPLAY|ARGS_01 },
   { "startup_message",	ARGS_1 },
@@ -326,7 +330,7 @@ struct comm comms[RC_LAST + 1] =
   { "wall",		NEED_DISPLAY|ARGS_1},
   { "width",		ARGS_0123 },
   { "windowlist",	ARGS_012 },
-  { "windows",		CAN_QUERY|ARGS_0 },
+  { "windows",		CAN_QUERY|ARGS_01 },
   { "wrap",		NEED_FORE|ARGS_01 },
 #ifdef COPY_PASTE
   { "writebuf",		ARGS_0123 },
@@ -337,5 +341,6 @@ struct comm comms[RC_LAST + 1] =
 #ifdef ZMODEM
   { "zmodem",		ARGS_012 },
 #endif
-  { "zombie",		ARGS_012 }
+  { "zombie",		ARGS_012 },
+  { "zombie_timeout", ARGS_1 }
 };
