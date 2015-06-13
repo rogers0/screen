@@ -9,6 +9,7 @@ screen (4.3.0-1) UNRELEASED; urgency=medium
       58-show-encoding-hardstatus.patch,
       60-screen-4.2.1-debian4.1.0-compatibility.patch,
       80EXP_session_creation_time.patch
+    + Update line numbers in hyphen-used-as-minus-sign lintian overrides.
 
  -- Axel Beckert <abe@debian.org>  Sat, 13 Jun 2015 23:32:10 +0200
 

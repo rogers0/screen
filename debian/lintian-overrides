@@ -9,6 +9,6 @@ screen: init.d-script-does-not-implement-optional-option etc/init.d/screen-clean
 
 # hyphen-used-as-minus-sign false positives
 # "'$'-character"
-screen: hyphen-used-as-minus-sign usr/share/man/man1/screen.1.gz:674
+screen: hyphen-used-as-minus-sign usr/share/man/man1/screen.1.gz:679
 # "`%'-character"
-screen: hyphen-used-as-minus-sign usr/share/man/man1/screen.1.gz:828
+screen: hyphen-used-as-minus-sign usr/share/man/man1/screen.1.gz:833
