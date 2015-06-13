@@ -243,13 +243,14 @@ int nethackflag = 0;
 #endif
 int maxwin;
 
-
 struct layer *flayer;
 struct win *fore;
 struct win *windows;
 struct win *console_window;
 
-
+#ifdef BUILTIN_TELNET
+int af;
+#endif
 
 /*
  * Do this last
@@ -507,6 +508,9 @@ char **av;
   nwin = nwin_undef;
   nwin_options = nwin_undef;
   strcpy(screenterm, "screen");
+#ifdef BUILTIN_TELNET
+  af = AF_UNSPEC;
+#endif
 
   logreopen_register(lf_secreopen);
 
@@ -541,6 +545,14 @@ char **av;
 	    {
 	      switch (*ap)
 		{
+#ifdef BUILTIN_TELNET
+		case '4':
+			af = AF_INET;
+			break;
+		case '6':
+			af = AF_INET6;
+			break;
+#endif
 		case 'a':
 		  nwin_options.aflag = 1;
 		  break;
@@ -1137,8 +1149,11 @@ char **av;
   else
 #endif
     {
+#ifdef SOCKDIR /* if SOCKDIR is not defined, the socket is in $HOME.
+                  in that case it does not make sense to compare uids. */
       if ((int)st.st_uid != real_uid)
 	Panic(0, "You are not the owner of %s.", SockPath);
+#endif
     }
   if ((st.st_mode & 0777) != 0700)
     Panic(0, "Directory %s must have mode 700.", SockPath);
@@ -1179,8 +1194,8 @@ char **av;
       }
       if (fo == 0)
         Panic(0, "No Sockets found in %s.\n", SockPath);
-      Panic(0, "%d Socket%s in %s.\n", fo, fo > 1 ? "s" : "", SockPath);
-      /* NOTREACHED */
+      Msg(0, "%d Socket%s in %s.", fo, fo > 1 ? "s" : "", SockPath);
+      eexit(0);
     }
   signal(SIG_BYE, AttacherFinit);	/* prevent races */
   if (cmdflag)
@@ -1297,7 +1312,7 @@ char **av;
     {
       if (attach_fd == -1)
 	{
-	  if ((n = secopen(attach_tty, O_RDWR, 0)) < 0)
+	  if ((n = secopen(attach_tty, O_RDWR | O_NONBLOCK, 0)) < 0)
 	    Panic(0, "Cannot reopen '%s' - please check.", attach_tty);
 	}
       else
@@ -1556,6 +1571,12 @@ int wstat_valid;
       p->w_y = MFindUsedLine(p, p->w_bot, 1);
       sprintf(buf, "\n\r=== Command %s (%s) ===", reason, s ? s : "?");
       WriteString(p, buf, strlen(buf));
+			if (p->w_poll_zombie_timeout) {
+				debug2("Set zombie poll timeout for window %s to %d\n", p->w_title,
+				p->w_poll_zombie_timeout);
+				SetTimeout(&p->w_zombieev, p->w_poll_zombie_timeout * 1000);
+				evenq(&p->w_zombieev);
+			}
       WindowChanged(p, 'f');
     }
   else
@@ -2271,8 +2292,8 @@ int padlen;
 	  while (i-- > 0)
 	    *pn-- = ' ';
 	  numpad--;
-	  if (r && p - buf == winmsg_rendpos[r - 1])
-	    winmsg_rendpos[--r] = pn - buf;
+	  if (r && p - buf + 1== winmsg_rendpos[r - 1])
+	    winmsg_rendpos[--r] = pn - buf + 1;
 	}
     }
   return pn2;
@@ -2685,6 +2706,20 @@ int rec;
 	    }
 	  p += strlen(p) - 1;
 	  break;
+	case 'X': case 'x':
+			*p = 0;
+			for (i = 0; win && win->w_cmdargs[i]; i++)
+			{
+				if (l < strlen(win->w_cmdargs[i]) + 1)
+			break;
+				sprintf(p, i ? "%s" : " %s", win->w_cmdargs[i]);
+				l -= strlen(p);
+				p += strlen(p);
+				if (i == 0 && *s == 'X')
+					break;
+			}
+			p--;
+			break;
 	case 'l':
 #ifdef LOADAV
 	  *p = 0;

@@ -42,6 +42,9 @@
 #include "screen.h"
 #include "extern.h"
 
+/* maximum window width */
+#define MAXWIDTH 1000
+
 static void CheckMaxSize __P((int));
 static void FreeMline  __P((struct mline *));
 static int  AllocMline __P((struct mline *ml, int));
@@ -159,6 +162,7 @@ int change_fore;
 
   cv = &D_canvas;
   cv->c_xe = wi - 1;
+  cv->c_ys = (D_has_hstatus == HSTATUS_FIRSTLINE);
   cv->c_ye = he - 1 - ((cv->c_slperp && cv->c_slperp->c_slnext) || captionalways) - (D_has_hstatus == HSTATUS_LASTLINE);
   cv->c_blank.l_height = cv->c_ye - cv->c_ys + 1;
   if (cv->c_slperp)
@@ -530,7 +534,8 @@ int wi;
   int i;
   struct mline *ml;
 
-  wi = ((wi + 1) + 255) & ~255;
+  if (wi > MAXWIDTH)
+	  wi = MAXWIDTH;
   if (wi <= maxwidth)
     return;
   maxwidth = wi;
@@ -666,16 +671,16 @@ int wi, he, hi;
   if (p->w_type == W_TYPE_GROUP)
     return 0;
 
-  if (wi > 1000)
+  if (wi > MAXWIDTH)
     {
-      Msg(0, "Window width too large. Truncated to 1000.");
-      wi = 1000;
+      Msg(0, "Window width too large. Truncated to %d.", MAXWIDTH);
+      wi = MAXWIDTH;
     }
 
-  if (he > 1000)
+  if (he > MAXWIDTH)
     {
-      Msg(0, "Window height too large. Truncated to 1000.");
-      he = 1000;
+      Msg(0, "Window height too large. Truncated to %d.", MAXWIDTH);
+      he = MAXWIDTH;
     }
 
   if (p->w_width == wi && p->w_height == he && p->w_histheight == hi)

@@ -31,8 +31,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #if !defined(NAMEDPIPE)
-#include <sys/socket.h>
-#include <sys/un.h>
+# include <sys/socket.h>
+# ifdef _OpenBSD_
+#  include <sys/uio.h>
+# endif
+# include <sys/un.h>
 #endif
 
 #ifndef SIGINT
@@ -230,8 +233,11 @@ char *match;
 #endif
 
       debug2("st.st_uid = %d, real_uid = %d\n", st.st_uid, real_uid);
+#ifdef SOCKDIR /* if SOCKDIR is not defined, the socket is in $HOME.
+                  in that case it does not make sense to compare uids. */
       if ((int)st.st_uid != real_uid)
 	continue;
+#endif
       mode = (int)st.st_mode & 0777;
       debug1("  has mode 0%03o\n", mode);
 #ifdef MULTIUSER 
@@ -450,8 +456,11 @@ MakeServerSocket()
       Msg(0, "There is already a screen running on %s.", Filename(SockPath));
       if (stat(SockPath, &st) == -1)
 	Panic(errno, "stat");
+#ifdef SOCKDIR /* if SOCKDIR is not defined, the socket is in $HOME.
+                  in that case it does not make sense to compare uids. */
       if ((int)st.st_uid != real_uid)
 	Panic(0, "Unfortunately you are not its owner.");
+#endif
       if ((st.st_mode & 0700) == 0600)
 	Panic(0, "To resume it, use \"screen -r\"");
       else
@@ -542,8 +551,11 @@ MakeServerSocket()
       Msg(0, "There is already a screen running on %s.", Filename(SockPath));
       if (stat(SockPath, &st) == -1)
 	Panic(errno, "stat");
+#ifdef SOCKDIR /* if SOCKDIR is not defined, the socket is in $HOME.
+                  in that case it does not make sense to compare uids. */
       if (st.st_uid != real_uid)
 	Panic(0, "Unfortunately you are not its owner.");
+#endif
       if ((st.st_mode & 0700) == 0600)
 	Panic(0, "To resume it, use \"screen -r\"");
       else
