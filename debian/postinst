@@ -23,6 +23,15 @@ if [ "$1" = configure ]; then
        echo 'd /var/run/screen 1777 root utmp' > $override
     fi
   fi
+
+  # LP #1462692
+  servicedir=/lib/systemd/system
+  servicefile=$servicedir/screen-cleanup.service
+  mkdir -p $servicedir
+  if [ ! -e $servicefile ]; then
+      ln -s /dev/null $servicefile
+  fi
+
   add-shell /usr/bin/screen || true
 fi
 

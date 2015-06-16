@@ -8,6 +8,10 @@ fi
 if [ "$1" = purge ]; then
   rm -vf /etc/tmpfiles.d/screen-cleanup.conf
   rmdir -pv --ignore-fail-on-non-empty /etc/tmpfiles.d
+
+  # LP #1462692
+  rm -f /lib/systemd/system/screen-cleanup.service
+  rmdir -p --ignore-fail-on-non-empty /lib/systemd/system
 fi
 
 if [ "$1" = disappear ]; then
