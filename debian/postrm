@@ -5,6 +5,11 @@ if [ "$1" = purge ] || [ "$1" = remove ]; then
   rm -rf /var/run/screen
 fi
 
+if [ "$1" = purge ]; then
+  rm -vf /etc/tmpfiles.d/screen-cleanup.conf
+  rmdir -pv --ignore-fail-on-non-empty /etc/tmpfiles.d
+fi
+
 if [ "$1" = disappear ]; then
   remove-shell /usr/bin/screen || true
 fi

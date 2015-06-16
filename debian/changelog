@@ -1,5 +1,8 @@
 screen (4.3.0-2) UNRELEASED; urgency=medium
 
+  * Properly handle /etc/tmpfiles.d/ creation upon installation when
+    screen is not setgid and not running under systemd. Regression
+    introduced in 4.2.1-4.
   * Add fixed bugs reported in Ubuntu to previous changelog entry.
 
  -- Axel Beckert <abe@debian.org>  Tue, 16 Jun 2015 12:45:51 +0200
