@@ -18,7 +18,8 @@ Testsuite: autopkgtest
 
 Package: screen
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
 Suggests: iselect (>= 1.4.0-1) | screenie | byobu
 Description: terminal multiplexer with VT100/ANSI terminal emulation
  GNU Screen is a terminal multiplexer that runs several separate "screens" on
