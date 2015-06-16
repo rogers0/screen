@@ -1,0 +1,13 @@
+# The following directory is needed if the local admin wants to remove
+# the setgid bit by following the steps listed in README.Debian.  Just
+# creating the directory in postinst (in case systemd is not
+# installed) and removing it again in postrm does not work, because
+# postinst either removes a directory owned by systemd (even if empty)
+# or leaves an unowned directory in case of any other init system is
+# used. The situation would get even more tricky if the file hasn't
+# been created because running under sysvinit and then the init system
+# is switched (either by installing systemd-sysv or by switching the
+# init system via boot parameters) without screen being reinstalled,
+# i.e. screen's postinst not being called again. (And screen's init
+# script can't handle that because it's no more run by systemd.)
+etc/tmpfiles.d
