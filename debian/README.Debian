@@ -110,7 +110,6 @@ A: Screen has to be setuid root to accomplish this. (Note the security implicati
 
 ] dpkg-statoverride --update --add root utmp 4755 /usr/bin/screen
 ] chmod 0755 /var/run/screen
-] mkdir -p /etc/tmpfiles.d
 ] echo 'd /var/run/screen 0755 root utmp' > /etc/tmpfiles.d/screen-cleanup.conf
 
    dpkg-statoverride will make sure that the modified permissions remain in effect
@@ -125,7 +124,6 @@ A: As above, via dpkg-statoverride:
 
 ] dpkg-statoverride --update --add root utmp 0755 /usr/bin/screen
 ] chmod 1777 /var/run/screen
-] mkdir -p /etc/tmpfiles.d
 ] echo 'd /var/run/screen 1777 root utmp' > /etc/tmpfiles.d/screen-cleanup.conf
 
 
@@ -138,4 +136,4 @@ A:
 ] chmod 0775 /var/run/screen
 ] rm /etc/tmpfiles.d/screen-cleanup.conf
 
- -- Axel Beckert <abe@debian.org>, Tue, 16 Jun 2015 21:14:03 +0200
+ -- Axel Beckert <abe@debian.org>, Tue, 16 Jun 2015 23:27:03 +0200
