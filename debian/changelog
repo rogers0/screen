@@ -2,6 +2,8 @@ screen (4.3.1-2) UNRELEASED; urgency=medium
 
   * Suggest ncurses-term as it can solve cases where screen refuses to
     work due to an unknown terminal given in $TERM.
+  * Remove Jan Christoph Nordholz from Uploaders as suggested by the MIA
+    team. Thanks for all your work on screen, Jan!
 
  -- Axel Beckert <abe@debian.org>  Wed, 26 Aug 2015 20:52:01 +0200
 

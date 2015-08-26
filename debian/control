@@ -2,7 +2,6 @@ Source: screen
 Section: misc
 Priority: standard
 Maintainer: Axel Beckert <abe@debian.org>
-Uploaders: Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
 Standards-Version: 3.9.6
 Build-Depends: debhelper (>= 9.20130504~),
                dh-autoreconf,
