@@ -1,7 +1,7 @@
 screen (4.3.1-2) UNRELEASED; urgency=medium
 
   * Suggest ncurses-term as it can solve cases where screen refuses to
-    work due to an unknown terminal given in $TERM.
+    work due to an unknown terminal given in $TERM. (Closes: #609656)
   * Remove Jan Christoph Nordholz from Uploaders as suggested by the MIA
     team. Thanks for all your work on screen, Jan!
 
