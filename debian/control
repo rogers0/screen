@@ -20,7 +20,8 @@ Package: screen
 Architecture: any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
-Suggests: iselect (>= 1.4.0-1) | screenie | byobu
+Suggests: iselect (>= 1.4.0-1) | screenie | byobu,
+          ncurses-term
 Description: terminal multiplexer with VT100/ANSI terminal emulation
  GNU Screen is a terminal multiplexer that runs several separate "screens" on
  a single physical character-based terminal. Each virtual terminal emulates a
