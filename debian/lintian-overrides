@@ -12,3 +12,9 @@ screen: init.d-script-does-not-implement-optional-option etc/init.d/screen-clean
 screen: hyphen-used-as-minus-sign usr/share/man/man1/screen.1.gz:679
 # "`%'-character"
 screen: hyphen-used-as-minus-sign usr/share/man/man1/screen.1.gz:833
+
+# False positive, handled by debian/tmpfile, debian/postinst and
+# debian/postrm. See https://bugs.debian.org/740301 and
+# https://bugs.launchpad.net/bugs/1462692 for the context of this
+# implementation.
+screen: systemd-no-service-for-init-rcS-script screen-cleanup
