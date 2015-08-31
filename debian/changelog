@@ -1,5 +1,6 @@
 screen (4.3.1-2) UNRELEASED; urgency=medium
 
+  * Cherry-pick patch to fix DoS via stack overflow. (Closes: #797624)
   * Suggest ncurses-term as it can solve cases where screen refuses to
     work due to an unknown terminal given in $TERM. (Closes: #609656)
   * Remove Jan Christoph Nordholz from Uploaders as suggested by the MIA
