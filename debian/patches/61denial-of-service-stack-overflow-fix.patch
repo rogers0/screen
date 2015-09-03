@@ -2,6 +2,7 @@ Origin: commit b7484c224738247b510ed0d268cd577076958f1b
 Author: Kuang-che Wu <kcwu@csie.org>
 Bug: https://savannah.gnu.org/bugs/?45713
 Bug-Debian: http://bugs.debian.org/797624
+Bug-MITRE: https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-6806
 Description: Fix stack overflow due to too deep recursion
  How to reproduce:
  Run this command inside screen
@@ -9,6 +10,8 @@ Description: Fix stack overflow due to too deep recursion
  .   
  screen will recursively call MScrollV to depth n/256.
  This is time consuming and will overflow stack if n is huge.
+ .
+ This issue has been assigned the id CVE-2015-6806.
 
 diff --git a/ansi.c b/ansi.c
 index a342fb1..152d2ef 100644
