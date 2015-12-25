@@ -3,7 +3,7 @@
 # Copyright (C) 1997 joost witteveen <joost@rulcmc.leidenuniv.nl>
 # Copyright (C) 1997-2001 Juan Cespedes <cespedes@debian.org>
 # Copyright (C) 2001 Adam Lazur <zal@debian.org>
-# Copyright (C) 2011-2013 Axel Beckert <abe@debian.org>
+# Copyright (C) 2011-2015 Axel Beckert <abe@debian.org>
 
 # Uncomment me to turn on debugging
 #export DH_VERBOSE=1
