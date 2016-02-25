@@ -9,6 +9,7 @@
 #export DH_VERBOSE=1
 
 ROOT := $(CURDIR)/debian/screen
+ROOT_UDEB := $(CURDIR)/debian/screen-udeb
 # statically define this... sucko
 TTYGROUP := 5
 
@@ -49,6 +50,9 @@ override_dh_auto_install:
 	chmod 2755 $(ROOT)/usr/bin/screen
 	# Fix package-contains-info-dir-file, remove /usr/share/info/dir.gz
 	rm -f $(ROOT)/usr/share/info/dir*
+	# do not copy useless file to udeb
+	cp -a $(ROOT)/* $(ROOT_UDEB)/
+	rm -rf $(ROOT_UDEB)/usr/share/{doc,info,lintian,man} $(ROOT_UDEB)/usr/lib
 
 override_dh_installinit:
 	dh_installinit --no-start --init-script='screen-cleanup'

@@ -1,7 +1,11 @@
 screen (4.3.1-3) UNRELEASED; urgency=medium
 
+  [ Axel Beckert ]
   * Add CVE-ID to previous changelog entry and patch.
   * Remove screen-dbg package, there are automatic -dbgsym packages now.
+
+  [ Roger Shimizu ]
+  * Add udeb support
 
  -- Axel Beckert <abe@debian.org>  Thu, 03 Sep 2015 14:29:29 +0200
 
